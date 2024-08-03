@@ -5,6 +5,7 @@ import java.util.Map;
 
 import arc.Core;
 import arc.scene.style.Drawable;
+import arc.util.Log;
 import arc.scene.ui.ImageButton;
 import mindustry.gen.Tex;
 import mindustry.ui.Styles;
@@ -37,15 +38,18 @@ public class StyleMananger {
 
   public static void load() {
     var currentStyle = Core.settings.get("oxygen-core-style", "mindustry");
+    Log.info("load style @",currentStyle);
     if (!styles.containsKey(currentStyle)) {
       style = defaultStyle;
+      Core.settings.put("oxygen-core-style", currentStyle);
     } else {
       style = styles.get(currentStyle);
     }
+
   }
 
   public static void changeStyle(String name) {
-    Core.settings.put("oxygencore-style", name);
+    Core.settings.put("oxygen-core-style", name);
     load();
   }
 

@@ -11,19 +11,25 @@ import mindustry.mod.Mod;
 public class CoreMod extends Mod {
   @Override
   public void init() {
-
+    Events.on(EventType.ClientLoadEvent.class, event -> {
+      Time.runTask(10f, () -> {
+        loadUI();
+      });
+    });
   }
 
   @Override
   public void loadContent() {
+
+  }
+
+  public void loadUI() {
+    Manager.init();
     StyleMananger.init();
     StyleMananger.load();
-    Events.on(EventType.ClientLoadEvent.class, event -> {
-      Time.runTask(10f, () -> {
-        var window = new Window();
-        window.center();
-        window.show();
-      });
-    });
+    var window = new Window();
+    window.setPosition(100f, 100f);
+    window.resize(300f, 200f);
+    window.show();
   }
 }

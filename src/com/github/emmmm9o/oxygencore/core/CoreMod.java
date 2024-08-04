@@ -1,6 +1,6 @@
 package com.github.emmmm9o.oxygencore.core;
 
-import com.github.emmmm9o.oxygencore.ui.StyleMananger;
+import com.github.emmmm9o.oxygencore.ui.StyleManager;
 import com.github.emmmm9o.oxygencore.ui.Window;
 
 import arc.Events;
@@ -24,12 +24,12 @@ public class CoreMod extends Mod {
   }
 
   public void loadUI() {
+    StyleManager.init();
+    StyleManager.load();
     Manager.init();
-    StyleMananger.init();
-    StyleMananger.load();
     var window = new Window();
-    window.setPosition(300f, 300f);
     window.resize(300f, 200f);
     window.show();
+    window.setPosition(300f, 300f);
   }
 }

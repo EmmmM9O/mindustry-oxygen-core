@@ -12,12 +12,11 @@ import arc.scene.event.InputEvent;
 import arc.scene.event.InputListener;
 import arc.scene.ui.Image;
 import arc.scene.ui.ImageButton;
-import arc.scene.ui.ScrollPane;
 import arc.scene.ui.layout.Cell;
 import arc.scene.ui.layout.Table;
 import arc.util.Align;
 import arc.util.Tmp;
-import mindustry.gen.Tex;
+import mindustry.gen.Icon;
 
 public class Window {
   public String title = "Empty";
@@ -25,13 +24,14 @@ public class Window {
   public Table table, bodyContainer, statusBarContainer;
   public float x, y;
   public float width = 100, height = 100;
-  public boolean resizeable = true, draggable = true, moving;
+  public boolean resizeable = true, draggable = true, moving, resizing;
   public boolean visible, fullscreen, center, added;
   public Element body, statusBar;
   public static float draggedAlpha = 0.45f;
   protected Cell<Table> titleBarCell, statusBarCell, statusBarContainerCell, bodyCell;
   protected Cell<Table> titleTextBarCell;
-  protected Cell<ImageButton> maximizeButtonCell;
+  protected Cell<ImageButton> maximizeButtonCell, resizeButtonCell;
+  public FullscreenDialog fullscreenDialog;
 
   public boolean active() {
     return Manager.activeWindow == this;
@@ -61,25 +61,17 @@ public class Window {
 
   }
 
-  protected void bResize(float x, float y, float startX, float startY) {
-    if (fullscreen)
-      return;
-    var dwidth = x - startX;
-    var dheight = y - startY;
-    dwidth += width;
-    dheight += height;
-    dwidth = Math.max(dwidth, 96f);
-    dheight = Math.max(dheight, 64f);
-  }
-
   public void resize(float dwidth, float dheight) {
     width = dwidth;
     height = dheight;
+    width = Math.max(width, 96f);
+    height = Math.max(height, 64f);
+
     layout();
   }
 
   public void layout(float width, float height) {
-    table.setSize(width, height + 64f);
+    table.setSize(width, height + 48f);
     titleBarCell.get().setWidth(width);
     titleTextBarCell.get().setWidth(width - 32f * (4 + (resizeable ? 1 : 0)));
     this.bodyCell.size(width, height);
@@ -102,15 +94,11 @@ public class Window {
     this.titleBarCell = table.table(titleBar -> {
       this.titleTextBarCell = titleBar.table((titleTextBar) -> {
         titleTextBar
-            .label(() -> (titleFunc == null
-                ? (active() ? "[cyan]" : "[gray]")
-                    + (title.startsWith("@") ? Core.bundle.get(title.substring(1)) : title)
-                : titleFunc.get(this)))
-            .fill().left();
-      }).growX().left();
-      this.titleTextBarCell.get().setBackground(StyleMananger.style.background);
+            .label(() -> getTitleConntext())
+            .fill().grow().get().setAlignment(Align.center);
+      }).grow().left();
+      this.titleTextBarCell.get().setBackground(StyleManager.style.titleTextBackground);
       this.titleTextBarCell.get().addListener(new InputListener() {
-
         @Override
         public void touchDragged(InputEvent event, float tx, float ty, int pointer) {
           if (draggable && !fullscreen) {
@@ -133,44 +121,42 @@ public class Window {
       });
       titleBar.table(rightBar -> {
         maximizeButtonCell = rightBar
-            .button(Core.atlas.drawable("oxygen-core-fullscreen"), StyleMananger.style.defaulti,
+            .button(Core.atlas.drawable("oxygen-core-fullscreen"), StyleManager.style.windowButtons,
                 () -> {
                   fullscreen();
                 })
-            .uniform().fill().right().grow();
+            .uniform().fill().right().grow().size(48f);
         maximizeButtonCell.get().setDisabled((() -> !this.resizeable));
         rightBar
-            .button(Core.atlas.drawable("oxygen-core-hide"), StyleMananger.style.defaulti,
+            .button(Core.atlas.drawable("oxygen-core-hide"), StyleManager.style.windowButtons,
                 () -> {
                   hide();
                 })
-            .uniform().fill().right().grow();
+            .uniform().fill().right().grow().size(48f);
         rightBar
-            .button(Core.atlas.drawable("oxygen-core-close"), StyleMananger.style.defaulti, (() -> {
+            .button(Icon.cancel, StyleManager.style.windowButtons, (() -> {
               close();
-            })).uniform().fill().right().grow();
-        var resizeButtonCell = rightBar.button(
-            Core.atlas.drawable("oxygen-core-resize"),
-            StyleMananger.style.defaulti,
+            })).uniform().fill().right().grow().size(48f);
+        resizeButtonCell = rightBar.button(
+            Icon.resize,
+            StyleManager.style.defaulti,
             () -> {
-            }).uniform().fill().right().grow();
+            }).uniform().fill().right().grow().size(48f);
         resizeButtonCell.get().addListener(new InputListener() {
-          protected float lastX = 0, lastY = 0;
 
           @Override
           public void touchDragged(InputEvent event, float tx, float ty, int pointer) {
-            bResize(tx, ty, lastX, lastY);
+            resizeTo(tx, ty);
           }
 
           @Override
           public void touchUp(InputEvent event, float tx, float ty, int pointer, KeyCode button) {
-            bResize(tx, ty, lastX, lastY);
+            resizing = false;
           }
 
           @Override
           public boolean touchDown(InputEvent event, float tx, float ty, int pointer, KeyCode button) {
-            lastX = tx;
-            lastY = ty;
+            resizing = true;
             return true;
           }
         });
@@ -187,14 +173,14 @@ public class Window {
         };
       });
     });
-    titleBarCell.get().setBackground(StyleMananger.style.background);
+    titleBarCell.get().setBackground(StyleManager.style.titleBarBackground);
     titleBarCell.fillX();
     table.row();
     bodyContainer = new Table();
     bodyCell = table.table(body -> {
       body.add(bodyContainer);
     }).uniformX();
-    bodyCell.get().setBackground(StyleMananger.style.background);
+    bodyCell.get().setBackground(StyleManager.style.bodyBackground);
     table.row();
     statusBarContainer = new Table();
     this.statusBarCell = table.table(statusBar -> {
@@ -202,22 +188,31 @@ public class Window {
         statB.add(statusBarContainer);
       }).uniformX();
     }).uniformX();
-    this.statusBarCell.get().setBackground(StyleMananger.style.background);
+    this.statusBarCell.get().setBackground(StyleManager.style.statusBarBackground);
     table.update(() -> {
       if (!table.fillParent && !fullscreen) {
-        table.color.a = moving ? draggedAlpha : 1f;
+        table.color.a = moving || resizing ? draggedAlpha : 1f;
         Vec2 pos = table.localToParentCoordinates(Tmp.v1.set(0, 0));
         setPosition(
             Mathf.clamp(pos.x, 0, table.parent.getWidth() - table.getPrefWidth() / 2),
             Mathf.clamp(pos.y, 0, table.parent.getHeight() - table.getPrefHeight() / 2));
       }
     });
+    this.fullscreenDialog = new FullscreenDialog(this);
+    Manager.windowManager.registerWindow(this);
+
   }
 
   public void setBody(Element body) {
     bodyContainer.clear();
     this.body = body;
     bodyContainer.add(body);
+  }
+
+  public String getTitleConntext() {
+    return (titleFunc == null
+        ? (title.startsWith("@") ? Core.bundle.get(title.substring(1)) : title)
+        : titleFunc.get(this));
   }
 
   public void setStatusBar(Element statusBar) {
@@ -239,6 +234,7 @@ public class Window {
       fullscreen = true;
       hide();
       maximizeButtonCell.get().replaceImage(new Image(Core.atlas.drawable("oxygen-core-consume")));
+      fullscreenDialog.show();
     }
     onFullScreen(fullscreen);
   }
@@ -247,20 +243,13 @@ public class Window {
     if (visible) {
       visible = false;
       table.visible = false;
+      Manager.windowManager.changeVisible(visible, this);
       onHide();
     }
   }
 
-  public void flush() {
-    if (fullscreen) {
-      layout(Manager.widthX(), Manager.heightY() - 64);
-    } else {
-      layout();
-    }
-  }
-
   public float getHeight() {
-    return fullscreen ? Manager.heightY() - 64 : height;
+    return fullscreen ? Manager.heightY() - 48 : height;
   }
 
   public float getWidth() {
@@ -286,6 +275,7 @@ public class Window {
 
   public void close() {
     hide();
+    Manager.windowManager.removeWindow(this);
     table.parent.removeChild(table);
     table.remove();
     this.onClose();
@@ -299,6 +289,7 @@ public class Window {
     if (!visible) {
       visible = true;
       table.visible = true;
+      Manager.windowManager.changeVisible(visible, this);
       onShow();
     }
   }
@@ -306,13 +297,17 @@ public class Window {
   public void positionParent(float x, float y) {
     if (table.parent == null)
       return;
-    var tab = titleTextBarCell.get();
-    Vec2 pos = tab.localToAscendantCoordinates(table.parent, Tmp.v1.set(x, y));
-    pos.x -= titleBarCell.get().getPrefWidth() / 2;
-    pos.y -= table.getPrefHeight() - titleBarCell.get().getPrefHeight() / 2;
     setPosition(
-        Mathf.clamp(pos.x, 0, table.parent.getWidth() - table.getPrefWidth() / 2),
-        Mathf.clamp(pos.y, 0, table.parent.getHeight() - table.getPrefHeight() / 2));
+        Mathf.clamp(x + this.x - titleTextBarCell.get().getWidth() / 2, 0,
+            table.parent.getWidth() - table.getWidth() / 2),
+        Mathf.clamp(y + this.y - 24, 0, table.parent.getHeight() - table.getHeight()));
+  }
 
+  public void resizeTo(float tx, float ty) {
+    if (table.parent == null)
+      return;
+    float dw = tx + table.getWidth() - resizeButtonCell.get().getWidth() / 2;
+    float dy = ty + table.getHeight() - resizeButtonCell.get().getHeight();
+    resize(Math.abs(dw), Math.abs(dy));
   }
 }

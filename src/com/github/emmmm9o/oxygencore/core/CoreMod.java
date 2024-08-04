@@ -28,7 +28,7 @@ public class CoreMod extends Mod {
     StyleMananger.init();
     StyleMananger.load();
     var window = new Window();
-    window.setPosition(100f, 100f);
+    window.setPosition(300f, 300f);
     window.resize(300f, 200f);
     window.show();
   }

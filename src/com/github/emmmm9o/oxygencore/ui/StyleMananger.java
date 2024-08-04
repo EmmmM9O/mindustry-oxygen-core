@@ -12,8 +12,8 @@ import mindustry.ui.Styles;
 
 public class StyleMananger {
   public static class OxygenStyle {
-    public ImageButton.ImageButtonStyle defaultImageButtonStyle;
-    public Drawable button;
+    public ImageButton.ImageButtonStyle defaulti;
+    public Drawable background;
 
     public OxygenStyle() {
     }
@@ -21,31 +21,30 @@ public class StyleMananger {
 
   public static OxygenStyle style, defaultStyle = new OxygenStyle() {
     {
-      this.defaultImageButtonStyle = Styles.defaulti;
-      this.button = Tex.button;
+      this.defaulti = Styles.defaulti;
+      this.background = Tex.button;
     }
   };
   public static Map<String, OxygenStyle> styles = new HashMap<String, OxygenStyle>();
 
   public static void init() {
-    registerStyle("mindustry", new OxygenStyle() {
+    registerStyle("light", new OxygenStyle() {
       {
-        this.defaultImageButtonStyle = Styles.defaulti;
-        this.button = Tex.button;
+        this.defaulti = Styles.cleari;
+        this.background = Styles.black6;
       }
     });
   }
 
   public static void load() {
-    var currentStyle = Core.settings.get("oxygen-core-style", "mindustry");
-    Log.info("load style @",currentStyle);
+    var currentStyle = Core.settings.get("oxygen-core-style", "light");
+    Log.info("load style @", currentStyle);
     if (!styles.containsKey(currentStyle)) {
       style = defaultStyle;
-      Core.settings.put("oxygen-core-style", currentStyle);
     } else {
       style = styles.get(currentStyle);
     }
-
+    Core.settings.put("oxygen-core-style", currentStyle);
   }
 
   public static void changeStyle(String name) {

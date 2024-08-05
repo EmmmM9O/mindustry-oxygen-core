@@ -56,6 +56,7 @@ public class FloatTable extends Table {
       setPosition(
           Mathf.clamp(pos.x, getPrefWidth() / 2, parent.getWidth() - getPrefWidth() / 2),
           Mathf.clamp(pos.y, getPrefHeight() / 2, parent.getHeight() - getPrefHeight() / 2));
+      toFront();
     });
   }
 

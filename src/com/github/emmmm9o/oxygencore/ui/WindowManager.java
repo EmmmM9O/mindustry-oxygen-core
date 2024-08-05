@@ -1,13 +1,13 @@
 package com.github.emmmm9o.oxygencore.ui;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import com.github.emmmm9o.oxygencore.core.Manager;
 
 import arc.Core;
+import arc.math.Interp;
+import arc.scene.actions.Actions;
 import arc.scene.ui.Image;
 import arc.scene.ui.ImageButton;
 import arc.scene.ui.layout.Cell;
@@ -61,7 +61,7 @@ public class WindowManager extends FloatTable {
   public void registerWindow(Window window) {
     windows.put(window, windows_hash);
     windowsTable.add(windowTable(window, windows_hash))
-        .name(Integer.toString(windows_hash)).size(menuSize, 48).uniform().fill().top().grow();
+        .name(Integer.toString(windows_hash)).size(menuSize, 48).uniform().top().row();
     windows_hash++;
   }
 
@@ -83,12 +83,14 @@ public class WindowManager extends FloatTable {
   public void resetStyles(Table table) {
     for (var entry : StyleManager.styles.entrySet()) {
       var style = entry.getValue();
-      table.table(style.bodyBackground, one -> {
-        one.labelWrap(entry.getKey()).height(48).grow().fill();
+      table.add(new Table(style.bodyBackground, one -> {
+        String str = entry.getKey();
+        one.label(() -> str).height(48).grow().left()
+            .get().setAlignment(Align.center);
         one.button(Icon.pick, style.windowButtons, () -> {
           StyleManager.changeStyle(entry.getKey());
-        }).size(48).fill();
-      }).size(menuSize, 48).top();
+        }).size(48).fill().right();
+      })).size(menuSize, 48).top().grow().uniform().row();
     }
   }
   // public boolean smoothing;
@@ -112,8 +114,8 @@ public class WindowManager extends FloatTable {
 
     });
     stylesWindow = new Table(table -> {
-      resetStyles(table);
     });
+    resetStyles(stylesWindow);
     windowsTable.fillParent = true;
     menuTableCell = table(menu -> {
       menu.table(StyleManager.style.titleBarBackground, topBar -> {
@@ -187,18 +189,24 @@ public class WindowManager extends FloatTable {
 
   public void syncMenu() {
     var body = bodyCell.get();
-    body.clearChildren();
-    body.addChild(this.currentMenu);
+    body.clear();
+    body.add(this.currentMenu).size(menuSize, menuSize - 48).fill().uniform();
+    menuTableCell.get().pack();
   }
 
   public void showMenu() {
     this.showingMenu = !this.showingMenu;
+    menuTableCell.get().setTransform(true);
     if (this.showingMenu) {
       // smoothing = true;
+
       menuTableCell.size(menuSize);
+      menuTableCell.get().actions(Actions.scaleTo(0f, 1f), Actions.visible(true),
+          Actions.scaleTo(1f, 1f, 0.07f, Interp.pow3Out));
     } else {
       // smoothing = true;
       menuTableCell.size(menuSize, 0);
+      menuTableCell.get().actions(Actions.scaleTo(0f, 1f, 0.06f, Interp.pow3Out), Actions.visible(false));
     }
   }
 

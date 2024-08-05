@@ -12,26 +12,36 @@ import arc.scene.event.InputEvent;
 import arc.scene.event.InputListener;
 import arc.scene.ui.Image;
 import arc.scene.ui.ImageButton;
+import arc.scene.ui.ScrollPane;
 import arc.scene.ui.layout.Cell;
 import arc.scene.ui.layout.Table;
 import arc.util.Align;
+import arc.util.Time;
 import arc.util.Tmp;
 import mindustry.gen.Icon;
+import mindustry.gen.Tex;
 
 public class Window {
   public String title = "Empty";
   public Func<Window, String> titleFunc = null;
   public Table table, bodyContainer, statusBarContainer;
-  public float x, y;
+  public float x, y, startX = -1, startY = -1;
   public float width = 100, height = 100;
   public boolean resizeable = true, draggable = true, moving, resizing;
-  public boolean visible, fullscreen, center, added;
-  public Element body, statusBar;
+  public boolean visible, fullscreen, center, added, closed;
   public static float draggedAlpha = 0.45f;
-  protected Cell<Table> titleBarCell, statusBarCell, statusBarContainerCell, bodyCell;
+  protected Cell<Table> titleBarCell, statusBarCell;
   protected Cell<Table> titleTextBarCell;
-  protected Cell<ImageButton> maximizeButtonCell, resizeButtonCell;
-  public FullscreenDialog fullscreenDialog;
+
+  protected Cell<Table> bodyCell;
+
+  protected Cell<ImageButton> resizeButtonCell;
+  public ScrollPane bodyScroll;
+
+  public void setStart(float x, float y) {
+    this.startX = x;
+    this.startY = y;
+  }
 
   public boolean active() {
     return Manager.activeWindow == this;
@@ -76,12 +86,8 @@ public class Window {
     titleTextBarCell.get().setWidth(width - 32f * (4 + (resizeable ? 1 : 0)));
     this.bodyCell.size(width, height);
     this.statusBarCell.get().setWidth(width);
-    this.statusBarContainerCell.get().setWidth(width);
     onResize(width, height);
-    if (this.body != null)
-      this.body.updateVisibility();
-    if (this.statusBar != null)
-      this.statusBar.updateVisibility();
+
   }
 
   public void layout() {
@@ -89,13 +95,16 @@ public class Window {
   }
 
   public Window() {
+  }
+
+  public void init() {
     var that = this;
     this.table = new Table();
     this.titleBarCell = table.table(titleBar -> {
       this.titleTextBarCell = titleBar.table((titleTextBar) -> {
         titleTextBar
             .label(() -> getTitleConntext())
-            .fill().grow().get().setAlignment(Align.center);
+            .grow().get().setAlignment(Align.center);
       }).grow().left();
       this.titleTextBarCell.get().setBackground(StyleManager.style.titleTextBackground);
       this.titleTextBarCell.get().addListener(new InputListener() {
@@ -120,28 +129,21 @@ public class Window {
         }
       });
       titleBar.table(rightBar -> {
-        maximizeButtonCell = rightBar
-            .button(Core.atlas.drawable("oxygen-core-fullscreen"), StyleManager.style.windowButtons,
-                () -> {
-                  fullscreen();
-                })
-            .uniform().fill().right().grow().size(48f);
-        maximizeButtonCell.get().setDisabled((() -> !this.resizeable));
-        rightBar
+       rightBar
             .button(Core.atlas.drawable("oxygen-core-hide"), StyleManager.style.windowButtons,
                 () -> {
                   hide();
                 })
-            .uniform().fill().right().grow().size(48f);
+            .uniform().right().grow().size(48f);
         rightBar
             .button(Icon.cancel, StyleManager.style.windowButtons, (() -> {
               close();
-            })).uniform().fill().right().grow().size(48f);
+            })).uniform().right().grow().size(48f);
         resizeButtonCell = rightBar.button(
             Icon.resize,
             StyleManager.style.defaulti,
             () -> {
-            }).uniform().fill().right().grow().size(48f);
+            }).uniform().right().grow().size(48f);
         resizeButtonCell.get().addListener(new InputListener() {
 
           @Override
@@ -177,17 +179,18 @@ public class Window {
     titleBarCell.fillX();
     table.row();
     bodyContainer = new Table();
-    bodyCell = table.table(body -> {
-      body.add(bodyContainer);
-    }).uniformX();
+    drawBody(bodyContainer);
+    bodyCell = table.table(bodyt -> {
+      bodyScroll = bodyt.add(
+          new ScrollPane(bodyContainer)).uniformX().grow().get();
+    }).uniformX().fillX();
     bodyCell.get().setBackground(StyleManager.style.bodyBackground);
     table.row();
     statusBarContainer = new Table();
+    drawStatus(statusBarContainer);
     this.statusBarCell = table.table(statusBar -> {
-      that.statusBarContainerCell = statusBar.table(statB -> {
-        statB.add(statusBarContainer);
-      }).uniformX();
-    }).uniformX();
+      statusBar.add(statusBarContainer).uniformX().height(48).grow();
+    }).uniformX().fillX().height(48);
     this.statusBarCell.get().setBackground(StyleManager.style.statusBarBackground);
     table.update(() -> {
       if (!table.fillParent && !fullscreen) {
@@ -198,27 +201,22 @@ public class Window {
             Mathf.clamp(pos.y, 0, table.parent.getHeight() - table.getPrefHeight() / 2));
       }
     });
-    this.fullscreenDialog = new FullscreenDialog(this);
     Manager.windowManager.registerWindow(this);
 
   }
 
-  public void setBody(Element body) {
-    bodyContainer.clear();
-    this.body = body;
-    bodyContainer.add(body);
+  public void drawBody(Table table) {
+
+  }
+
+  public void drawStatus(Table table) {
+
   }
 
   public String getTitleConntext() {
     return (titleFunc == null
         ? (title.startsWith("@") ? Core.bundle.get(title.substring(1)) : title)
         : titleFunc.get(this));
-  }
-
-  public void setStatusBar(Element statusBar) {
-    statusBarContainer.clear();
-    this.statusBar = statusBar;
-    statusBarContainer.add(statusBar);
   }
 
   public void toFront() {
@@ -228,13 +226,8 @@ public class Window {
   public void fullscreen() {
     if (fullscreen) {
       fullscreen = false;
-      show();
-      maximizeButtonCell.get().replaceImage(new Image(Core.atlas.drawable("oxygen-core-fullscreen")));
     } else {
       fullscreen = true;
-      hide();
-      maximizeButtonCell.get().replaceImage(new Image(Core.atlas.drawable("oxygen-core-consume")));
-      fullscreenDialog.show();
     }
     onFullScreen(fullscreen);
   }
@@ -279,12 +272,19 @@ public class Window {
     table.parent.removeChild(table);
     table.remove();
     this.onClose();
+    closed = true;
   }
 
   public void show() {
     if (!added) {
       Manager.addElement(table);
       added = true;
+      if (startX != -1 && startY != -1) {
+        Time.run(10, () -> {
+
+          setPosition(startX, startY);
+        });
+      }
     }
     if (!visible) {
       visible = true;

@@ -23,6 +23,8 @@ public class IOBlock extends BasicWindowBlock {
     super(name);
     this.size = size;
     portNumber = size * 4;
+    hasItems = true;
+    hasLiquids = true;
   }
 
   @Override
@@ -49,7 +51,7 @@ public class IOBlock extends BasicWindowBlock {
         if (Vars.world.build(p.x + tileX(), p.y + tileY()) == source) {
           var port = ports.get(i);
           if (port != null) {
-            if (port.inputItem(item, source) > 0) {
+            if (port.inputItem(item, source)) {
               return true;
             }
           } else {
@@ -139,15 +141,8 @@ public class IOBlock extends BasicWindowBlock {
 
     @Override
     public void drawConfigure() {
-      var edge = Edges.getEdges(block.size);
-      if (edge.length != portNumber) {
-        Log.err("edge number not equal portNumber");
-      }
-      for (int index = 0; index < edge.length; index++) {
-        var port = ports.get(index);
-        if (port == null)
-          continue;
-        port.draw(edge[index]);
+      for (var port : ports) {
+        port.draw();
       }
     }
 

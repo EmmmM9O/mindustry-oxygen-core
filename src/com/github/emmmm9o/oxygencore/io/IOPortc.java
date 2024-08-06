@@ -33,7 +33,7 @@ public interface IOPortc {
 
   public void configureDisplay(Table table);
 
-  public void draw(Point2 side);
+  public void draw();
 
   public IOPortType type();
 

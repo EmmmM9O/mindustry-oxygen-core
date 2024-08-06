@@ -5,9 +5,14 @@ import com.github.emmmm9o.oxygencore.ctype.OxygenContent;
 import com.github.emmmm9o.oxygencore.ctype.OxygenContentType;
 import com.github.emmmm9o.oxygencore.ctype.OxygenMappableContent;
 import com.github.emmmm9o.oxygencore.io.IOPortType;
+import com.github.emmmm9o.oxygencore.util.OxygenEventType;
 
+import arc.Events;
+import arc.func.Cons;
 import arc.struct.ObjectMap;
+import arc.struct.ObjectSet;
 import arc.struct.Seq;
+import arc.util.Log;
 import mindustry.mod.Mods.LoadedMod;
 
 @SuppressWarnings("unchecked")
@@ -15,6 +20,49 @@ public class OxygenContentLoader {
   public static Seq<OxygenContentType> contentTypes = new Seq<>();
   public Seq<Seq<OxygenContent>> contentMap = new Seq<>();
   public Seq<ObjectMap<String, OxygenMappableContent>> contentNameMap = new Seq<>();
+  private ObjectSet<Cons<OxygenContent>> initialization = new ObjectSet<>();
+
+  private void initialize(Cons<OxygenContent> callable) {
+    if (initialization.contains(callable))
+      return;
+
+    for (OxygenContentType type : contentTypes) {
+      for (OxygenContent content : contentMap.get(type.id)) {
+        try {
+          callable.get(content);
+        } catch (Throwable e) {
+          if (content.mod != null) {
+            Log.err("OxygenContent Load Mod[@] Error@", content.mod.name, e);
+          } else {
+            throw new RuntimeException(e);
+          }
+        }
+      }
+    }
+
+    initialization.add(callable);
+  }
+
+  public void log() {
+    Log.debug("Oxygen-Core Content Loader :");
+    Log.debug("--- CONTENT INFO ---");
+    for (int k = 0; k < contentMap.size; k++) {
+      Log.debug("[@]: loaded @", contentTypes.get(k).name, contentMap.get(k).size);
+    }
+    Log.debug("Total content loaded: @", contentTypes.mapInt(c -> contentMap.get(c.id).size).sum());
+    Log.debug("-------------------");
+
+  }
+
+  public void init() {
+    initialize(OxygenContent::init);
+    Events.fire(new OxygenEventType.OxygenContentInitEvent());
+  }
+
+  public void load() {
+    initialize(OxygenContent::loadIcon);
+    initialize(OxygenContent::load);
+  }
 
   public OxygenContentLoader() {
 

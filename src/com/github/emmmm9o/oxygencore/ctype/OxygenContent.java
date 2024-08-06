@@ -16,6 +16,24 @@ public abstract class OxygenContent implements Comparable<OxygenContent> {
     Manager.content.handleContent(this);
   }
 
+  /**
+   * Called after all content and modules are created. Do not use to load regions
+   * or texture data!
+   */
+  public void init() {
+  }
+
+  /**
+   * * Called after all content is created, only on non-headless versions.
+   * * Use for loading regions or other image data.
+   */
+  public void load() {
+  }
+
+  /** Called right before load(). */
+  public void loadIcon() {
+  }
+
   /** @return whether this is content from the base game. */
   public boolean isVanilla() {
     return mod == null;

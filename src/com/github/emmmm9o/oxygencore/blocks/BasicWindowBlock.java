@@ -1,21 +1,24 @@
 package com.github.emmmm9o.oxygencore.blocks;
 
+import com.github.emmmm9o.oxygencore.meta.OxygenStat;
 import com.github.emmmm9o.oxygencore.ui.BlockWindow;
 import com.github.emmmm9o.oxygencore.ui.WindowListener;
 
 import arc.Core;
 import arc.graphics.g2d.Lines;
 import arc.graphics.Color;
-import mindustry.game.Team;
 import mindustry.gen.Building;
 import mindustry.world.Block;
-import mindustry.world.Tile;
 
 public class BasicWindowBlock extends Block {
   public BasicWindowBlock(String name) {
     super(name);
   }
-
+  @Override
+  public void setStats() {
+    super.setStats();
+    stats.add(OxygenStat.hasWindow,true);
+  };
   public class BasicWindowBuild extends Building implements WindowListener {
     public BlockWindow window;
 

@@ -7,10 +7,8 @@ import arc.func.Func;
 import arc.input.KeyCode;
 import arc.math.Mathf;
 import arc.math.geom.Vec2;
-import arc.scene.Element;
 import arc.scene.event.InputEvent;
 import arc.scene.event.InputListener;
-import arc.scene.ui.Image;
 import arc.scene.ui.ImageButton;
 import arc.scene.ui.ScrollPane;
 import arc.scene.ui.layout.Cell;
@@ -19,7 +17,6 @@ import arc.util.Align;
 import arc.util.Time;
 import arc.util.Tmp;
 import mindustry.gen.Icon;
-import mindustry.gen.Tex;
 
 public class Window {
   public String title = "Empty";

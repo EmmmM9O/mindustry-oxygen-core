@@ -7,6 +7,7 @@ import arc.graphics.g2d.Fill;
 import arc.graphics.g2d.Font;
 import arc.graphics.g2d.GlyphLayout;
 import arc.math.geom.Vec2;
+import arc.scene.ui.Label;
 import arc.scene.ui.layout.Scl;
 import arc.scene.ui.layout.Table;
 import arc.util.Align;
@@ -19,14 +20,16 @@ import mindustry.ui.Fonts;
 import mindustry.ui.Styles;
 import mindustry.world.meta.BlockGroup;
 import mindustry.world.meta.Env;
+
 import static mindustry.Vars.*;
 
+import com.github.emmmm9o.oxygencore.meta.OxygenStat;
 import com.github.emmmm9o.oxygencore.ui.MessageBlockWindow;
 
 public class OxygenMessageBlock extends BasicWindowBlock {
   public int maxTextLength = 600;
   public int maxNewlines = 40;
-
+  
   public OxygenMessageBlock(String name) {
     super(name);
     configurable = true;
@@ -58,10 +61,19 @@ public class OxygenMessageBlock extends BasicWindowBlock {
 
     });
   }
-
+  @Override
+  public void setStats() {
+    super.setStats();
+    stats.add(OxygenStat.maxLength,maxTextLength);
+    stats.add(OxygenStat.maxLines,maxNewlines);
+  };
   public class OxygenMessageBuild extends BasicWindowBuild {
     public StringBuilder message = new StringBuilder();
-
+    @Override
+    public void displayConsumption(Table table) {
+      var label=new Label(()->(message == null || message.length() == 0 ? "[lightgray]" + Core.bundle.get("empty") : message));
+      table.add(label).grow();
+    }
     @Override
     public void drawSelect() {
       if (renderer.pixelator.enabled())

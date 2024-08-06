@@ -15,7 +15,6 @@ import arc.scene.ui.layout.Table;
 import arc.scene.ui.ScrollPane;
 import arc.util.Align;
 import mindustry.gen.Icon;
-import mindustry.gen.Tex;
 
 public class WindowManager extends FloatTable {
   public Cell<Table> menuTableCell;

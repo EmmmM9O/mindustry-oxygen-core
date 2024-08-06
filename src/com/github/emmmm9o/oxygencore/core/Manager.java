@@ -8,11 +8,20 @@ import arc.scene.Element;
 import arc.scene.event.Touchable;
 import arc.scene.ui.layout.WidgetGroup;
 import arc.util.Time;
+import mindustry.Vars;
+import mindustry.mod.Mod;
+import mindustry.mod.Mods.LoadedMod;
 
 public class Manager {
   public static Window activeWindow;
   public static WidgetGroup group;
   public static WindowManager windowManager;
+  public static OxygenContentLoader content;
+  public static LoadedMod mod;
+
+  public static LoadedMod getLoadedMod(Class<? extends Mod> clazz) {
+    return Vars.mods.getMod(clazz);
+  }
 
   public static float scale() {
     return (Core.settings.getInt("uiscale", 100) / 100 - 1) * 1.5f + 1;
@@ -52,6 +61,16 @@ public class Manager {
   }
 
   public static void init() {
+    content = new OxygenContentLoader();
+  }
+
+  public static void initContent() {
+    mod = getLoadedMod(CoreMod.class);
+    // it needs mod to call baseContent
+    content.createBaseContent();
+  }
+
+  public static void initUI() {
     group = new WidgetGroup();
     group.fillParent = true;
     group.touchable = Touchable.childrenOnly;

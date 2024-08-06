@@ -17,26 +17,29 @@ public class MessageBlockWindow extends BlockWindow {
     super(building);
     this.messageBuild = building;
   }
-@Override
-public void drawControlTable(Table controlTable){
-    textArea = controlTable.add(new TextArea(messageBuild.message.toString().replace("\r", "\n"))).grow().uniformX()
-        .margin(20f).marginBottom(96f)
-        .get();
-    textArea.setFilter((textField, c) -> {
-      if (c == '\n') {
-        int count = 0;
-        for (int i = 0; i < textField.getText().length(); i++) {
-          if (textField.getText().charAt(i) == '\n') {
-            count++;
-          }
-        }
-        return count < ((OxygenMessageBlock) building.block()).maxNewlines;
-      }
-      return true;
-    });
-    textArea.setMaxLength(((OxygenMessageBlock) building.block()).maxTextLength);
 
-}
+  @Override
+  public void drawControlTable(Table controlTable) {
+    controlTable.table(cont -> {
+      textArea = cont.add(new TextArea(messageBuild.message.toString().replace("\r", "\n"))).uniform().fill().grow().left()
+          .get();
+      textArea.setFilter((textField, c) -> {
+        if (c == '\n') {
+          int count = 0;
+          for (int i = 0; i < textField.getText().length(); i++) {
+            if (textField.getText().charAt(i) == '\n') {
+              count++;
+            }
+          }
+          return count < ((OxygenMessageBlock) building.block()).maxNewlines;
+        }
+        return true;
+      });
+      textArea.setMaxLength(((OxygenMessageBlock) building.block()).maxTextLength);
+      cont.label(() -> textArea.getText()).uniform().fill().grow().right();
+    }).grow().uniformX().minHeight(240f).minWidth(100f).get().setBackground(StyleManager.style.bodyBackground);
+  }
+
   @Override
   public void drawStatus(Table tab) {
     tab.label(() -> textArea.getText().length() + " / " + ((OxygenMessageBlock) building.block()).maxTextLength)

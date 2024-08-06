@@ -7,7 +7,6 @@ import arc.graphics.g2d.Fill;
 import arc.graphics.g2d.Font;
 import arc.graphics.g2d.GlyphLayout;
 import arc.math.geom.Vec2;
-import arc.scene.ui.TextArea;
 import arc.scene.ui.layout.Scl;
 import arc.scene.ui.layout.Table;
 import arc.util.Align;
@@ -135,7 +134,6 @@ public class OxygenMessageBlock extends BasicWindowBlock {
       super.read(read, revision);
       message = new StringBuilder(read.str());
     }
-
 
     @Override
     public void initWindow() {

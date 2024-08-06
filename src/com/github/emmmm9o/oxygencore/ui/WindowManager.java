@@ -12,13 +12,14 @@ import arc.scene.ui.Image;
 import arc.scene.ui.ImageButton;
 import arc.scene.ui.layout.Cell;
 import arc.scene.ui.layout.Table;
+import arc.scene.ui.ScrollPane;
 import arc.util.Align;
 import mindustry.gen.Icon;
+import mindustry.gen.Tex;
 
 public class WindowManager extends FloatTable {
   public Cell<Table> menuTableCell;
-  public Cell<Table> bodyCell;
-  public Table currentMenu;
+  public Table currentMenu,bodyTable,windowsPaneTable;
   public String currentTitle = "Empty";
   public boolean showingMenu;
   public Table settingTable, windowsTable, stylesWindow;
@@ -60,22 +61,25 @@ public class WindowManager extends FloatTable {
 
   public void registerWindow(Window window) {
     windows.put(window, windows_hash);
-    windowsTable.add(windowTable(window, windows_hash))
+    windowsPaneTable.add(windowTable(window, windows_hash))
         .name(Integer.toString(windows_hash)).size(menuSize, 48).uniform().top().row();
     windows_hash++;
   }
 
   public void removeWindow(Window window) {
     var index = windows.remove(window);
-    var table = windowsTable.find(Integer.toString(index));
+    var table = windowsPaneTable.find( Integer.toString(index) );
+    var cell=windowsPaneTable.getCell(table);
+    windowsPaneTable.getCells().remove(cell);
+    table.layout();
     table.visible = false;
-    windowsTable.removeChild(table);
+    windowsPaneTable.removeChild(table);
     table.remove();
   }
 
   public void changeVisible(boolean visible, Window window) {
     var index = windows.get(window);
-    var table = (Table) windowsTable.find(Integer.toString(index));
+    var table = (Table) windowsPaneTable.find(Integer.toString(index));
     var button = (ImageButton) (((Table) table.find("buttons")).find("visible"));
     button.replaceImage(new Image(visible ? Icon.eye : Icon.eyeOff));
   }
@@ -111,12 +115,13 @@ public class WindowManager extends FloatTable {
     row();
     settingTable = new Table();
     windowsTable = new Table(table -> {
-
+      windowsPaneTable = new Table(StyleManager.style.bodyBackground);
+      table.add(new ScrollPane(windowsPaneTable)
+      ).size(menuSize, menuSize - 48).fill().grow();
     });
     stylesWindow = new Table(table -> {
     });
     resetStyles(stylesWindow);
-    windowsTable.fillParent = true;
     menuTableCell = table(menu -> {
       menu.table(StyleManager.style.titleBarBackground, topBar -> {
         topBar.table(StyleManager.style.titleTextBackground, labelBar -> {
@@ -130,10 +135,9 @@ public class WindowManager extends FloatTable {
         }).right().height(48).fill();
       }).size(menuSize, 48).fill().top();
       menu.row();
-      menu.pane(body -> {
-        bodyCell = body.table(StyleManager.style.bodyBackground, t -> {
-        }).size(menuSize, menuSize - 48).fill();
-      }).size(menuSize, menuSize - 48).fill().bottom();
+      bodyTable=new Table(StyleManager.style.bodyBackground);
+      menu.add(bodyTable
+      ).size(menuSize, menuSize - 48).fill().bottom().grow();
     }).visible(() -> showingMenu && currentMenu != null);
   }
 
@@ -188,10 +192,9 @@ public class WindowManager extends FloatTable {
   }
 
   public void syncMenu() {
-    var body = bodyCell.get();
-    body.clear();
-    body.add(this.currentMenu).size(menuSize, menuSize - 48).fill().uniform();
-    menuTableCell.get().pack();
+    bodyTable.clearChildren();
+    bodyTable.add(this.currentMenu).size(menuSize, menuSize - 48).fill().uniform().grow();
+    //menuTableCell.get().pack();
   }
 
   public void showMenu() {
@@ -200,13 +203,12 @@ public class WindowManager extends FloatTable {
     if (this.showingMenu) {
       // smoothing = true;
 
-      menuTableCell.size(menuSize);
-      menuTableCell.get().actions(Actions.scaleTo(0f, 1f), Actions.visible(true),
-          Actions.scaleTo(1f, 1f, 0.07f, Interp.pow3Out));
+     menuTableCell.size(menuSize);
+      menuTableCell.get().actions(Actions.alpha(0f), Actions.fadeIn(0.1f, Interp.fade));
     } else {
       // smoothing = true;
       menuTableCell.size(menuSize, 0);
-      menuTableCell.get().actions(Actions.scaleTo(0f, 1f, 0.06f, Interp.pow3Out), Actions.visible(false));
+      menuTableCell.get().actions(Actions.alpha(1f), Actions.fadeIn(0.1f, Interp.fade));
     }
   }
 

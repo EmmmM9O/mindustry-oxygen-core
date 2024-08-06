@@ -59,10 +59,6 @@ public class Window {
 
   }
 
-  public void onFullScreen(boolean fullscreen) {
-
-  }
-
   public void onMove(float tx, float ty) {
 
   }
@@ -129,7 +125,7 @@ public class Window {
         }
       });
       titleBar.table(rightBar -> {
-       rightBar
+        rightBar
             .button(Core.atlas.drawable("oxygen-core-hide"), StyleManager.style.windowButtons,
                 () -> {
                   hide();
@@ -221,15 +217,6 @@ public class Window {
 
   public void toFront() {
     table.toFront();
-  }
-
-  public void fullscreen() {
-    if (fullscreen) {
-      fullscreen = false;
-    } else {
-      fullscreen = true;
-    }
-    onFullScreen(fullscreen);
   }
 
   public void hide() {

@@ -1,11 +1,11 @@
 package com.github.emmmm9o.oxygencore.ui;
 
 import arc.Core;
+import arc.scene.ui.layout.Cell;
 import arc.scene.ui.layout.Table;
 import arc.struct.OrderedMap;
 import arc.struct.Seq;
 import arc.util.Scaling;
-import arc.util.Log;
 import mindustry.Vars;
 import mindustry.gen.Building;
 import mindustry.gen.Icon;
@@ -19,25 +19,35 @@ import mindustry.world.meta.Stats;
 
 public class BlockWindow extends Window {
   public Table topButtons, buildingInfo, blockInfo;
+  public Cell<Table> topButtonsCell, buildingInfoCell, blockInfoCell;
   public Building building;
   public boolean showBuildingInfo, showBlockInfo;
+  public int blockInfoIndex, buildingInfoIndex;
 
   @Override
   public void drawBody(Table cont) {
-    topButtons = cont.table(buttons -> {
+    topButtonsCell = cont.table(buttons -> {
       buttons.button(Icon.menu, StyleManager.style.windowButtons, () -> {
         showBuildingInfo = !showBuildingInfo;
+
       }).size(48).left();
       buttons.button(Icon.infoCircle, StyleManager.style.windowButtons, () -> {
         showBlockInfo = !showBlockInfo;
+
       }).size(48).left();
-    }).height(48).top().get();
+    }).height(48).top();
+    topButtons = topButtonsCell.get();
     cont.row();
-    buildingInfo = cont.table(tab -> {
+    cont.table(tab -> {
+      drawControlTable(tab);
+    }).uniformX().grow();
+    cont.row();
+    buildingInfoCell = cont.table(tab -> {
       building.display(tab);
-    }).uniformX().grow().visible(() -> showBuildingInfo).get();
+    }).uniformX().grow().visible(() -> showBuildingInfo);
+    buildingInfo = buildingInfoCell.get();
     cont.row();
-    blockInfo = cont.table(table -> {
+    blockInfoCell = cont.table(table -> {
       var block = block();
       block.checkStats();
       table.table(title1 -> {
@@ -100,19 +110,23 @@ public class BlockWindow extends Window {
         table.row();
       }
       block.displayExtra(table);
-    }).uniformX().grow().visible(() -> showBlockInfo).get();
-    cont.row();
-    cont.table(tab->{drawControlTable(tab);}).uniformX().grow();
+
+    }).uniformX().grow().visible(() -> showBlockInfo);
+    blockInfo = blockInfoCell.get();
 
   }
-  public BlockWindow(){
+
+  public BlockWindow() {
   }
+
   public BlockWindow(Building building) {
     this.building = building;
   }
-  public void drawControlTable(Table table){
+
+  public void drawControlTable(Table table) {
 
   }
+
   public Block block() {
     return building.block;
   }

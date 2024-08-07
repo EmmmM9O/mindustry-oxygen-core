@@ -1,7 +1,14 @@
 package com.github.emmmm9o.oxygencore.ctype;
 
+import com.github.emmmm9o.oxygencore.ui.StyleManager;
+import com.github.emmmm9o.oxygencore.ui.selectors.Selectable;
+
 import arc.Core;
 import arc.graphics.g2d.TextureRegion;
+import arc.scene.style.TextureRegionDrawable;
+import arc.scene.ui.Image;
+import arc.scene.ui.ImageButton;
+import arc.scene.ui.layout.Cell;
 import arc.scene.ui.layout.Table;
 import arc.struct.OrderedMap;
 import arc.struct.Seq;
@@ -53,6 +60,30 @@ public abstract class OxygenInfoContent extends OxygenMappableContent {
 
   public void setStats() {
 
+  }
+
+  public Cell<?> displaySelectIcon(Table table, Runnable onClick, boolean selected) {
+    var t = new boolean[1];
+    t[0] = selected;
+    Cell<ImageButton>[] button = new Cell[1];
+    button[0] = table.button(new TextureRegionDrawable(uiIcon),
+        t[0] ? StyleManager.style.selectedButton : StyleManager.style.windowButtons, () -> {
+          t[0] = !t[0];
+          if (button != null) {
+            if (t[0]) {
+              button[0].get().setStyle(StyleManager.style.selectedButton);
+            } else {
+              button[0].get().setStyle(StyleManager.style.windowButtons);
+            }
+          }
+        }).size(64)
+        .uniform();
+    return button[0];
+  }
+
+  public Cell<?> displayIcon(Table table, Runnable onClick) {
+    return table.button(new TextureRegionDrawable(uiIcon), StyleManager.style.windowButtons, onClick).size(64)
+        .uniform();
   }
 
   public void display(Table table) {

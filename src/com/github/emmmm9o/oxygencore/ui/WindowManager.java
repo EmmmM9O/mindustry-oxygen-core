@@ -165,15 +165,15 @@ public class WindowManager extends FloatTable {
    * }
    */
   public void showSettings() {
-    ChooseTable(settingTable, "settings");
+    ChooseTable(settingTable, "@window.settings");
   }
 
   public void showWindows() {
-    ChooseTable(windowsTable, "windows");
+    ChooseTable(windowsTable, "@window.windows");
   }
 
   public void showStyles() {
-    ChooseTable(stylesWindow, "styles");
+    ChooseTable(stylesWindow, "@window.styles");
   }
 
   public void ChooseTable(Table table, String title) {

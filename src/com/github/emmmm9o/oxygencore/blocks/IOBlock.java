@@ -15,7 +15,7 @@ import mindustry.gen.Building;
 import mindustry.type.Item;
 import mindustry.type.Liquid;
 import mindustry.world.Edges;
-
+import mindustry.world.meta.Env;
 public class IOBlock extends BasicWindowBlock {
   public int portNumber;
 
@@ -25,6 +25,12 @@ public class IOBlock extends BasicWindowBlock {
     portNumber = size * 4;
     hasItems = true;
     hasLiquids = true;
+    envEnabled = Env.any;
+    drawDisabled = false;
+    destructible = true;
+    configurable = true;
+    solid = true;
+
   }
 
   @Override
@@ -42,7 +48,9 @@ public class IOBlock extends BasicWindowBlock {
       for (int i = 0; i < portNumber; i++)
         ports.add(IOPort.nonePort);
     }
-
+    public boolean acceptItemGen (Building source, Item item) {
+	    return items.get(item) < getMaximumAccepted(item);
+    }
     @Override
     public boolean acceptItem(Building source, Item item) {
       var sides = Edges.getEdges(block.size);
@@ -55,7 +63,7 @@ public class IOBlock extends BasicWindowBlock {
               return true;
             }
           } else {
-            if (super.acceptItem(source, item)) {
+            if (acceptItemGen(source,item)) {
               return true;
             }
           }
@@ -64,8 +72,11 @@ public class IOBlock extends BasicWindowBlock {
       return false;
     }
 
+    public boolean acceptLiquidGen (Building source, Liquid liquid) {
+    return true;
+    }
     @Override
-    public boolean acceptLiquid(Building source, Liquid liquid) {
+    public boolean acceptLiquid (Building source, Liquid liquid) {
       var sides = Edges.getEdges(block.size);
       for (int i = 0; i < portNumber; i++) {
         var p = sides[i];
@@ -76,7 +87,7 @@ public class IOBlock extends BasicWindowBlock {
               return true;
             }
           } else {
-            if (super.acceptLiquid(source, liquid)) {
+            if (acceptLiquidGen(source, liquid)) {
               return true;
             }
           }
@@ -141,16 +152,24 @@ public class IOBlock extends BasicWindowBlock {
 
     @Override
     public void drawConfigure() {
+	    super.drawConfigure();
       for (var port : ports) {
+	      if(port!=null){
         port.draw();
+	      }
       }
     }
 
     @Override
     public void write(Writes write) {
       for (var port : ports) {
+	      if(port!=null){
+		      write.bool(false);
         write.str(port.getName());
         port.write(write);
+	      }else{
+		      write.bool(true);
+	      }
       }
     }
 
@@ -158,9 +177,13 @@ public class IOBlock extends BasicWindowBlock {
     public void read(Reads read) {
       ports = new Seq<>(portNumber);
       for (int i = 0; i < portNumber; i++) {
+	      if(!read.bool()){
         var name = read.str();
         var type = (IOPortType) Manager.content.getByName(OxygenContentType.io_port, name);
         ports.add(type.readFrom(read, this, i));
+	      }else{
+		      ports.add((IOPort)null);
+	      }
       }
       updateAllPort();
     }

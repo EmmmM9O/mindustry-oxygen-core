@@ -44,13 +44,13 @@ public class OxygenContentLoader {
   }
 
   public void log() {
-    Log.debug("Oxygen-Core Content Loader :");
-    Log.debug("--- CONTENT INFO ---");
+    Log.info("Oxygen-Core Content Loader :");
+    Log.info("--- CONTENT INFO ---");
     for (int k = 0; k < contentMap.size; k++) {
-      Log.debug("[@]: loaded @", contentTypes.get(k).name, contentMap.get(k).size);
+      Log.info("[@]: loaded @", contentTypes.get(k).name, contentMap.get(k).size);
     }
-    Log.debug("Total content loaded: @", contentTypes.mapInt(c -> contentMap.get(c.id).size).sum());
-    Log.debug("-------------------");
+    Log.info("Total content loaded: @", contentTypes.mapInt(c -> contentMap.get(c.id).size).sum());
+    Log.info("-------------------");
 
   }
 

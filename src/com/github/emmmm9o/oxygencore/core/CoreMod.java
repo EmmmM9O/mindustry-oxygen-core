@@ -11,23 +11,25 @@ import mindustry.mod.Mod;
 public class CoreMod extends Mod {
   @Override
   public void init() {
-    Events.on(EventType.ContentInitEvent.class, e -> {
+    //Events.on(EventType.ContentInitEvent.class, e -> {
       Manager.content.init();
       Manager.content.load();
       Manager.content.log();
-    });
-    Events.on(EventType.ClientLoadEvent.class, event -> {
-      Time.runTask(10f, () -> {
-        loadUI();
-      });
-    });
+    //});
+
 
   }
 
   @Override
   public void loadContent() {
+	  Manager.init();
     Manager.initContent();
     OxygenBlocks.load();
+    Events.on(EventType.ClientLoadEvent.class, event -> {
+      Time.runTask(10f, () -> {
+        loadUI();
+      });
+    });
   }
 
   public void loadUI() {

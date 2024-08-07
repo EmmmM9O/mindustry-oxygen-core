@@ -11,12 +11,12 @@ public class OxygenBlocks {
   public static Block oxygenMessageBlock, testOxygenIOBlock;
 
   public static void load() {
-    oxygenMessageBlock = new OxygenMessageBlock("oxygen-message-block") {
+    oxygenMessageBlock = new OxygenMessageBlock("message-block") {
       {
         requirements(Category.logic, with(Items.graphite, 5, Items.copper, 5));
       }
     };
-    testOxygenIOBlock = new IOBlock("oxygen-test-io-block", 2) {
+    testOxygenIOBlock = new IOBlock("test-io-block", 2) {
       {
         requirements(Category.distribution, with(Items.graphite, 5, Items.copper, 5));
         itemCapacity = 500;

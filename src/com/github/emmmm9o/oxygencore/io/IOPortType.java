@@ -8,7 +8,6 @@ import com.github.emmmm9o.oxygencore.ctype.OxygenContentType;
 import com.github.emmmm9o.oxygencore.ctype.OxygenInfoContent;
 
 import arc.func.Func2;
-import arc.scene.ui.layout.Table;
 import arc.util.Nullable;
 import arc.util.Structs;
 import arc.util.io.Reads;

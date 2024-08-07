@@ -27,8 +27,8 @@ import com.github.emmmm9o.oxygencore.meta.OxygenStat;
 import com.github.emmmm9o.oxygencore.ui.MessageBlockWindow;
 
 public class OxygenMessageBlock extends BasicWindowBlock {
-  public int maxTextLength = 600;
-  public int maxNewlines = 40;
+  public int maxTextLength = 1024;
+  public int maxNewlines = 64;
   
   public OxygenMessageBlock(String name) {
     super(name);
@@ -157,7 +157,7 @@ public class OxygenMessageBlock extends BasicWindowBlock {
     @Override
     public void drawWindow() {
       window.resize(400f, 400f);
-      window.title = "message block";
+      window.title = getDisplayName();
     }
   }
 }

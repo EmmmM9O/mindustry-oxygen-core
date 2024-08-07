@@ -4,12 +4,12 @@ import com.github.emmmm9o.oxygencore.core.Manager;
 
 import arc.func.Cons;
 import arc.func.Prov;
-import arc.math.geom.Point2;
+import arc.math.geom.Vec2;
 import arc.scene.style.Drawable;
 import arc.scene.ui.layout.Table;
 
 public class TipTable extends Table {
-  public Prov<Point2> positioner;
+  public Prov<Vec2> positioner;
 
   public boolean added;
 
@@ -22,7 +22,7 @@ public class TipTable extends Table {
     setPosition(pos.x, pos.y);
   }
 
-  public TipTable(Prov<Point2> positioner, Drawable background) {
+  public TipTable(Prov<Vec2> positioner, Drawable background) {
     super(background);
     this.positioner = positioner;
     update(() -> {
@@ -31,7 +31,10 @@ public class TipTable extends Table {
     });
   }
 
-  public TipTable(Prov<Point2> positioner, Drawable background, Cons<Table> run) {
+  public TipTable() {
+  }
+
+  public TipTable(Prov<Vec2> positioner, Drawable background, Cons<Table> run) {
     super(background, run);
     this.positioner = positioner;
     update(() -> {

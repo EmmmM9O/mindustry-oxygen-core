@@ -2,6 +2,7 @@ package com.github.emmmm9o.oxygencore.core;
 
 import com.github.emmmm9o.oxygencore.ui.Window;
 import com.github.emmmm9o.oxygencore.ui.WindowManager;
+import com.github.emmmm9o.oxygencore.ui.selectors.Selectors;
 
 import arc.Core;
 import arc.scene.Element;
@@ -76,6 +77,7 @@ public class Manager {
     group.touchable = Touchable.childrenOnly;
     group.visible = true;
     Core.scene.add(group);
+    Selectors.init();
     windowManager = new WindowManager();
 
     addElement(windowManager);

@@ -4,9 +4,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.github.emmmm9o.oxygencore.core.Manager;
+import com.github.emmmm9o.oxygencore.ui.selectors.Selectors;
 
 import arc.Core;
 import arc.math.Interp;
+import arc.math.geom.Vec2;
 import arc.scene.actions.Actions;
 import arc.scene.ui.Image;
 import arc.scene.ui.ImageButton;
@@ -14,14 +16,16 @@ import arc.scene.ui.layout.Cell;
 import arc.scene.ui.layout.Table;
 import arc.scene.ui.ScrollPane;
 import arc.util.Align;
+import mindustry.Vars;
+import mindustry.core.NetClient;
 import mindustry.gen.Icon;
 
 public class WindowManager extends FloatTable {
   public Cell<Table> menuTableCell;
-  public Table currentMenu,bodyTable,windowsPaneTable;
+  public Table currentMenu, bodyTable, windowsPaneTable;
   public String currentTitle = "Empty";
   public boolean showingMenu;
-  public Table settingTable, windowsTable, stylesWindow;
+  public Table settingTable, windowsTable, stylesWindow, debugWindow;
   public int windows_hash = 0;
   public Map<Window, Integer> windows;
   public static float menuSize = 48 * 10;
@@ -67,8 +71,8 @@ public class WindowManager extends FloatTable {
 
   public void removeWindow(Window window) {
     var index = windows.remove(window);
-    var table = windowsPaneTable.find( Integer.toString(index) );
-    var cell=windowsPaneTable.getCell(table);
+    var table = windowsPaneTable.find(Integer.toString(index));
+    var cell = windowsPaneTable.getCell(table);
     windowsPaneTable.getCells().remove(cell);
     table.layout();
     table.visible = false;
@@ -96,8 +100,10 @@ public class WindowManager extends FloatTable {
       })).size(menuSize, 48).top().grow().uniform().row();
     }
   }
+
   // public boolean smoothing;
   // public static float moveSmoothFactor = 2f;
+  public TipTable itemSelector;
 
   public WindowManager() {
     super();
@@ -111,14 +117,38 @@ public class WindowManager extends FloatTable {
     buttons.button(Icon.pick, StyleManager.style.windowButtons, () -> {
       showStyles();
     }).uniform().size(48);
+    buttons.button(Icon.admin, StyleManager.style.windowButtons, () -> {
+      showDebug();
+    }).uniform().size(48);
     row();
     settingTable = new Table();
     windowsTable = new Table(table -> {
       windowsPaneTable = new Table(StyleManager.style.bodyBackground);
-      table.add(new ScrollPane(windowsPaneTable)
-      ).size(menuSize, menuSize - 48).fill().grow();
+      table.add(new ScrollPane(windowsPaneTable)).size(menuSize, menuSize - 48).fill().grow();
     });
     stylesWindow = new Table(table -> {
+    });
+    debugWindow = new Table(table -> {
+      itemSelector = Selectors.itemSelector.create(() -> {
+        var dx = this.x + this.getWidth();
+        var dy = this.y;
+        return new Vec2(dx, dy);
+      }, items -> {
+        var str = new StringBuilder();
+        for (var it : items) {
+          str.append(it.content.localizedName);
+          str.append(",");
+        }
+        NetClient.sendMessage(str.toString());
+      }, item -> true);
+      itemSelector.visible = false;
+      table.button(Icon.add, StyleManager.style.windowButtons, () -> {
+        if (itemSelector.visible) {
+          itemSelector.hide();
+        } else {
+          itemSelector.show();
+        }
+      }).size(48);
     });
     resetStyles(stylesWindow);
     menuTableCell = table(menu -> {
@@ -134,9 +164,8 @@ public class WindowManager extends FloatTable {
         }).right().height(48).fill();
       }).size(menuSize, 48).fill().top();
       menu.row();
-      bodyTable=new Table(StyleManager.style.bodyBackground);
-      menu.add(bodyTable
-      ).size(menuSize, menuSize - 48).fill().bottom().grow();
+      bodyTable = new Table(StyleManager.style.bodyBackground);
+      menu.add(bodyTable).size(menuSize, menuSize - 48).fill().bottom().grow();
     }).visible(() -> showingMenu && currentMenu != null);
   }
 
@@ -176,6 +205,10 @@ public class WindowManager extends FloatTable {
     ChooseTable(stylesWindow, "@window.styles");
   }
 
+  public void showDebug() {
+    ChooseTable(debugWindow, "window.debug");
+  }
+
   public void ChooseTable(Table table, String title) {
     if (showingMenu) {
       showMenu();
@@ -193,7 +226,7 @@ public class WindowManager extends FloatTable {
   public void syncMenu() {
     bodyTable.clearChildren();
     bodyTable.add(this.currentMenu).size(menuSize, menuSize - 48).fill().uniform().grow();
-    //menuTableCell.get().pack();
+    // menuTableCell.get().pack();
   }
 
   public void showMenu() {
@@ -202,7 +235,7 @@ public class WindowManager extends FloatTable {
     if (this.showingMenu) {
       // smoothing = true;
 
-     menuTableCell.size(menuSize);
+      menuTableCell.size(menuSize);
       menuTableCell.get().actions(Actions.alpha(0f), Actions.fadeIn(0.1f, Interp.fade));
     } else {
       // smoothing = true;

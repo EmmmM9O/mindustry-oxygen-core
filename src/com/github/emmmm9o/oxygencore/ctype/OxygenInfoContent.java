@@ -4,6 +4,8 @@ import com.github.emmmm9o.oxygencore.ui.StyleManager;
 import com.github.emmmm9o.oxygencore.ui.selectors.Selectable;
 
 import arc.Core;
+import arc.func.Cons;
+import arc.func.Prov;
 import arc.graphics.g2d.TextureRegion;
 import arc.scene.style.TextureRegionDrawable;
 import arc.scene.ui.Image;
@@ -62,23 +64,22 @@ public abstract class OxygenInfoContent extends OxygenMappableContent {
 
   }
 
-  public Cell<?> displaySelectIcon(Table table, Runnable onClick, boolean selected) {
-    var t = new boolean[1];
-    t[0] = selected;
-    Cell<ImageButton>[] button = new Cell[1];
-    button[0] = table.button(new TextureRegionDrawable(uiIcon),
-        t[0] ? StyleManager.style.selectedButton : StyleManager.style.windowButtons, () -> {
-          t[0] = !t[0];
-          if (button != null) {
-            if (t[0]) {
-              button[0].get().setStyle(StyleManager.style.selectedButton);
-            } else {
-              button[0].get().setStyle(StyleManager.style.windowButtons);
-            }
-          }
+  public Cons<Boolean> displaySelectIcon(Table table, Runnable onClick, boolean selected) {
+
+    var button = table.button(new TextureRegionDrawable(uiIcon),
+        selected ? StyleManager.style.selectedButton : StyleManager.style.windowButtons, () -> {
+
         }).size(64)
         .uniform();
-    return button[0];
+    return select -> {
+      if (button != null) {
+        if (select) {
+          button.get().setStyle(StyleManager.style.selectedButton);
+        } else {
+          button.get().setStyle(StyleManager.style.windowButtons);
+        }
+      }
+    };
   }
 
   public Cell<?> displayIcon(Table table, Runnable onClick) {

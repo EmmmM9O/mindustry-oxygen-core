@@ -11,5 +11,7 @@ public interface Selectable {
 
   public String write();
 
-  public void read(String text);
+  public boolean read(String text);
+
+  public boolean isSelected();
 }

@@ -83,4 +83,19 @@ public class Util {
     block.displayExtra(table);
 
   }
+    public static float getRotation(int index,int size) {
+      // 0 bottom 1 top 2 left 3 right
+      switch ((int)(index) / (size)) {
+        case 1:
+          return 270f;
+        case 2:
+          return 0f;
+        case 3:
+          return 90f;
+        case 0:
+          return 180f;
+        default:
+          return 0;
+      }
+    }
 }

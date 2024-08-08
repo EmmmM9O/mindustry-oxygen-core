@@ -5,21 +5,25 @@ import com.github.emmmm9o.oxygencore.ctype.OxygenContentType;
 import com.github.emmmm9o.oxygencore.io.IOPortType;
 import com.github.emmmm9o.oxygencore.io.IOPortType.IOPort;
 import com.github.emmmm9o.oxygencore.meta.OxygenStat;
+import com.github.emmmm9o.oxygencore.util.Util;
 
+import arc.Core;
+import arc.graphics.g2d.Draw;
+import arc.graphics.g2d.TextureRegion;
+import arc.math.geom.Point2;
 import arc.struct.Seq;
-import arc.util.Log;
 import arc.util.io.Reads;
 import arc.util.io.Writes;
 import mindustry.Vars;
 import mindustry.gen.Building;
+import mindustry.gen.Tex;
 import mindustry.type.Item;
 import mindustry.type.Liquid;
 import mindustry.world.Edges;
 import mindustry.world.meta.Env;
-
 public class IOBlock extends BasicWindowBlock {
-  public int portNumber;
-
+  public transient int portNumber;
+  public TextureRegion defaultPort;
   public IOBlock(String name, int size) {
     super(name);
     this.size = size;
@@ -31,9 +35,13 @@ public class IOBlock extends BasicWindowBlock {
     destructible = true;
     configurable = true;
     solid = true;
-
   }
-
+  @Override
+  public void loadIcon() {
+    super.loadIcon();
+    defaultPort=Core.atlas.find( "oxygen-core-IOBlock-default-port",
+    "underline-over");
+  }
   @Override
   public void setStats() {
     super.setStats();
@@ -42,7 +50,6 @@ public class IOBlock extends BasicWindowBlock {
 
   public class IOBuild extends BasicWindowBuild {
     public Seq<IOPort> ports;
-
     @Override
     public void created() {
       ports = new Seq<>(portNumber);
@@ -157,13 +164,20 @@ public class IOBlock extends BasicWindowBlock {
     @Override
     public void drawConfigure() {
       super.drawConfigure();
+      int index=0;
       for (var port : ports) {
         if (port != null) {
           port.draw();
+        }else{
+          var po=Edges.getEdges(size)[index];
+          drawDefaultPort(po, index);
         }
+        index++;
       }
     }
-
+    public void drawDefaultPort(Point2 edge,int index){
+      Draw.rect(defaultPort, (edge.x + tileX()) * 8, (edge.y + tileY()) * 8, 8, 8, Util.getRotation(index,size));
+    }
     @Override
     public void write(Writes write) {
       for (var port : ports) {

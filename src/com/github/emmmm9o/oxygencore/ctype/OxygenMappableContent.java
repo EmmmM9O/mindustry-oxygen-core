@@ -5,10 +5,11 @@ import com.github.emmmm9o.oxygencore.core.Manager;
 import mindustry.mod.Mods.LoadedMod;
 
 public abstract class OxygenMappableContent extends OxygenContent {
-  public final String name;
+  public final String name,orginName;
 
   public OxygenMappableContent(String name, LoadedMod mod) {
     super(mod);
+    this.orginName=name;
     this.name = Manager.content.transformName(mod, name);
     Manager.content.handleMappableContent(this);
   }

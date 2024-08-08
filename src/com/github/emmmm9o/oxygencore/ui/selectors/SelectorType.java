@@ -22,7 +22,7 @@ public class SelectorType<T extends Selectable, D> {
   public Func<D, Seq<T>> list_builder;
   public Func4<Func<TipTable, Vec2>, Cons<Seq<T>>, Seq<T>, D, Selector> selector_builder;
   public String name;
-  public String localizedName;
+  public String localizedName, description;
   public Class<?> dataClass;
 
   public void initSeletor() {
@@ -70,6 +70,7 @@ public class SelectorType<T extends Selectable, D> {
   public SelectorType(String name) {
     this.name = name;
     this.localizedName = Core.bundle.get("selector." + this.name + ".name", this.name);
+    this.description = Core.bundle.get("selector." + this.name + ".description", "none");
   }
 
   public Selector create(Func<TipTable, Vec2> positioner, Cons<Seq<T>> callback, D data) {
@@ -101,7 +102,7 @@ public class SelectorType<T extends Selectable, D> {
               () -> {
                 callback.get(selected);
                 hide();
-		clearS();
+                clearS();
               }).size(48).uniform();
           buttons.button(Icon.copy, StyleManager.style.windowButtons,
               () -> {
@@ -118,7 +119,7 @@ public class SelectorType<T extends Selectable, D> {
         for (var opt : list) {
           opt.displayIcon(cont, () -> {
             select(opt);
-           // opt.select();
+            // opt.select();
             displayInfoTable(opt);
           });
           index++;
@@ -156,7 +157,7 @@ public class SelectorType<T extends Selectable, D> {
         }
       } else {
         infoTip.clearChildren();
-        infoTip.table(StyleManager.style.bodyBackground,table -> {
+        infoTip.table(StyleManager.style.bodyBackground, table -> {
           buildInfoTable(current, table);
         }).grow();
         if (!infoTip.visible) {
@@ -185,35 +186,38 @@ public class SelectorType<T extends Selectable, D> {
       for (var s : r) {
         if (!s.isEmpty()) {
           var select = Reflection.construct(classType);
-	  if(select!=null){
-          if (!select.read(s)) {
-		  for(var se:list){
-			  if(se.isSame(select)){
-				  this.select(se);
-			  }
-		  }
+          if (select != null) {
+            if (!select.read(s)) {
+              for (var se : list) {
+                if (se.isSame(select)) {
+                  this.select(se);
+                }
+              }
 
-          } else {
-	clearS();
-            Vars.ui.showErrorMessage("Error invalid content");
-            break;
-          }}
+            } else {
+              clearS();
+              Vars.ui.showErrorMessage("Error invalid content");
+              break;
+            }
+          }
         }
       }
       check();
-      
+
     }
 
     public void check() {
 
     }
+
     @Override
-    public void hide(){
-	    super.hide();
-	    infoTip.hide();
+    public void hide() {
+      super.hide();
+      infoTip.hide();
     }
+
     public void select(T t) {
-	    
+
       if (list.contains(t)) {
         t.select();
         if (t.isSelected()) {
@@ -224,10 +228,12 @@ public class SelectorType<T extends Selectable, D> {
       }
 
     }
-    public void sync(){
-	    hide();
-	    show();
+
+    public void sync() {
+      hide();
+      show();
     }
+
     public Selector() {
     }// it woudle not be used
 
@@ -241,8 +247,8 @@ public class SelectorType<T extends Selectable, D> {
       this.selected = new Seq<>();
       classType = (Class<T>) list.get(0).getClass();
       infoTip = new TipTable(tab -> {
-        var dx = this.x;	
-        var dy = this.y -tab.getPrefHeight()+64;
+        var dx = this.x;
+        var dy = this.y - tab.getPrefHeight();
         return new Vec2(dx, dy);
       }, StyleManager.style.bodyBackground);
       infoTip.visible = false;

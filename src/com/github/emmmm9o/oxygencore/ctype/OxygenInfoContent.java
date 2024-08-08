@@ -40,13 +40,14 @@ public abstract class OxygenInfoContent extends OxygenMappableContent {
 
   @Override
   public void loadIcon() {
-    fullIcon = Core.atlas.find(getContentType().name + "-" + name + "-full",
+    fullIcon =Core.atlas.find(mod.name+"-"+getContentType().name+"-" + orginName,
+	    Core.atlas.find(getContentType().name + "-" + name + "-full",
         Core.atlas.find(name + "-full",
             Core.atlas.find(name,
                 Core.atlas.find(getContentType().name + "-" + name,
-                    Core.atlas.find(name + "1")))));
+                    Core.atlas.find(name + "1"))))));
 
-    uiIcon = Core.atlas.find(getContentType().name + "-" + name + "-ui", fullIcon);
+    uiIcon = Core.atlas.find(mod.name+"-"+getContentType().name+"-" + orginName + "-ui", Core.atlas.find(name+"-ui",Core.atlas.find(getContentType().name+"-"+name+"-ui",fullIcon)));
   }
 
   public String displayDescription() {

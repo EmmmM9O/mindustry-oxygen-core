@@ -93,7 +93,7 @@ public class WindowManager extends FloatTable {
   // public boolean smoothing;
   // public static float moveSmoothFactor = 2f;
 
-  public void newPage (WindowPage page) {
+  public void newPage(WindowPage page) {
     page.id = pages.size + default_window_size;
     pages.add(page);
   }
@@ -129,9 +129,9 @@ public class WindowManager extends FloatTable {
 
       @Override
       public void drawTable() {
-        itemSelector = Selectors.itemSelector.create(tab -> {
-          var dx = that.x   ;
-          var dy = that.y-that.getPrefHeight()+48*3;
+        itemSelector = Selectors.portSelector.create(tab -> {
+          var dx = that.x;
+          var dy = that.y - that.getPrefHeight() + 48 * 3;
           return new Vec2(dx, dy);
         }, items -> {
           var str = new StringBuilder();
@@ -154,7 +154,7 @@ public class WindowManager extends FloatTable {
       @Override
       public void onClose() {
         itemSelector.close();
-      };  
+      };
 
     });
     windows = new HashMap<>();
@@ -179,7 +179,7 @@ public class WindowManager extends FloatTable {
         topBar.table(buttonsBar -> {
           buttonsBar.button(Icon.cancel, StyleManager.style.windowButtons, () -> {
             showMenu();
-            
+
           }).size(48);
         }).right().height(48).fill();
       }).size(menuSize, 48).fill().top();

@@ -91,11 +91,11 @@ public class OxygenContentLoader {
   }
 
   public void handleMappableContent(OxygenMappableContent content) {
-    if (contentNameMap.get(content.id).containsKey(content.name)) {
+    if (contentNameMap.get(content.getContentType().id).containsKey(content.name)) {
       throw new IllegalArgumentException(
           "Two content objects cannot have the same name! (issue: '" + content.name + "')");
     }
-    contentNameMap.get(content.id).put(content.name, content);
+    contentNameMap.get(content.getContentType().id).put(content.name, content);
   }
 
   public <T extends OxygenContent> Seq<T> getBy(OxygenContentType type) {

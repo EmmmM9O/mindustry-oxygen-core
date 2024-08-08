@@ -1,5 +1,9 @@
 package com.github.emmmm9o.oxygencore.ui.selectors;
 
+import com.github.emmmm9o.oxygencore.core.Manager;
+import com.github.emmmm9o.oxygencore.ctype.OxygenContentType;
+import com.github.emmmm9o.oxygencore.io.IOPortType;
+
 import arc.func.Func;
 import arc.struct.Seq;
 import mindustry.Vars;
@@ -19,12 +23,29 @@ public class Selectors {
     public ItemSelectorable(Item item) {
       super(item);
     }
+
     public ItemSelectorable() {
       super();
     }
   }
 
+  public static class PortSelectorable extends OxygenContentSeletorItem<IOPortType> {
+    @Override
+    public OxygenContentType getContentType() {
+      return OxygenContentType.io_port;
+    }
+
+    public PortSelectorable(IOPortType type) {
+      super(type);
+    }
+
+    public PortSelectorable() {
+      super();
+    }
+  }
+
   public static SelectorType<ItemSelectorable, Func<Item, Boolean>> itemSelector;
+  public static SelectorType<PortSelectorable, Func<IOPortType, Boolean>> portSelector;
 
   public static void init() {
     itemSelector = new SelectorType<ItemSelectorable, Func<Item, Boolean>>("item-selector", filter -> {
@@ -36,5 +57,14 @@ public class Selectors {
       }
       return res;
     }, ((Func<Item, Boolean>) item -> true).getClass());
+    portSelector = new SelectorType<PortSelectorable, Func<IOPortType, Boolean>>("port-selector", filter -> {
+      var res = new Seq<PortSelectorable>();
+      for (var port : Manager.content.io_ports()) {
+        if (filter.get(port)) {
+          res.add(new PortSelectorable(port));
+        }
+      }
+      return res;
+    }, ((Func<IOPortType, Boolean>) item -> true).getClass());
   }
 }

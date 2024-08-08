@@ -6,6 +6,7 @@ import com.github.emmmm9o.oxygencore.blocks.IOBlock.IOBuild;
 import com.github.emmmm9o.oxygencore.core.Manager;
 import com.github.emmmm9o.oxygencore.ctype.OxygenContentType;
 import com.github.emmmm9o.oxygencore.ctype.OxygenInfoContent;
+import com.github.emmmm9o.oxygencore.util.Util;
 
 import arc.func.Func2;
 import arc.graphics.g2d.Draw;
@@ -149,25 +150,11 @@ public class IOPortType extends OxygenInfoContent {
       return false;
     }
 
-    public float getRotation() {
-      // 0 bottom 1 top 2 left 3 right
-      switch ((index + 1) % 4) {
-        case 1:
-          return 180f;
-        case 2:
-          return 0f;
-        case 3:
-          return 90f;
-        case 0:
-          return 270f;
-        default:
-          return 0;
-      }
-    }
+
 
     @Override
     public void draw() {
-      Draw.rect(type.fullIcon, (edge.x + build.tileX()) * 8, (edge.y + build.tileY()) * 8, 8, 8, getRotation());
+      Draw.rect(type.fullIcon, (edge.x + build.tileX()) * 8, (edge.y + build.tileY()) * 8, 8, 8, Util.getRotation(index,build.block().size));
     }
 
     @Override

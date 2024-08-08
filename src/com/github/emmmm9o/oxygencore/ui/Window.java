@@ -74,7 +74,7 @@ public class Window {
   }
 
   public void layout(float width, float height) {
-    table.setSize(width, height + 48f);
+    table.setSize(width, height + StyleManager.ButtonSize);
     titleBarCell.get().setWidth(width);
     titleTextBarCell.get().setWidth(width - 32f * (4 + (resizeable ? 1 : 0)));
     this.bodyCell.size(width, height);
@@ -127,16 +127,16 @@ public class Window {
                 () -> {
                   hide();
                 })
-            .uniform().right().grow().size(48f);
+            .uniform().right().grow().size(StyleManager.ButtonSize);
         rightBar
             .button(Icon.cancel, StyleManager.style.windowButtons, (() -> {
               close();
-            })).uniform().right().grow().size(48f);
+            })).uniform().right().grow().size(StyleManager.ButtonSize);
         resizeButtonCell = rightBar.button(
             Icon.resize,
             StyleManager.style.defaulti,
             () -> {
-            }).uniform().right().grow().size(48f);
+            }).uniform().right().grow().size(StyleManager.ButtonSize);
         resizeButtonCell.get().addListener(new InputListener() {
 
           @Override
@@ -182,8 +182,8 @@ public class Window {
     statusBarContainer = new Table();
     drawStatus(statusBarContainer);
     this.statusBarCell = table.table(statusBar -> {
-      statusBar.add(statusBarContainer).uniformX().height(48).grow();
-    }).uniformX().fillX().height(48);
+      statusBar.add(statusBarContainer).uniformX().height(StyleManager.ButtonSize).grow();
+    }).uniformX().fillX().height(StyleManager.ButtonSize);
     this.statusBarCell.get().setBackground(StyleManager.style.statusBarBackground);
     table.update(() -> {
       if (!table.fillParent && !fullscreen) {
@@ -226,7 +226,7 @@ public class Window {
   }
 
   public float getHeight() {
-    return fullscreen ? Manager.heightY() - 48 : height;
+    return fullscreen ? Manager.heightY() - StyleManager.ButtonSize : height;
   }
 
   public float getWidth() {

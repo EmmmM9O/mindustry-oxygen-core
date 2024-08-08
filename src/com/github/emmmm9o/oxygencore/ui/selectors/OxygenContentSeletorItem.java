@@ -44,7 +44,7 @@ public class OxygenContentSeletorItem<T extends OxygenInfoContent> implements Se
   public void displayIcon(Table table, Runnable onClick) {
     iconButton = table.button(new TextureRegionDrawable(content.uiIcon),
         selected ? StyleManager.style.selectedButton : StyleManager.style.windowButtons,
-        onClick).size(64).uniform().get();
+        onClick).size(StyleManager.XButtonSize).uniform().get();
   }
 
   public void updateIcon() {

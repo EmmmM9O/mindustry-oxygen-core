@@ -90,30 +90,30 @@ public class SelectorType<T extends Selectable, D> {
     public void buildTable(Table table) {
       table.table(StyleManager.style.titleBarBackground, top -> {
         top.table(StyleManager.style.titleTextBackground, text -> {
-          text.add(localizedName).height(48).growX()
+          text.add(localizedName).height(StyleManager.ButtonSize).growX()
               .get().setAlignment(Align.center);
-        }).height(48).growX().left();
+        }).height(StyleManager.ButtonSize).growX().left();
         top.table(buttons -> {
           buttons.button(Icon.trash, StyleManager.style.windowButtons,
               () -> {
                 clearS();
-              }).size(48).uniform();
+              }).size(StyleManager.ButtonSize).uniform();
           buttons.button(Icon.save, StyleManager.style.windowButtons,
               () -> {
                 callback.get(selected);
                 hide();
                 clearS();
-              }).size(48).uniform();
+              }).size(StyleManager.ButtonSize).uniform();
           buttons.button(Icon.copy, StyleManager.style.windowButtons,
               () -> {
                 Core.app.setClipboardText(copy());
-              }).size(48).uniform();
+              }).size(StyleManager.ButtonSize).uniform();
           buttons.button(Icon.paste, StyleManager.style.windowButtons,
               () -> {
                 paste(Core.app.getClipboardText());
-              }).size(48).uniform();
-        }).height(48).right();
-      }).height(48).uniformX().growX().row();
+              }).size(StyleManager.ButtonSize).uniform();
+        }).height(StyleManager.ButtonSize).right();
+      }).height(StyleManager.ButtonSize).uniformX().growX().row();
       table.table(cont -> {
         var index = 0;
         for (var opt : list) {
@@ -144,8 +144,8 @@ public class SelectorType<T extends Selectable, D> {
       }).grow().row();
       table.table(footer -> {
         footer.label(() -> (current.isSelected() ? "selected" : "un selected"))
-            .height(48).growX().get().setAlignment(Align.center);
-      }).height(48).growX();
+            .height(StyleManager.ButtonSize).growX().get().setAlignment(Align.center);
+      }).height(StyleManager.ButtonSize).growX();
     }
 
     public void displayInfoTable(Selectable current) {

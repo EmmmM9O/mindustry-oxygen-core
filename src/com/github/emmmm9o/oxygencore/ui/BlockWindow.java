@@ -23,12 +23,12 @@ public class BlockWindow extends Window {
       buttons.button(Icon.menu, StyleManager.style.windowButtons, () -> {
         showBuildingInfo = !showBuildingInfo;
 
-      }).size(48).left();
+      }).size(StyleManager.ButtonSize).left();
       buttons.button(Icon.infoCircle, StyleManager.style.windowButtons, () -> {
         showBlockInfo = !showBlockInfo;
 
-      }).size(48).left();
-    }).height(48).top();
+      }).size(StyleManager.ButtonSize).left();
+    }).height(StyleManager.ButtonSize).top();
     topButtons = topButtonsCell.get();
     cont.row();
     cont.table(tab -> {

@@ -6,6 +6,7 @@ import com.github.emmmm9o.oxygencore.blocks.IOBlock.IOBuild;
 import com.github.emmmm9o.oxygencore.core.Manager;
 import com.github.emmmm9o.oxygencore.ctype.OxygenContentType;
 import com.github.emmmm9o.oxygencore.ctype.OxygenInfoContent;
+import com.github.emmmm9o.oxygencore.ui.StyleManager;
 import com.github.emmmm9o.oxygencore.util.Util;
 
 import arc.func.Func2;
@@ -76,12 +77,12 @@ public class IOPortType extends OxygenInfoContent {
       }
 
     } catch (Throwable ignored) {
-     // throw new RuntimeException("Error " + ignored.toString());
+      // throw new RuntimeException("Error " + ignored.toString());
     }
     if (portType == null) {
-      portType = (a, b) -> new IOPort(a,b,this);
+      portType = (a, b) -> new IOPort(a, b, this);
       // only for debug
-    //  throw new RuntimeException("Error class " + getClass().toString());
+      // throw new RuntimeException("Error class " + getClass().toString());
     }
   }
 
@@ -150,16 +151,15 @@ public class IOPortType extends OxygenInfoContent {
       return false;
     }
 
-
-
     @Override
     public void draw() {
-      Draw.rect(type.fullIcon, (edge.x + build.tileX()) * 8, (edge.y + build.tileY()) * 8, 8, 8, Util.getRotation(index,build.block().size));
+      Draw.rect(type.fullIcon, (edge.x + build.tileX()) * 8, (edge.y + build.tileY()) * 8, 8, 8,
+          Util.getRotation(index, build.block().size));
     }
 
     @Override
     public void display(Table table) {
-
+      table.image(type.uiIcon).size(StyleManager.XButtonSize);
     }
 
     @Override

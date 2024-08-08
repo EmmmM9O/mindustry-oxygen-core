@@ -28,6 +28,8 @@ public class StyleManager {
     }
   }
 
+  public static final float ButtonSize = 48f;
+  public static final float XButtonSize = 64f;
   public static Drawable accent6;
   public static OxygenStyle style;
   public static Map<String, OxygenStyle> styles = new HashMap<String, OxygenStyle>();

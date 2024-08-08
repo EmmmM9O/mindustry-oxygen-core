@@ -39,15 +39,19 @@ public class OxygenContentSeletorItem<T extends OxygenInfoContent> implements Se
 
   }
 
-  public OxygenContentSeletorItem(T content, boolean selected) {
+  public OxygenContentSeletorItem (T content, boolean selected) {
     this.content = content;
     this.selected = selected;
   }
-
+public boolean isSame(Selectable other){
+	return content==((OxygenContentSeletorItem)other).content;
+}
   public OxygenContentSeletorItem(T content) {
     this(content, false);
   }
-
+  public OxygenContentSeletorItem() {
+    this(null, false);
+  }
   @Override
   public boolean read(String text) {
     content = Manager.content.getByName(content.getContentType(), text);

@@ -3,13 +3,14 @@ package com.github.emmmm9o.oxygencore.ui;
 import com.github.emmmm9o.oxygencore.core.Manager;
 
 import arc.func.Cons;
-import arc.func.Prov;
+import arc.func.Func;
 import arc.math.geom.Vec2;
+import arc.util.Align;
 import arc.scene.style.Drawable;
 import arc.scene.ui.layout.Table;
 
 public class TipTable extends Table {
-  public Prov<Vec2> positioner;
+  public Func<TipTable, Vec2> positioner;
 
   public boolean added;
 
@@ -18,11 +19,11 @@ public class TipTable extends Table {
   }
 
   public void update_pos() {
-    var pos = positioner.get();
-    setPosition(pos.x, pos.y);
+    var pos = positioner.get(this);
+    setPosition(pos.x, pos.y, Align.bottomLeft);
   }
 
-  public TipTable(Prov<Vec2> positioner, Drawable background) {
+  public TipTable(Func<TipTable, Vec2> positioner, Drawable background) {
     super(background);
     this.positioner = positioner;
     update(() -> {
@@ -34,7 +35,7 @@ public class TipTable extends Table {
   public TipTable() {
   }
 
-  public TipTable(Prov<Vec2> positioner, Drawable background, Cons<Table> run) {
+  public TipTable(Func<TipTable, Vec2> positioner, Drawable background, Cons<Table> run) {
     super(background, run);
     this.positioner = positioner;
     update(() -> {
@@ -57,7 +58,8 @@ public class TipTable extends Table {
   }
 
   public void close() {
+    hide();
     Manager.group.removeChild(this);
-    remove();
+    added=false;
   }
 }

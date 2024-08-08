@@ -1,6 +1,7 @@
 package com.github.emmmm9o.oxygencore.io;
 
 import com.github.emmmm9o.oxygencore.blocks.IOBlock.IOBuild;
+import com.github.emmmm9o.oxygencore.io.IOPortType.IOPort;
 
 import arc.math.geom.Point2;
 import arc.scene.ui.layout.Table;

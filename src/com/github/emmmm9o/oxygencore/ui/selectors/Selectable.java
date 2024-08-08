@@ -1,5 +1,6 @@
 package com.github.emmmm9o.oxygencore.ui.selectors;
 
+
 import arc.scene.ui.layout.Table;
 
 public interface Selectable {
@@ -14,4 +15,5 @@ public interface Selectable {
   public boolean read(String text);
 
   public boolean isSelected();
+  public boolean isSame(Selectable other);
 }

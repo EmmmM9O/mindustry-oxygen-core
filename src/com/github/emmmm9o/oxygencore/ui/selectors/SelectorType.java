@@ -9,39 +9,36 @@ import com.github.emmmm9o.oxygencore.util.Reflection;
 
 import arc.Core;
 import arc.func.Func;
-import arc.func.Prov;
 import arc.func.Cons;
 import arc.math.geom.Vec2;
 import arc.scene.ui.layout.Table;
 import arc.struct.Seq;
 import arc.util.Align;
-import arc.util.Nullable;
 import arc.util.Structs;
 import mindustry.Vars;
 import mindustry.gen.Icon;
 
 public class SelectorType<T extends Selectable, D> {
   public Func<D, Seq<T>> list_builder;
-  public Func4<Prov<Vec2>, Cons<Seq<T>>, Seq<T>, D, Selector> selector_builder;
+  public Func4<Func<TipTable, Vec2>, Cons<Seq<T>>, Seq<T>, D, Selector> selector_builder;
   public String name;
   public String localizedName;
-  public @Nullable Class<?> subclass;
+  public Class<?> dataClass;
 
   public void initSeletor() {
     try {
       Class<?> current = getClass();
 
-      if (current.isAnonymousClass()) {
-        current = current.getSuperclass();
-      }
-
-      subclass = current;
       while (selector_builder == null && SelectorType.class.isAssignableFrom(current)) {
         Class<?> type = Structs.find(
             current.getDeclaredClasses(), t -> Selector.class.isAssignableFrom(t) && !t.isInterface());
         if (type != null) {
+          Func<TipTable, Vec2> p1 = tab -> new Vec2();
+          Cons<Seq<T>> p2 = t -> {
+          };
+          Seq<T> p3 = new Seq<T>();
           Constructor<? extends Selector> cons = (Constructor<? extends Selector>) type
-              .getDeclaredConstructor(type.getDeclaringClass());
+              .getDeclaredConstructor(p1.getClass(), p2.getClass(), p3.getClass(), dataClass, type.getDeclaringClass());
           selector_builder = (a, b, c, d) -> {
             try {
               return cons.newInstance(a, b, c, d, this);
@@ -57,24 +54,25 @@ public class SelectorType<T extends Selectable, D> {
 
     }
     if (selector_builder == null) {
-      selector_builder = (a, b, c, d) -> null;
+      selector_builder = (a, b, c, d) -> new Selector(a, b, c, d, this);
       // only for debug
-      throw new RuntimeException("Error class " + getClass().toString());
+      // throw new RuntimeException("Error class " + getClass().toString());
     }
   }
 
-  public SelectorType(String name, Func<D, Seq<T>> builder) {
+  public SelectorType(String name, Func<D, Seq<T>> builder, Class<?> dataClass) {
     this(name);
     this.list_builder = builder;
+    this.dataClass = dataClass;
+    initSeletor();
   }
 
   public SelectorType(String name) {
     this.name = name;
     this.localizedName = Core.bundle.get("selector." + this.name + ".name", this.name);
-    initSeletor();
   }
 
-  public Selector create(Prov<Vec2> positioner, Cons<Seq<T>> callback, D data) {
+  public Selector create(Func<TipTable, Vec2> positioner, Cons<Seq<T>> callback, D data) {
     return selector_builder.get(positioner, callback, list_builder.get(data), data);
   }
 
@@ -103,6 +101,7 @@ public class SelectorType<T extends Selectable, D> {
               () -> {
                 callback.get(selected);
                 hide();
+		clearS();
               }).size(48).uniform();
           buttons.button(Icon.copy, StyleManager.style.windowButtons,
               () -> {
@@ -113,18 +112,19 @@ public class SelectorType<T extends Selectable, D> {
                 paste(Core.app.getClipboardText());
               }).size(48).uniform();
         }).height(48).right();
-      }).height(48).uniformX().growX();
+      }).height(48).uniformX().growX().row();
       table.table(cont -> {
         var index = 0;
         for (var opt : list) {
           opt.displayIcon(cont, () -> {
             select(opt);
-            opt.select();
+           // opt.select();
             displayInfoTable(opt);
           });
           index++;
           if (index >= 10) {
             cont.row();
+            index = 0;
           }
         }
       }).uniformX().growX();
@@ -140,7 +140,7 @@ public class SelectorType<T extends Selectable, D> {
     public void buildInfoTable(Selectable current, Table table) {
       table.table(main -> {
         current.display(main);
-      }).grow();
+      }).grow().row();
       table.table(footer -> {
         footer.label(() -> (current.isSelected() ? "selected" : "un selected"))
             .height(48).growX().get().setAlignment(Align.center);
@@ -156,7 +156,7 @@ public class SelectorType<T extends Selectable, D> {
         }
       } else {
         infoTip.clearChildren();
-        infoTip.table(table -> {
+        infoTip.table(StyleManager.style.bodyBackground,table -> {
           buildInfoTable(current, table);
         }).grow();
         if (!infoTip.visible) {
@@ -185,47 +185,64 @@ public class SelectorType<T extends Selectable, D> {
       for (var s : r) {
         if (!s.isEmpty()) {
           var select = Reflection.construct(classType);
+	  if(select!=null){
           if (!select.read(s)) {
-            select.select();
-            selected.add(select);
+		  for(var se:list){
+			  if(se.isSame(select)){
+				  this.select(se);
+			  }
+		  }
+
           } else {
-            selected.clear();
+	clearS();
             Vars.ui.showErrorMessage("Error invalid content");
             break;
-          }
+          }}
         }
       }
       check();
+      
     }
 
     public void check() {
 
     }
-
+    @Override
+    public void hide(){
+	    super.hide();
+	    infoTip.hide();
+    }
     public void select(T t) {
+	    
       if (list.contains(t)) {
         t.select();
-        if (!selected.contains(t)) {
+        if (t.isSelected()) {
           selected.add(t);
         } else {
           selected.remove(t);
         }
       }
-    }
 
+    }
+    public void sync(){
+	    hide();
+	    show();
+    }
     public Selector() {
     }// it woudle not be used
 
-    public Selector(Prov<Vec2> positioner, Cons<Seq<T>> callback, Seq<T> list, D data, SelectorType<T, D> type) {
+    public Selector(Func<TipTable, Vec2> positioner, Cons<Seq<T>> callback, Seq<T> list, D data,
+        SelectorType<T, D> type) {
       super(positioner, StyleManager.style.bodyBackground);
       this.list = list;
       this.data = data;
       this.type = type;
       this.callback = callback;
+      this.selected = new Seq<>();
       classType = (Class<T>) list.get(0).getClass();
-      infoTip = new TipTable(() -> {
-        var dx = this.x + this.getWidth();
-        var dy = this.y + this.getHeight() - infoTip.getHeight();
+      infoTip = new TipTable(tab -> {
+        var dx = this.x;	
+        var dy = this.y -tab.getPrefHeight()+64;
         return new Vec2(dx, dy);
       }, StyleManager.style.bodyBackground);
       infoTip.visible = false;

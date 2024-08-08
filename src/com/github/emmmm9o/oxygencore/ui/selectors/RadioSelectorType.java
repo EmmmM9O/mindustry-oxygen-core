@@ -1,8 +1,9 @@
 package com.github.emmmm9o.oxygencore.ui.selectors;
 
+import com.github.emmmm9o.oxygencore.ui.TipTable;
+
 import arc.func.Cons;
 import arc.func.Func;
-import arc.func.Prov;
 import arc.math.geom.Vec2;
 import arc.struct.Seq;
 
@@ -11,11 +12,11 @@ import arc.struct.Seq;
  */
 public class RadioSelectorType<T extends Selectable, D> extends SelectorType<T, D> {
 
-  public RadioSelectorType(String name, Func<D, Seq<T>> builder) {
-    super(name, builder);
+  public RadioSelectorType(String name, Func<D, Seq<T>> builder, Class<?> dataClass) {
+    super(name, builder, dataClass);
   }
 
-  public Selector create_radio(Prov<Vec2> positioner, Cons<T> callback, D data) {
+  public Selector create_radio(Func<TipTable, Vec2> positioner, Cons<T> callback, D data) {
     // return selector_builder.get(positioner, callback, list_builder.get(data),
     // data);
     return super.create(positioner, list -> {

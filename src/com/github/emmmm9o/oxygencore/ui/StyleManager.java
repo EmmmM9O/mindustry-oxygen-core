@@ -56,9 +56,9 @@ public class StyleManager {
         this.selectedButton = new ImageButtonStyle() {
           {
             down = Styles.flatDown;
-            checked = Styles.flatDown;
-            up = accent6;
+            up = Styles.accentDrawable;
             over = Styles.flatOver;
+            imageUpColor = Color.white;
           }
         };
       }

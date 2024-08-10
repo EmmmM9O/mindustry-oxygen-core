@@ -15,6 +15,7 @@ import mindustry.type.Liquid;
 public class ForbiddenPortType extends IOPortType {
   public ForbiddenPortType(String name) {
     super(name);
+    portType = (a, b) -> new ForbiddenPort(a, b, this);
   }
 
   public class ForbiddenPort extends IOPort {

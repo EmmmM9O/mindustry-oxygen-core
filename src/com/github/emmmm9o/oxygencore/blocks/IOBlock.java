@@ -88,7 +88,7 @@ public class IOBlock extends BasicWindowBlock {
     }
 
     public boolean acceptItemGen(Building source, Item item) {
-      return items.get(item) < getMaximumAccepted(item);
+      return (items.get(item) < getMaximumAccepted(item)) && team == source.team;
     }
 
     @Override
@@ -113,7 +113,7 @@ public class IOBlock extends BasicWindowBlock {
     }
 
     public boolean acceptLiquidGen(Building source, Liquid liquid) {
-      return true;
+      return source.team == team;
     }
 
     @Override
@@ -192,22 +192,29 @@ public class IOBlock extends BasicWindowBlock {
     }
 
     public void changePort(int index, IOPort port) {
-      ports.remove(index).remove();
-      port.clearData();
+      var t = ports.remove(index);
+      if (t != null)
+        t.remove();
+      if (port != null)
+        port.clearData();
       ports.insert(index, port);
-      for (var por : ports) {
-        if (por != port) {
-          por.updatePort(port);
-          port.updatePort(por);
+      if (port != null) {
+        for (var por : ports) {
+          if (por != port && por != null && port != null) {
+            por.updatePort(port);
+            port.updatePort(por);
+          }
         }
       }
     }
+
     @Override
     public void buildConfiguration(Table table) {
       table.button(Icon.settings, Styles.cleari, () -> {
         showWindow();
       });
     }
+
     @Override
     public void drawConfigure() {
       super.drawConfigure();
@@ -261,7 +268,7 @@ public class IOBlock extends BasicWindowBlock {
     public void updateAllPort() {
       for (var port : ports) {
         for (var port2 : ports) {
-          if (port != port2)
+          if (port != port2 && port != null && port2 != null)
             port.updatePort(port2);
         }
       }

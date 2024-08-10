@@ -14,6 +14,7 @@ public class RadioSelectorType<T extends Selectable, D> extends SelectorType<T, 
 
   public RadioSelectorType(String name, Func<D, Seq<T>> builder, Class<?> dataClass) {
     super(name, builder, dataClass);
+    selector_builder = (a, b, c, d) -> (Selector) (new RadioSelector(a, b, c, d, this));
   }
 
   public Selector create_radio(Func<TipTable, Vec2> positioner, Cons<T> callback, D data) {
@@ -26,12 +27,42 @@ public class RadioSelectorType<T extends Selectable, D> extends SelectorType<T, 
         callback.get(list.get(0));
     }, data);
   }
+  
+  public Selector create_radio(Func<TipTable, Vec2> positioner, Cons<T> callback, D data, int defaultT) {
+    var selector = create_radio(positioner, callback, data);
+    selector.select(selector.list.get(defaultT));
+    return selector;
+  }
+
+  public Selector create_radio(Func<TipTable, Vec2> positioner, Cons<T> callback, D data, T defaultT) {
+    var selector = create_radio(positioner, callback, data);
+    selector.select(selector.list.find(t -> t.isSame(defaultT)));
+    return selector;
+  }
 
   public class RadioSelector extends Selector {
+    public RadioSelector(Func<TipTable, Vec2> positioner, Cons<Seq<T>> callback, Seq<T> list, D data,
+        SelectorType<T, D> type) {
+      super(positioner, callback, list, data, type);
+    }
+
     @Override
     public void select(T t) {
-      super.select(t);
-      check();
+      if (list.contains(t)) {
+        if (!t.isSelected()) {
+          if (selected.size != 0) {
+            selected.each(tr -> {
+              tr.select();
+            });
+            selected.clear();
+          }
+          t.select();
+          selected.add(t);
+        } else {
+          t.select();
+          selected.remove(t);
+        }
+      }
     }
 
     @Override

@@ -217,7 +217,6 @@ public class SelectorType<T extends Selectable, D> {
     }
 
     public void select(T t) {
-
       if (list.contains(t)) {
         t.select();
         if (t.isSelected()) {

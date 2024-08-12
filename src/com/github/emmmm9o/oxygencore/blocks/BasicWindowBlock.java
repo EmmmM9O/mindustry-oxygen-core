@@ -6,22 +6,25 @@ import com.github.emmmm9o.oxygencore.ui.WindowListener;
 
 import arc.Core;
 import arc.graphics.g2d.Lines;
+import arc.scene.ui.layout.Table;
 import arc.graphics.Color;
 import mindustry.gen.Building;
+import mindustry.type.Item;
 import mindustry.world.Block;
 
 public class BasicWindowBlock extends Block {
   public BasicWindowBlock(String name) {
     super(name);
   }
+
   @Override
   public void setStats() {
     super.setStats();
-    stats.add(OxygenStat.hasWindow,true);
+    stats.add(OxygenStat.hasWindow, true);
   };
+
   public class BasicWindowBuild extends Building implements WindowListener {
     public BlockWindow window;
-
 
     @Override
     public void draw() {
@@ -82,6 +85,11 @@ public class BasicWindowBlock extends Block {
     public void afterDestroyed() {
       if (window != null)
         window.close();
+
+    }
+
+    public void displayWindowExtra(Table table) {
+
     }
   }
 }

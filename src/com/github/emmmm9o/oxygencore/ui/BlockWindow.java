@@ -1,5 +1,6 @@
 package com.github.emmmm9o.oxygencore.ui;
 
+import com.github.emmmm9o.oxygencore.blocks.BasicWindowBlock.BasicWindowBuild;
 import com.github.emmmm9o.oxygencore.util.Util;
 
 import arc.scene.ui.layout.Cell;
@@ -55,7 +56,9 @@ public class BlockWindow extends Window {
   }
 
   public void drawControlTable(Table table) {
-
+    if (building instanceof BasicWindowBuild bwb) {
+      bwb.displayWindowExtra(table);
+    }
   }
 
   public Block block() {

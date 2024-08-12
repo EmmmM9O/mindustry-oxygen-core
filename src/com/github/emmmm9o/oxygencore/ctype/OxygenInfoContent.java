@@ -89,8 +89,8 @@ public abstract class OxygenInfoContent extends OxygenMappableContent {
     checkStats();
     table.table(title1 -> {
       title1.image(uiIcon).size(Vars.iconXLarge).scaling(Scaling.fit);
-      title1.add("[accent]" + localizedName + "\n[gray]" + name).padLeft(5);
-    });
+      title1.add("[accent]" + localizedName + "\n[gray]").padLeft(5);
+    }).row();
     if (description != null) {
       var any = stats.toMap().size > 0;
 

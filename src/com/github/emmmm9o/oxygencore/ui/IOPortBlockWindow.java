@@ -1,5 +1,6 @@
 package com.github.emmmm9o.oxygencore.ui;
 
+import com.github.emmmm9o.oxygencore.blocks.BasicWindowBlock.BasicWindowBuild;
 import com.github.emmmm9o.oxygencore.blocks.IOBlock.IOBuild;
 import com.github.emmmm9o.oxygencore.ui.selectors.SelectorType;
 import com.github.emmmm9o.oxygencore.ui.selectors.Selectors;
@@ -82,7 +83,7 @@ public class IOPortBlockWindow extends BlockWindow {
           top.add("id:" + currentID)
               .height(StyleManager.ButtonSize).left().grow().get().setAlignment(Align.center);
         }).height(StyleManager.ButtonSize).growX().uniformX().row();
-        main.table(StyleManager.style.bodyBackground,cont -> {
+        main.table(StyleManager.style.bodyBackground, cont -> {
           cont.table(type -> {
             if (ioBuild.ports.get(currentID) != null)
               ioBuild.ports.get(currentID).type.display(type);
@@ -105,15 +106,15 @@ public class IOPortBlockWindow extends BlockWindow {
     this.ioBuild = ioBuild;
     lists = new Seq<>();
     configureTable = new TipTable(tab -> {
-      var dx = this.x + this.getWidth() + tab.getPrefWidth()/2+36f;
-      var dy = this.y+this.getHeight()-24f;
+      var dx = this.x + this.getWidth() + tab.getPrefWidth() / 2 + 36f;
+      var dy = this.y + this.getHeight() - 24f;
       return new Vec2(dx, dy);
     }, StyleManager.style.bodyBackground);
     configureTable.visible = false;
 
     selectorTable = Selectors.radioPortSelector.create_radio(tab -> {
       var dx = this.x + this.getWidth() / 2;
-      var dy = this.y - this.getHeight() / 2+tab.getHeight()+52f;
+      var dy = this.y - this.getHeight() / 2 + tab.getHeight() + 52f;
       return new Vec2(dx, dy);
     }, portS -> {
       var t = getById(currentID);
@@ -154,8 +155,11 @@ public class IOPortBlockWindow extends BlockWindow {
               if (currentID != id) {
                 clearAllHightlight();
                 ((Table) tab.find(Integer.toString(id))).setBackground(Styles.accentDrawable);
-                if (currentID != -1&&((selectorTable.selected==null&&ioBuild.ports.get(currentID)!=null)||(ioBuild.ports.get(currentID)==null&&selectorTable.selected!=null)||(((Selectors.PortSelectorable)selectorTable.selected.get(0)).content!=ioBuild.ports.get(currentID).type)))
-                  selectorTable.callback.get( selectorTable.selected );
+                if (currentID != -1 && ((selectorTable.selected == null && ioBuild.ports.get(currentID) != null)
+                    || (ioBuild.ports.get(currentID) == null && selectorTable.selected != null)
+                    || (((Selectors.PortSelectorable) selectorTable.selected.get(0)).content != ioBuild.ports
+                        .get(currentID).type)))
+                  selectorTable.callback.get(selectorTable.selected);
                 selectorTable.clearS();
                 if (ioBuild.ports.get(id) != null) {
                   selectorTable.select(selectorTable.list.find(l -> l.content == ioBuild.ports.get(id).type));
@@ -208,7 +212,10 @@ public class IOPortBlockWindow extends BlockWindow {
         bottom.table().size(StyleManager.XButtonSize).left();
       })
           .size(StyleManager.XButtonSize * (ioBuild.block.size + 2), StyleManager.XButtonSize);
-    }).size(StyleManager.XButtonSize * (ioBuild.block.size + 2));
+    }).size(StyleManager.XButtonSize * (ioBuild.block.size + 2)).row();
+    if (building instanceof BasicWindowBuild bwb) {
+      bwb.displayWindowExtra(table);
+    }
   }
 
   public String copy() {
@@ -216,10 +223,12 @@ public class IOPortBlockWindow extends BlockWindow {
   }
 
   public void paste(String str) {
-	  try{
-	  if(str.length()<=8) return;
-    ioBuild.configure(Base64Coder.decode(str));
-	  }catch(Throwable err){}
+    try {
+      if (str.length() <= 8)
+        return;
+      ioBuild.configure(Base64Coder.decode(str));
+    } catch (Throwable err) {
+    }
   }
 
   public void clearS() {

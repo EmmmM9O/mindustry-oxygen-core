@@ -25,7 +25,6 @@ import arc.util.io.Reads;
 import arc.util.io.Writes;
 import mindustry.Vars;
 import mindustry.gen.Building;
-import mindustry.gen.Tex;
 import mindustry.gen.Icon;
 import mindustry.ui.Styles;
 import mindustry.type.Item;
@@ -50,7 +49,7 @@ public class IOBlock extends BasicWindowBlock {
     solid = true;
     config(byte[].class, (IOBuild build, byte[] data) -> {
       var reader = new Reads(new DataInputStream(new ByteArrayInputStream(data)));
-      build.read(reader);
+      build.readT(reader);
       reader.close();
     });
   }
@@ -75,7 +74,7 @@ public class IOBlock extends BasicWindowBlock {
     public byte[] config() {
       var baos = new ByteArrayOutputStream();
       var writer = new Writes(new DataOutputStream(baos));
-      write(writer);
+      writeT(writer);
       writer.close();
       return baos.toByteArray();
     }
@@ -155,13 +154,17 @@ public class IOBlock extends BasicWindowBlock {
               return true;
             }
           } else {
-            if (super.canDump(to, item)) {
+            if (canDumpGen(to, item)) {
               return true;
             }
           }
         }
       }
       return false;
+    }
+
+    public boolean canDumpGen(Building to, Item item) {
+      return super.canDump(to, item);
     }
 
     @Override
@@ -176,13 +179,17 @@ public class IOBlock extends BasicWindowBlock {
               return true;
             }
           } else {
-            if (super.canDumpLiquid(to, liquid)) {
+            if (canDumpLiquidGen(to, liquid)) {
               return true;
             }
           }
         }
       }
       return false;
+    }
+
+    public boolean canDumpLiquidGen(Building to, Liquid liquid) {
+      return super.canDumpLiquid(to, liquid);
     }
 
     public void clearS() {
@@ -234,9 +241,9 @@ public class IOBlock extends BasicWindowBlock {
       Draw.rect(defaultPort, (edge.x + tileX()) * 8, (edge.y + tileY()) * 8, 8, 8, Util.getRotation(index, size));
     }
 
-    @Override
-    public void write(Writes write) {
-      for (var port : ports) {
+    public void writeT(Writes write) {
+      for (int i = 0; i < portNumber; i++) {
+        var port = ports.get(i);
         if (port != null) {
           write.bool(false);
           write.str(port.getName());
@@ -248,7 +255,24 @@ public class IOBlock extends BasicWindowBlock {
     }
 
     @Override
-    public void read(Reads read) {
+    public void read(Reads read, byte revision) {
+      super.read(read, revision);
+      var length = read.i();
+      var data = read.b(length);
+      var reader = new Reads(new DataInputStream(new ByteArrayInputStream(data)));
+      readT(reader);
+      reader.close();
+    }
+
+    @Override
+    public void write(Writes write) {
+      super.write(write);
+      var data = config();
+      write.i(data.length);
+      write.b(data);
+    }
+
+    public void readT(Reads read) {
       ports = new Seq<>(portNumber);
       for (int i = 0; i < portNumber; i++) {
         if (!read.bool()) {
@@ -286,6 +310,7 @@ public class IOBlock extends BasicWindowBlock {
       window.resize(400f, 400f);
       window.title = getDisplayName();
     }
+
   }
 
 }

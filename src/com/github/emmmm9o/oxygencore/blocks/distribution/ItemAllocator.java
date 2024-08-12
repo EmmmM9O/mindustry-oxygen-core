@@ -38,10 +38,10 @@ public class ItemAllocator extends IOBlock {
 
     @Override
     public void updateTile() {
-      time += 1f / speed * delta();
-      if (time >= 1f) {
+      //time += 1f / speed * delta();
+      //if (time >= 1f) {
         dump();
-      }
+    // }
     }
   }
 }

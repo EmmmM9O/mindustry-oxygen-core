@@ -1,15 +1,18 @@
 package com.github.emmmm9o.oxygencore.core;
 
+import com.github.emmmm9o.oxygencore.ui.BlockWindow;
 import com.github.emmmm9o.oxygencore.ui.Window;
 import com.github.emmmm9o.oxygencore.ui.WindowManager;
 import com.github.emmmm9o.oxygencore.ui.selectors.Selectors;
 
 import arc.Core;
+import arc.Events;
 import arc.scene.Element;
 import arc.scene.event.Touchable;
 import arc.scene.ui.layout.WidgetGroup;
 import arc.util.Time;
 import mindustry.Vars;
+import mindustry.game.EventType;
 import mindustry.mod.Mod;
 import mindustry.mod.Mods.LoadedMod;
 
@@ -66,6 +69,9 @@ public class Manager {
   }
 
   public static void initContent() {
+    {
+
+    }
     mod = getLoadedMod(CoreMod.class);
     // it needs mod to call baseContent
     content.createBaseContent();
@@ -79,10 +85,16 @@ public class Manager {
     Core.scene.add(group);
     Selectors.init();
     windowManager = new WindowManager();
-
     addElement(windowManager);
     Time.run(10, () -> {
       loadManagerPosition();
+    });
+    Events.on(EventType.GameOverEvent.class, e -> {
+      for (var w : windowManager.windows.keySet()) {
+        if (w instanceof BlockWindow) {
+          w.close();
+        }
+      }
     });
   }
 

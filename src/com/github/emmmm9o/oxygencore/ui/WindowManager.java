@@ -149,6 +149,9 @@ public class WindowManager extends FloatTable {
             itemSelector.show();
           }
         }).size(StyleManager.ButtonSize);
+        table.button(Icon.planet, StyleManager.style.windowButtons, () -> {
+          Manager.planet.show();
+        }).size(StyleManager.ButtonSize);
       };
 
       @Override

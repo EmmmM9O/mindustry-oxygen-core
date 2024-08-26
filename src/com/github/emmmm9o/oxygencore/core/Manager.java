@@ -3,6 +3,7 @@ package com.github.emmmm9o.oxygencore.core;
 import com.github.emmmm9o.oxygencore.ui.BlockWindow;
 import com.github.emmmm9o.oxygencore.ui.Window;
 import com.github.emmmm9o.oxygencore.ui.WindowManager;
+import com.github.emmmm9o.oxygencore.ui.dialogs.OxygenPlanetDialog;
 import com.github.emmmm9o.oxygencore.ui.selectors.Selectors;
 
 import arc.Core;
@@ -22,6 +23,7 @@ public class Manager {
   public static WindowManager windowManager;
   public static OxygenContentLoader content;
   public static LoadedMod mod;
+  public static OxygenPlanetDialog planet;
 
   public static LoadedMod getLoadedMod(Class<? extends Mod> clazz) {
     return Vars.mods.getMod(clazz);
@@ -84,6 +86,7 @@ public class Manager {
     group.visible = true;
     Core.scene.add(group);
     Selectors.init();
+    planet = new OxygenPlanetDialog();
     windowManager = new WindowManager();
     addElement(windowManager);
     Time.run(10, () -> {

@@ -11,6 +11,7 @@ import arc.input.KeyCode;
 import arc.math.Mathf;
 import arc.scene.event.InputEvent;
 import arc.scene.event.InputListener;
+import arc.scene.event.Touchable;
 import arc.scene.ui.layout.Table;
 import arc.struct.EnumSet;
 import arc.struct.Seq;
@@ -44,7 +45,7 @@ public class MulticraftBlock extends IOBlock {
   public MulticraftBlock(String name, int size) {
     super(name, size);
     sync = true;
-    update=true;
+    update = true;
     copyConfig = true;
     ambientSoundVolume = 0.03f;
     flags = EnumSet.of(BlockFlag.factory);
@@ -145,7 +146,7 @@ public class MulticraftBlock extends IOBlock {
 
     @Override
     public void created() {
-	    super.created();
+      super.created();
       select = initSelect;
     }
 
@@ -164,10 +165,12 @@ public class MulticraftBlock extends IOBlock {
     public float warmupTarget() {
       return 1f;
     }
+
     @Override
-            public float getProgressIncrease(float baseTime) {
-		                return super.getProgressIncrease(baseTime);
-				        }
+    public float getProgressIncrease(float baseTime) {
+      return super.getProgressIncrease(baseTime);
+    }
+
     @Override
     public boolean shouldConsume() {
       if (select == -1)
@@ -181,7 +184,8 @@ public class MulticraftBlock extends IOBlock {
     }
 
     public void dumpOutputs() {
-	    if(select==-1) return;
+      if (select == -1)
+        return;
       if (timer(timerDump, dumpTime / timeScale)) {
         for (var output : formulas.get(select).outputs) {
           dump(output.item);
@@ -215,10 +219,11 @@ public class MulticraftBlock extends IOBlock {
     public boolean shouldAmbientSound() {
       return efficiency > 0;
     }
-        @Override
-	        public int getMaximumAccepted(Item item) {
-			            return itemCapacity;
-}
+
+    @Override
+    public int getMaximumAccepted(Item item) {
+      return itemCapacity;
+    }
 
     public Seq<Formula> formula() {
       return formulas;
@@ -242,7 +247,7 @@ public class MulticraftBlock extends IOBlock {
       }
 
       var formula = formulas.get(select);
-      if ( efficiency > 0) {
+      if (efficiency > 0) {
         progress += getProgressIncrease(formula.craftTime);
         warmup = Mathf.approachDelta(warmup, warmupTarget(), warmupSpeed);
       } else {
@@ -269,8 +274,8 @@ public class MulticraftBlock extends IOBlock {
     }
 
     public boolean isNeeded(Item item) {
-	    if(select==-1)
-		    return false;
+      if (select == -1)
+        return false;
       for (var input : formulas.get(select).inputs) {
         if (input.item == item)
           return true;
@@ -305,24 +310,28 @@ public class MulticraftBlock extends IOBlock {
     public void readT(Reads read) {
       select = read.s();
     }
-@Override
-public void read(Reads read, byte revision){
-super.read(read, revision);
-progress = read.f();
-warmup = read.f();
-}
-@Override
-public void write(Writes write) {
-super.write(write);
-write.f(progress);write.f(warmup);
-}
+
+    @Override
+    public void read(Reads read, byte revision) {
+      super.read(read, revision);
+      progress = read.f();
+      warmup = read.f();
+    }
+
+    @Override
+    public void write(Writes write) {
+      super.write(write);
+      write.f(progress);
+      write.f(warmup);
+    }
+
     @Override
     public void displayWindowExtra(Table tab) {
       tab.table(table -> {
         int index = 0;
         for (var formula : formulas) {
           final int finalInd = index;
-          table.table(select == index ? Styles.accentDrawable : StyleManager.style.bodyBackground, t -> {
+          var tak = table.table(select == index ? Styles.accentDrawable : StyleManager.style.bodyBackground, t -> {
             formula.display(t);
           }).growX().pad(5).uniformX().name(Integer.toString(index)).update(ta -> {
             var ind = Integer.parseInt(ta.name);
@@ -330,7 +339,8 @@ write.f(progress);write.f(warmup);
             if (tag != ta.getBackground()) {
               ta.setBackground(tag);
             }
-          }).get().addListener(new InputListener() {
+          }).get();
+          tak.addListener(new InputListener() {
             @Override
             public boolean touchDown(InputEvent event, float x, float y, int pointer, KeyCode button) {
               if (select != finalInd)
@@ -340,6 +350,7 @@ write.f(progress);write.f(warmup);
               return true;
             }
           });
+          tak.touchable = Touchable.enabled;
           table.row();
           index++;
         }

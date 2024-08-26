@@ -56,7 +56,10 @@ public class Formula {
       power.image(Icon.power).color(Pal.power);
       power.add(Float.toString(
           this.usage * 60));
-    }).right().grow().pad(10f);
-
+    }).grow();
+    t.table(time -> {
+      time.image(Icon.crafting).color(Pal.accent);
+      time.add(Float.toString(craftTime / 60f) + "s");
+    }).right().grow().pad(10);
   }
 }

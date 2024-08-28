@@ -60,6 +60,7 @@ public class OPlanet extends OxygenInfoContent {
   }
 
   public void draw(UniverseParams params, Mat3D projection, Mat3D transform) {
+	  if(mesh==null) mesh=meshLoader.get();
     mesh.render(params, projection, transform);
   }
 
@@ -68,7 +69,10 @@ public class OPlanet extends OxygenInfoContent {
     return OxygenContentType.oplanet;
   }
 
-  public Mat3D getTransform(Mat3D mat) {
-    return mat.setToTranslation(position);
+  public Mat3D getTransform(UniverseParams params, Mat3D mat) {
+    var t = position;
+    var p = params.planet.position;
+    Vec3 center = new Vec3((t.x - p.x) / params.zoom, (t.y - p.y) / params.zoom, (t.z - p.z) / params.zoom);
+    return mat.setToTranslation(center);
   }
 }

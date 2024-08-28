@@ -1,5 +1,7 @@
 package com.github.emmmm9o.oxygencore.universe;
 
+import com.github.emmmm9o.oxygencore.core.Manager;
+
 import arc.Core;
 import arc.graphics.Color;
 import arc.graphics.Cubemap;
@@ -28,7 +30,8 @@ public class UniverseRenderer implements Disposable {
       shadowColor = new Color(0, 0, 0, 0.7f);
   public final Camera3D cam = new Camera3D();
   public final VertexBatch3D batch = new VertexBatch3D(20000, false, true, 0);
-  public final CubemapMesh skybox = new CubemapMesh(new Cubemap("cubemaps/stars/"));
+  // 31j438ijf4s0
+  public CubemapMesh skybox;
   public final Bloom bloom = new Bloom(Core.graphics.getWidth() / 4, Core.graphics.getHeight() / 4, true, false) {
     {
       setThreshold(0.8f);
@@ -47,6 +50,10 @@ public class UniverseRenderer implements Disposable {
   }
 
   public UniverseRenderer() {
+
+    var path = Manager.mod.root.child("cubemaps").child("solsky");
+    skybox = new CubemapMesh(new Cubemap(path.child("right.png"), path.child("left.png"), path.child("top.png"),
+        path.child("bottom.png"), path.child("front.png"), path.child("back.png")));
     projector.setScaling(1f / 150f);
     cam.fov = 60f;
     cam.far = 150f;
@@ -66,19 +73,11 @@ public class UniverseRenderer implements Disposable {
     cam.up.set(Vec3.Y);
 
     cam.resize(w, h);
-    if (params.zoom <= 100) {
-      params.camPos.setLength((params.zoom) * params.planet.radius + 50f);
-      cam.far = params.zoom * Math.max(params.planet.radius, 400f) + 400f;
 
-      cam.position.set(params.planet.position).add(params.camPos);
-      cam.lookAt(params.planet.position);
-    } else {
-      cam.far = Math.max(400f, params.planet.radius) + 10000f;
-      params.camPos.setLength(200f);
-      var pos = Tmp.v34.set(params.planet.position).scl(1f/params.zoom);
-      cam.position.set(pos).add(params.camPos);
-      cam.lookAt(pos);
-    }
+    cam.far = 50000f;
+    params.camPos.setLength(Math.max(200f, params.planet.radius)*1.4f);
+    cam.position.set(0, 0, 0).add(params.camPos);
+    cam.lookAt(0, 0, 0);
     cam.update();
     params.camUp.set(cam.up);
     params.camDir.set(cam.direction);
@@ -115,11 +114,10 @@ public class UniverseRenderer implements Disposable {
 
   public void renderPlanet(OPlanet planet, UniverseParams params) {
     cam.update();
-    if (params.zoom <= 100) {
-      if (cam.frustum.containsSphere(planet.position, planet.clipRadius)) {
-        // render planet at offsetted position in the world
-        planet.draw(params, cam.combined, planet.getTransform(mat));
-      }
+    if ((planet.radius / params.zoom >= 0.1)
+        && cam.frustum.containsSphere(Tmp.v31.set(planet.position).sub(params.planet.position).scl(1f / params.zoom),
+            planet.clipRadius / params.zoom)) {
+      planet.draw(params, cam.combined, planet.getTransform(params, mat));
     }
 
     for (OPlanet child : planet.children) {
@@ -140,18 +138,12 @@ public class UniverseRenderer implements Disposable {
   public void renderOrbit(OPlanet planet, UniverseParams params) {
     if (planet.parent == null)
       return;
-    if (params.zoom <= 100) {
-      Vec3 center = planet.parent.position;
-      for (var point : planet.orbit.points) {
-        batch.vertex(Tmp.v32.set(center).add(point), planet.orbit.color);
-      }
-    } else {
-      var t = planet.parent.position;
-      Vec3 center = new Vec3(t.x / params.zoom, t.y / params.zoom, t.z / params.zoom);
-      for (var point : planet.orbit.points) {
-        batch.vertex(Tmp.v32.set(center).add(point.x / params.zoom, point.y / params.zoom, point.z / params.zoom),
-            planet.orbit.color);
-      }
+    var t = planet.parent.position;
+    var p = params.planet.position;
+    Vec3 center = new Vec3((t.x - p.x) / params.zoom, (t.y - p.y) / params.zoom, (t.z - p.z) / params.zoom);
+    for (var point : planet.orbit.points) {
+      batch.vertex(Tmp.v32.set(center).add(point.x / params.zoom, point.y / params.zoom, point.z / params.zoom),
+          planet.orbit.color);
     }
     batch.flush(Gl.lineLoop);
   }

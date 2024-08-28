@@ -1,5 +1,6 @@
 package com.github.emmmm9o.oxygencore.core;
 
+import com.github.emmmm9o.oxygencore.graphics.OShaders;
 import com.github.emmmm9o.oxygencore.ui.BlockWindow;
 import com.github.emmmm9o.oxygencore.ui.Window;
 import com.github.emmmm9o.oxygencore.ui.WindowManager;
@@ -16,6 +17,7 @@ import arc.scene.ui.layout.WidgetGroup;
 import arc.util.Time;
 import mindustry.Vars;
 import mindustry.game.EventType;
+import mindustry.game.EventType.FileTreeInitEvent;
 import mindustry.mod.Mod;
 import mindustry.mod.Mods.LoadedMod;
 
@@ -72,17 +74,23 @@ public class Manager {
 
   public static void init() {
     content = new OxygenContentLoader();
+    Events.on(FileTreeInitEvent.class, e -> Core.app.post(() -> {
+
+    }));
   }
 
   public static void initContent() {
-
     mod = getLoadedMod(CoreMod.class);
+    if (!Vars.headless) {
+      OShaders.init();
+    }
     // it needs mod to call baseContent
     content.createBaseContent();
 
   }
 
   public static void initUI() {
+
     universe = new OUniverse();
     universe.updateGlobal();
     universeRenderer = new UniverseRenderer();

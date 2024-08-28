@@ -5,6 +5,8 @@ import com.github.emmmm9o.oxygencore.ctype.OxygenContent;
 import com.github.emmmm9o.oxygencore.ctype.OxygenContentType;
 import com.github.emmmm9o.oxygencore.ctype.OxygenMappableContent;
 import com.github.emmmm9o.oxygencore.io.IOPortType;
+import com.github.emmmm9o.oxygencore.universe.OPlanet;
+import com.github.emmmm9o.oxygencore.universe.OPlanets;
 import com.github.emmmm9o.oxygencore.util.OxygenEventType;
 
 import arc.Events;
@@ -78,6 +80,8 @@ public class OxygenContentLoader {
   public void createBaseContent() {
     registerContent(OxygenContentType.io_port);
     IOPorts.load();
+    registerContent(OxygenContentType.oplanet);
+    OPlanets.load();
   }
 
   public String transformName(LoadedMod mod, String name) {
@@ -104,6 +108,10 @@ public class OxygenContentLoader {
 
   public Seq<IOPortType> io_ports() {
     return getBy(OxygenContentType.io_port);
+  }
+
+  public Seq<OPlanet> oplanets() {
+    return getBy(OxygenContentType.oplanet);
   }
 
   public <T extends OxygenMappableContent> T getByName(OxygenContentType type, String name) {

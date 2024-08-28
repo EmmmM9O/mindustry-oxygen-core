@@ -18,7 +18,6 @@ import arc.util.Tmp;
 import mindustry.Vars;
 import mindustry.content.Planets;
 import mindustry.gen.Icon;
-import mindustry.gen.Tex;
 import mindustry.graphics.Pal;
 import mindustry.graphics.g3d.PlanetParams;
 import mindustry.graphics.g3d.PlanetRenderer;
@@ -28,8 +27,13 @@ import mindustry.ui.Styles;
 import mindustry.ui.dialogs.BaseDialog;
 import static mindustry.Vars.*;
 
+import com.github.emmmm9o.oxygencore.core.Manager;
 import com.github.emmmm9o.oxygencore.ui.StyleManager;
 import com.github.emmmm9o.oxygencore.ui.layout.TreeTable;
+import com.github.emmmm9o.oxygencore.universe.OPlanet;
+import com.github.emmmm9o.oxygencore.universe.OPlanets;
+import com.github.emmmm9o.oxygencore.universe.UniverseParams;
+import com.github.emmmm9o.oxygencore.universe.UniverseRenderer;
 
 import static arc.Core.*;
 
@@ -37,26 +41,24 @@ import static arc.Core.*;
  * OxygenPlanetDialog
  */
 public class OxygenPlanetDialog extends BaseDialog implements PlanetInterfaceRenderer {
-  public PlanetParams state = new PlanetParams();
+  public UniverseParams state = new UniverseParams();
   public float zoom = 1f;
-  public TreeTable<Planet> planetsTree;
+  public TreeTable<OPlanet> planetsTree;
   public String searchText = "";
   public Label hoverLabel = new Label("");
   public Table sectorTop = new Table(), notifs = new Table(), expandTable = new Table();
   public Mode mode = Mode.look;
-  public final PlanetRenderer planets = renderer.planets;
+  public final UniverseRenderer planets = Manager.universeRenderer;
 
   public OxygenPlanetDialog() {
     super("", Styles.fullDialog);
-    state.renderer = this;
-    state.drawUi = true;
 
     shouldPause = true;
-    state.planet = Planets.serpulo;
+    state.planet = OPlanets.Sol;
     hoverLabel.setStyle(Styles.outlineLabel);
     hoverLabel.setAlignment(Align.center);
-    planetsTree = new TreeTable<>(Vars.content.planets(), planet -> planet.parent) {
-      public void drawNodeContent(Planet data, Table table) {
+    planetsTree = new TreeTable<>(Manager.content.oplanets(), planet -> planet.parent) {
+      public void drawNodeContent(OPlanet data, Table table) {
         var ta = table.table(text -> {
           text.add(data.localizedName).grow().get().setAlignment(Align.center);
         }).grow().height(StyleManager.ButtonSize).get();
@@ -66,6 +68,7 @@ public class OxygenPlanetDialog extends BaseDialog implements PlanetInterfaceRen
           public boolean touchDown(InputEvent event, float x, float y, int pointer, KeyCode button) {
             if (state.planet != data) {
               state.planet = data;
+              state.zoom = 1f;
               rebuildExpand();
             }
             return true;
@@ -96,7 +99,7 @@ public class OxygenPlanetDialog extends BaseDialog implements PlanetInterfaceRen
       @Override
       public boolean scrolled(InputEvent event, float x, float y, float amountX, float amountY) {
         if (event.targetActor == OxygenPlanetDialog.this) {
-          zoom = Mathf.clamp(zoom + amountY / 10f, state.planet.minZoom, 2f);
+          zoom = Mathf.clamp(zoom + amountY / 10f, 0.001f, 1000000f);
         }
         return true;
       }
@@ -110,7 +113,7 @@ public class OxygenPlanetDialog extends BaseDialog implements PlanetInterfaceRen
           lastZoom = zoom;
         }
 
-        zoom = (Mathf.clamp(initialDistance / distance * lastZoom, state.planet.minZoom, 2f));
+        zoom = (Mathf.clamp(initialDistance / distance * lastZoom, 0.001f, 1000000f));
       }
 
       @Override
@@ -164,7 +167,6 @@ public class OxygenPlanetDialog extends BaseDialog implements PlanetInterfaceRen
   void setup() {
     searchText = "";
     zoom = state.zoom = 1f;
-    state.uiAlpha = 1f;
     ui.minimapfrag.hide();
 
     clearChildren();
@@ -220,34 +222,32 @@ public class OxygenPlanetDialog extends BaseDialog implements PlanetInterfaceRen
       ui.showInfo("@map.multiplayer");
       return this;
     }
-    if (Vars.state.rules.sector != null) {
-      state.planet = Vars.state.rules.sector.planet;
-      settings.put("lastplanet", state.planet.name);
-    }
     rebuildButtons();
     mode = Mode.look;
-    state.otherCamPos = null;
     zoom = 1f;
     state.zoom = 1f;
-    state.uiAlpha = 0f;
     return super.show();
   }
 
   @Override
   public void act(float delta) {
     super.act(delta);
-    if (state.otherCamPos != null) {
-      state.otherCamAlpha = Mathf.lerpDelta(state.otherCamAlpha, 1f, 0.05f);
-      state.camPos.set(0f, PlanetRenderer.camLength, 0.1f);
-      if (Mathf.equal(state.otherCamAlpha, 1f, 0.01f)) {
-        state.camPos.set(Tmp.v31.set(state.otherCamPos).lerp(state.planet.position, state.otherCamAlpha)
-            .add(state.camPos).sub(state.planet.position));
-
-        state.otherCamPos = null;
-      }
-    }
+    /*
+     * if (state.otherCamPos != null) {
+     * state.otherCamAlpha = Mathf.lerpDelta(state.otherCamAlpha, 1f, 0.05f);
+     * state.camPos.set(0f, PlanetRenderer.camLength, 0.1f);
+     * if (Mathf.equal(state.otherCamAlpha, 1f, 0.01f)) {
+     * state.camPos.set(Tmp.v31.set(state.otherCamPos).lerp(state.planet.position,
+     * state.otherCamAlpha)
+     * .add(state.camPos).sub(state.planet.position));
+     * 
+     * state.otherCamPos = null;
+     * }
+     * }
+     */
     state.zoom = Mathf.lerpDelta(state.zoom, zoom, 0.4f);
-    state.uiAlpha = Mathf.lerpDelta(state.uiAlpha, Mathf.num(state.zoom < 1.9f), 0.1f);
+    // state.uiAlpha = Mathf.lerpDelta(state.uiAlpha, Mathf.num(state.zoom < 1.9f),
+    // 0.1f);
   }
 
   public enum Mode {

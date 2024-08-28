@@ -7,6 +7,7 @@ import arc.util.Nullable;
 public class OxygenContentType {
   public int id;
   public final String name;
+
   public final @Nullable Class<? extends OxygenContent> contentClass;
 
   public OxygenContentType(String name, Class<? extends OxygenContent> contentClass) {
@@ -15,4 +16,5 @@ public class OxygenContentType {
   }
 
   public static OxygenContentType io_port = new OxygenContentType("io_port", IOPortType.class);
+  public static OxygenContentType oplanet = new OxygenContentType("oplanet", IOPortType.class);
 }

@@ -4,6 +4,7 @@ import static mindustry.Vars.headless;
 
 import com.github.emmmm9o.oxygencore.ctype.OxygenContentType;
 import com.github.emmmm9o.oxygencore.ctype.OxygenInfoContent;
+import com.github.emmmm9o.oxygencore.graphics.OShaders;
 
 import arc.func.Prov;
 import arc.graphics.Color;
@@ -26,8 +27,10 @@ public class OPlanet extends OxygenInfoContent {
   public Vec3 position = new Vec3(0, 0, 0);
   public float camRadius;
   public float clipRadius = -1f;
-  public boolean bloom;
+  public boolean bloom = false, atmosphere = false;
   public Color lightColor = Color.white.cpy();
+  public Color ambientColor = new Color(0.1f, 0.1f, 0.1f, 1f);
+  public float atmosphereHeight = 0.14f, refractionIndex = 0.5f, refractionPower = 5f,light_power=0.002f;
 
   public float gravitational_parameter() {
     return mass * OUniverse.gravitational_constant;
@@ -48,7 +51,7 @@ public class OPlanet extends OxygenInfoContent {
   }
 
   public @Nullable GenericMesh mesh;
-  public Prov<GenericMesh> meshLoader = () -> new ShaderSphereMesh(this, Shaders.unlit, 2);
+  public Prov<GenericMesh> meshLoader = () -> new ShaderSphereMesh(this, OShaders.icosphere, 32);
 
   @Override
   public void load() {
@@ -59,9 +62,10 @@ public class OPlanet extends OxygenInfoContent {
 
   }
 
-  public void draw(UniverseParams params, Mat3D projection, Mat3D transform) {
-	  if(mesh==null) mesh=meshLoader.get();
-    mesh.render(params, projection, transform);
+  public void draw(UniverseParams params, Mat3D view, Mat3D projection, Mat3D transform) {
+    if (mesh == null)
+      mesh = meshLoader.get();
+    mesh.render(params, view, projection, transform);
   }
 
   @Override

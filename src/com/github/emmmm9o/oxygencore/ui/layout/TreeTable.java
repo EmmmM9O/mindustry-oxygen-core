@@ -32,14 +32,14 @@ public class TreeTable<E> extends Table {
   public void drawNode(TreeNode<E> node, Table table) {
     table.table(content -> {
       drawNodeContent(node.data, content);
-    }).uniformX().growX().row();
+    }).uniformX().growX().height(24f).row();
     if (node.children.size != 0) {
       table.table(listT -> {
         listT.table(pad -> {
-        }).width(15f).uniformY().grow().left();
+        }).width(5f).uniformY().grow().left();
         listT.table(list -> {
           for (var child : node.children) {
-            list.table(Tex.pane, element -> {
+            list.table(element -> {
               drawNode(child, element);
             }).uniformX().growX().row();
           }

@@ -1,6 +1,7 @@
 package com.github.emmmm9o.oxygencore.ctype;
 
 import com.github.emmmm9o.oxygencore.io.IOPortType;
+import com.github.emmmm9o.oxygencore.universe.OPlanet;
 
 import arc.util.Nullable;
 
@@ -16,5 +17,5 @@ public class OxygenContentType {
   }
 
   public static OxygenContentType io_port = new OxygenContentType("io_port", IOPortType.class);
-  public static OxygenContentType oplanet = new OxygenContentType("oplanet", IOPortType.class);
+  public static OxygenContentType oplanet = new OxygenContentType("oplanet", OPlanet.class);
 }

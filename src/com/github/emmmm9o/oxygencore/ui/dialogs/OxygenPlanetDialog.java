@@ -15,12 +15,10 @@ import arc.scene.ui.ScrollPane;
 import arc.scene.ui.layout.Table;
 import arc.util.Align;
 import arc.util.Tmp;
-import mindustry.Vars;
-import mindustry.content.Planets;
+
 import mindustry.gen.Icon;
 import mindustry.graphics.Pal;
-import mindustry.graphics.g3d.PlanetParams;
-import mindustry.graphics.g3d.PlanetRenderer;
+
 import mindustry.graphics.g3d.PlanetRenderer.PlanetInterfaceRenderer;
 import mindustry.type.Planet;
 import mindustry.ui.Styles;
@@ -54,14 +52,14 @@ public class OxygenPlanetDialog extends BaseDialog implements PlanetInterfaceRen
     super("", Styles.fullDialog);
 
     shouldPause = true;
-    state.planet = OPlanets.Sol;
+    state.planet = OPlanets.Sun;
     hoverLabel.setStyle(Styles.outlineLabel);
     hoverLabel.setAlignment(Align.center);
     planetsTree = new TreeTable<>(Manager.content.oplanets(), planet -> planet.parent) {
       public void drawNodeContent(OPlanet data, Table table) {
         var ta = table.table(text -> {
-          text.add(data.localizedName).grow().get().setAlignment(Align.center);
-        }).grow().height(StyleManager.ButtonSize).get();
+          text.add(data.localizedName).grow().height(24f).get().setAlignment(Align.center);
+        }).grow().height(24f).get();
         ta.touchable = Touchable.enabled;
         ta.addListener(new InputListener() {
           @Override

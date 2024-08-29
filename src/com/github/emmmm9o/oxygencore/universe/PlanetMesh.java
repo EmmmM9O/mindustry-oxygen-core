@@ -30,12 +30,18 @@ public abstract class PlanetMesh implements GenericMesh {
 
   }
 
+  public void runRender(UniverseParams params) {
+
+  }
+
   @Override
-  public void render(UniverseParams params, Mat3D projection, Mat3D transform) {
+  public void render(UniverseParams params, Mat3D view, Mat3D projection, Mat3D transform) {
     preRender(params);
     shader.bind();
-    shader.setUniformMatrix4("u_proj", projection.val);
-    shader.setUniformMatrix4("u_trans", transform.val);
+    shader.setUniformMatrix4("u_view", view.val);
+    shader.setUniformMatrix4("u_projection", projection.val);
+    shader.setUniformMatrix4("u_model", transform.val);
+    runRender(params);
     shader.apply();
     mesh.render(shader, Gl.triangles);
   }

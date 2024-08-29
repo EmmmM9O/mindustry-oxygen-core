@@ -56,7 +56,7 @@ public class UniverseRenderer implements Disposable {
         path.child("bottom.png"), path.child("front.png"), path.child("back.png")));
     projector.setScaling(1f / 150f);
     cam.fov = 60f;
-    cam.far = 150f;
+    cam.far = 500000f;
   }
 
   public void render(UniverseParams params) {
@@ -74,8 +74,8 @@ public class UniverseRenderer implements Disposable {
 
     cam.resize(w, h);
 
-    cam.far = 50000f;
-    params.camPos.setLength(Math.max(200f, params.planet.radius)*1.4f);
+    cam.far = 10000000f;
+    params.camPos.setLength(Math.max(200f, params.planet.radius) * 1.4f);
     cam.position.set(0, 0, 0).add(params.camPos);
     cam.lookAt(0, 0, 0);
     cam.update();
@@ -117,7 +117,7 @@ public class UniverseRenderer implements Disposable {
     if ((planet.radius / params.zoom >= 0.1)
         && cam.frustum.containsSphere(Tmp.v31.set(planet.position).sub(params.planet.position).scl(1f / params.zoom),
             planet.clipRadius / params.zoom)) {
-      planet.draw(params, cam.combined, planet.getTransform(params, mat));
+      planet.draw(params, cam.view, cam.projection, planet.getTransform(params, mat));
     }
 
     for (OPlanet child : planet.children) {

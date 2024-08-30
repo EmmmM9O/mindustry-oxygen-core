@@ -243,6 +243,8 @@ public class OxygenPlanetDialog extends BaseDialog implements PlanetInterfaceRen
      * }
      * }
      */
+
+    zoom = Mathf.clamp(zoom,state.planet.radius/150f, 1000000f);
     state.zoom = Mathf.lerpDelta(state.zoom, zoom, 0.4f);
     // state.uiAlpha = Mathf.lerpDelta(state.uiAlpha, Mathf.num(state.zoom < 1.9f),
     // 0.1f);

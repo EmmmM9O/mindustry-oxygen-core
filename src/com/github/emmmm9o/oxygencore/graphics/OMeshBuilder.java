@@ -15,6 +15,57 @@ public class OMeshBuilder {
 
   private static Mesh mesh;
 
+  public static Mesh ring(int divisions, float innerRadius, float outerRadius) {
+    int numVertices = divisions * 6;
+    int numIndices = divisions * 6;
+    mesh = new Mesh(true, numVertices * 8, numIndices * 2,
+        VertexAttribute.position3,
+        VertexAttribute.normal,
+        VertexAttribute.texCoords);
+    mesh.getVerticesBuffer().limit(mesh.getMaxVertices());
+    mesh.getVerticesBuffer().position(0);
+
+    mesh.getIndicesBuffer().limit(mesh.getMaxIndices());
+    mesh.getIndicesBuffer().position(0);
+    float angleStep = (float) (2 * Math.PI / divisions);
+    for (int i = 0; i < divisions; i++) {
+      float angle0 = i * angleStep;
+      float angle1 = (i + 1) * angleStep;
+      addRingVertex(i, angle0, innerRadius);
+    mesh.getVerticesBuffer().put(0f);
+    mesh.getVerticesBuffer().put(0f);
+      addRingVertex(i, angle1, innerRadius);
+    mesh.getVerticesBuffer().put(0f);
+    mesh.getVerticesBuffer().put(1f);
+      addRingVertex(i, angle0, outerRadius);
+    mesh.getVerticesBuffer().put(1f);
+    mesh.getVerticesBuffer().put(0f);
+      addRingVertex(i, angle1, outerRadius);
+    mesh.getVerticesBuffer().put(1f);
+    mesh.getVerticesBuffer().put(1f);
+      mesh.getIndicesBuffer().put((short) (i * 4));
+      mesh.getIndicesBuffer().put((short) (i * 4 + 1));
+      mesh.getIndicesBuffer().put((short) (i * 4 + 2));
+      mesh.getIndicesBuffer().put((short) (i * 4 + 2));
+      mesh.getIndicesBuffer().put((short) (i * 4 + 3));
+      mesh.getIndicesBuffer().put((short) (i * 4 + 1));
+    }
+    return mesh;
+  }
+
+  private static void addRingVertex(int index, float angle, float radius) {
+    float x = (float) (Math.cos(angle) * radius);
+    float y = (float) (Math.sin(angle) * radius);
+    float z = 0;
+    mesh.getVerticesBuffer().put(x);
+    mesh.getVerticesBuffer().put(y);
+    mesh.getVerticesBuffer().put(z);
+    mesh.getVerticesBuffer().put(0);
+    mesh.getVerticesBuffer().put(0);
+    mesh.getVerticesBuffer().put(1);
+
+  }
+
   public static Mesh buildIcosphere(int divisions) {
     int numVertices = (divisions + 1) * (divisions + 1);
     int numIndices = divisions * divisions * 6;
@@ -39,8 +90,8 @@ public class OMeshBuilder {
         float x = cosPhi * sinTheta * -1;
         float y = cosTheta * -1;
         float z = sinPhi * sinTheta * -1;
-        float u = 1f-(float) lon / divisions;
-        float v = 1f-(float) lat / divisions;
+        float u = 1f - (float) lon / divisions;
+        float v = 1f - (float) lat / divisions;
         mesh.getVerticesBuffer().put(x);
         mesh.getVerticesBuffer().put(y);
         mesh.getVerticesBuffer().put(z);
@@ -65,4 +116,5 @@ public class OMeshBuilder {
 
     return mesh;
   }
+
 }

@@ -37,11 +37,24 @@ public class SolarMesh implements GenericMesh {
     shader.setUniformMatrix4("u_projection", projection.val);
     shader.setUniformMatrix4("u_model", transform.val);
     shader.setUniformf("u_radius", planet.radius / params.zoom);
-    shader.setUniformf("u_zoom",  params.zoom);
-    shader.setUniformf("u_haloIntensity", 0.00006f);
+    shader.setUniformf("u_zoom", params.zoom);
+    shader.setUniformf("u_haloIntensity", 0.00005f);
     shader.setUniformf("u_camera_pos", params.camPos);
     texture.bind(0);
     shader.setUniformi("u_texture", 0);
+    shader.apply();
+    mesh.render(shader, Gl.triangles);
+  }
+
+  @Override
+  public void renderPoint(UniverseParams params, Mat3D view, Mat3D projection, Mat3D transform) {
+    var shader = OShaders.icosphere;
+    shader.bind();
+    shader.setUniformMatrix4("u_view", view.val);
+    shader.setUniformMatrix4("u_projection", projection.val);
+    shader.setUniformMatrix4("u_model", transform.val);
+    shader.setUniformf("color", planet.lightColor);
+    shader.setUniformf("u_radius", planet.pointSize);
     shader.apply();
     mesh.render(shader, Gl.triangles);
   }

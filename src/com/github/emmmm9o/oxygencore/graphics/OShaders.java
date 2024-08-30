@@ -17,7 +17,7 @@ import arc.util.Log;
  */
 public class OShaders {
   public static Shader icpT, icosphere;
-  public static OShader solarShader, atmPlanetMesh, atmosphere, ring;
+  public static OShader solarShader, atmPlanetMesh, atmosphere, ring, line;
 
   public static Fi file(String path) {
     return Manager.mod.root.child("shaders").child(path);
@@ -88,6 +88,7 @@ public class OShaders {
     atmPlanetMesh = new OShader("planet");
     atmosphere = new OShader("atmosphere");
     ring = new OShader("ring");
+    line = new OShader(file("planet.vert"), file("line.frag"));
   }
 
 }

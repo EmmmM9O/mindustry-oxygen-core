@@ -32,9 +32,11 @@ public class OPlanet extends OxygenInfoContent {
   public boolean bloom = false, atmosphere = false, ring = false, gas = false;
   public Color lightColor = Color.white.cpy();
   public Color ambientColor = new Color(0.1f, 0.1f, 0.1f, 1f);
+  public Color lineColor = Color.purple.cpy();
+
   public float atmosphereHeight = 0.14f, refractionIndex = 0.5f, refractionPower = 5f, lightPower = 0.002f, mix = 0.5f,
       innerRadius, outerRadius, pointSize = 0.5f,
-      dayPeriod = 24 * 60 * 60, axialTilt = 23.44f;
+      dayPeriod = 24 * 60 * 60, axialTilt = 23.44f, lineHight = 0.1f;
 
   public float gravitational_parameter() {
     return mass * OUniverse.gravitational_constant;

@@ -17,6 +17,7 @@ import arc.util.Align;
 import arc.util.Tmp;
 
 import mindustry.gen.Icon;
+import mindustry.gen.Tex;
 import mindustry.graphics.Pal;
 
 import mindustry.graphics.g3d.PlanetRenderer.PlanetInterfaceRenderer;
@@ -58,8 +59,9 @@ public class OxygenPlanetDialog extends BaseDialog implements PlanetInterfaceRen
     planetsTree = new TreeTable<>(Manager.content.oplanets(), planet -> planet.parent) {
       public void drawNodeContent(OPlanet data, Table table) {
         var ta = table.table(text -> {
-          text.add(data.localizedName).grow().height(24f).get().setAlignment(Align.center);
-        }).grow().height(24f).get();
+          text.image(Icon.planetSmall).size(32f).uniformY().left();
+          text.add(data.localizedName).left().grow().height(32f).get().setAlignment(Align.left);
+        }).growX().height(32f).left().get();
         ta.touchable = Touchable.enabled;
         ta.addListener(new InputListener() {
           @Override
@@ -187,7 +189,7 @@ public class OxygenPlanetDialog extends BaseDialog implements PlanetInterfaceRen
 
           @Override
           public void draw() {
-            planets.render(state);
+            // planets.render(state);
           }
 
         },
@@ -244,7 +246,7 @@ public class OxygenPlanetDialog extends BaseDialog implements PlanetInterfaceRen
      * }
      */
 
-    zoom = Mathf.clamp(zoom,state.planet.radius/150f, 1000000f);
+    zoom = Mathf.clamp(zoom, state.planet.radius / 150f, 1000000f);
     state.zoom = Mathf.lerpDelta(state.zoom, zoom, 0.4f);
     // state.uiAlpha = Mathf.lerpDelta(state.uiAlpha, Mathf.num(state.zoom < 1.9f),
     // 0.1f);

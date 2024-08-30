@@ -19,7 +19,7 @@ import mindustry.ui.Styles;
 public class StyleManager {
   public static class OxygenStyle {
     public ImageButton.ImageButtonStyle defaulti, windowButtons,
-        selectedButton;
+        selectedButton, none;
     public Drawable titleTextBackground,
         statusBarBackground, bodyBackground, titleBarBackground;
     public DialogStyle fullscreenDialogStyle;
@@ -47,6 +47,7 @@ public class StyleManager {
         this.titleBarBackground = Styles.black3;
         this.titleTextBackground = Styles.black5;
         this.statusBarBackground = Styles.black5;
+        this.none = Styles.emptyi;
         this.fullscreenDialogStyle = new DialogStyle() {
           {
             this.background = Tex.windowEmpty;

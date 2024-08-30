@@ -119,7 +119,7 @@ public class OPlanets {
                                                                 1.8986111e3f, 69.9110f);
                                 Jupiter.orbit.color = Color.brown;
                                 Jupiter.lightColor = new Color(0.65f, 0.65f, 0.65f, 1.0f);
-				Jupiter.ambientColor = new Color(0.25f,0.25f,0.25f,1f);
+				Jupiter.ambientColor = new Color(0.1f,0.1f,0.1f,1f);
                                 Jupiter.meshLoader = () -> new AtmPlanetMesh(Jupiter, 48,
                                                                 new Texture(path.child("jupiter.png")), null, null);
                                 Jupiter.atmosphere = true;

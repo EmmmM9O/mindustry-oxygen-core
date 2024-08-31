@@ -1,5 +1,6 @@
 package com.github.emmmm9o.oxygencore.core;
 
+import com.github.emmmm9o.oxygencore.graphics.ORenderers;
 import com.github.emmmm9o.oxygencore.graphics.OShaders;
 import com.github.emmmm9o.oxygencore.ui.BlockWindow;
 import com.github.emmmm9o.oxygencore.ui.Window;
@@ -28,8 +29,8 @@ public class Manager {
   public static OxygenContentLoader content;
   public static LoadedMod mod;
   public static OxygenPlanetDialog planet;
-  public static UniverseRenderer universeRenderer;
   public static OUniverse universe;
+  public static ORenderers renderers;
 
   public static LoadedMod getLoadedMod(Class<? extends Mod> clazz) {
     return Vars.mods.getMod(clazz);
@@ -74,9 +75,7 @@ public class Manager {
 
   public static void init() {
     content = new OxygenContentLoader();
-    Events.on(FileTreeInitEvent.class, e -> Core.app.post(() -> {
 
-    }));
   }
 
   public static void initContent() {
@@ -90,10 +89,10 @@ public class Manager {
   }
 
   public static void initUI() {
-
+    renderers = new ORenderers();
+    renderers.init();
     universe = new OUniverse();
     universe.updateGlobal();
-    universeRenderer = new UniverseRenderer();
     group = new WidgetGroup();
     group.fillParent = true;
     group.touchable = Touchable.childrenOnly;

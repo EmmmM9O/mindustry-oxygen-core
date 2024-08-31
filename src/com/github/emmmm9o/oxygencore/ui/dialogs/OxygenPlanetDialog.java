@@ -47,7 +47,7 @@ public class OxygenPlanetDialog extends BaseDialog implements PlanetInterfaceRen
   public Label hoverLabel = new Label("");
   public Table sectorTop = new Table(), notifs = new Table(), expandTable = new Table();
   public Mode mode = Mode.look;
-  public final UniverseRenderer planets = Manager.universeRenderer;
+  public final UniverseRenderer planets = Manager.renderers.universe;
 
   public OxygenPlanetDialog() {
     super("", Styles.fullDialog);
@@ -189,7 +189,7 @@ public class OxygenPlanetDialog extends BaseDialog implements PlanetInterfaceRen
 
           @Override
           public void draw() {
-            // planets.render(state);
+            planets.render(state);
           }
 
         },

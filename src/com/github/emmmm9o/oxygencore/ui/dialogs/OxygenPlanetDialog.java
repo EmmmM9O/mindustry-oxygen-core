@@ -13,6 +13,7 @@ import arc.scene.ui.Dialog;
 import arc.scene.ui.Label;
 import arc.scene.ui.ScrollPane;
 import arc.scene.ui.layout.Table;
+import arc.struct.ObjectMap;
 import arc.util.Align;
 import arc.util.Tmp;
 
@@ -48,11 +49,13 @@ public class OxygenPlanetDialog extends BaseDialog implements PlanetInterfaceRen
   public Table sectorTop = new Table(), notifs = new Table(), expandTable = new Table();
   public Mode mode = Mode.look;
   public final UniverseRenderer planets = Manager.renderers.universe;
+  public ObjectMap<String, Table> oplanetTables;
 
   public OxygenPlanetDialog() {
     super("", Styles.fullDialog);
 
     shouldPause = true;
+    oplanetTables = new ObjectMap<>();
     state.planet = OPlanets.Sun;
     hoverLabel.setStyle(Styles.outlineLabel);
     hoverLabel.setAlignment(Align.center);
@@ -67,16 +70,20 @@ public class OxygenPlanetDialog extends BaseDialog implements PlanetInterfaceRen
           @Override
           public boolean touchDown(InputEvent event, float x, float y, int pointer, KeyCode button) {
             if (state.planet != data) {
+              ((Table)oplanetTables.get(state.planet.name).parent).setBackground(StyleManager.style.buttonUnselect);
               state.planet = data;
+              ((Table) table.parent).setBackground(StyleManager.style.buttonSelect);
               state.zoom = 1f;
               rebuildExpand();
             }
             return true;
           }
         });
+        oplanetTables.put(data.name, table);
       };
     };
 
+    ((Table)oplanetTables.get(state.planet.name).parent).setBackground(StyleManager.style.buttonSelect);
     rebuildButtons();
 
     onResize(this::rebuildButtons);

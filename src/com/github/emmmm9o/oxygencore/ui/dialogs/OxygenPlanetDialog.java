@@ -14,6 +14,7 @@ import arc.scene.ui.Label;
 import arc.scene.ui.ScrollPane;
 import arc.scene.ui.layout.Table;
 import arc.struct.ObjectMap;
+import arc.struct.Seq;
 import arc.util.Align;
 import arc.util.Tmp;
 
@@ -28,6 +29,7 @@ import mindustry.ui.dialogs.BaseDialog;
 import static mindustry.Vars.*;
 
 import com.github.emmmm9o.oxygencore.core.Manager;
+import com.github.emmmm9o.oxygencore.ui.Radio;
 import com.github.emmmm9o.oxygencore.ui.StyleManager;
 import com.github.emmmm9o.oxygencore.ui.layout.TreeTable;
 import com.github.emmmm9o.oxygencore.universe.OPlanet;
@@ -50,11 +52,19 @@ public class OxygenPlanetDialog extends BaseDialog implements PlanetInterfaceRen
   public Mode mode = Mode.look;
   public final UniverseRenderer planets = Manager.renderers.universe;
   public ObjectMap<String, Table> oplanetTables;
+  public Radio<Integer> timeRadio;
+  public static Seq<Integer> timeScls = new Seq<>(new Integer[] { 1, 2, 5, 10, 60, 60 * 60, 24 * 60 * 60,
+      12 * 24 * 60 * 60, 60 * 24 * 60 * 60, 365 * 24 * 60 * 60, 365 * 24 * 60 * 60 * 10 });
 
   public OxygenPlanetDialog() {
     super("", Styles.fullDialog);
 
     shouldPause = true;
+    timeRadio = new Radio<Integer>(timeScls, Manager.universe.timeScl, Styles.none, (num, tab) -> tab.table(t -> {
+      t.add(Integer.toString(num)).height(24f).grow().get().setAlignment(Align.center);
+    }).uniformY().height(24f).marginLeft(7f).marginRight(8f).get(), (num) -> {
+      Manager.universe.timeScl = num;
+    }, false);
     oplanetTables = new ObjectMap<>();
     state.planet = OPlanets.Sun;
     hoverLabel.setStyle(Styles.outlineLabel);
@@ -70,7 +80,7 @@ public class OxygenPlanetDialog extends BaseDialog implements PlanetInterfaceRen
           @Override
           public boolean touchDown(InputEvent event, float x, float y, int pointer, KeyCode button) {
             if (state.planet != data) {
-              ((Table)oplanetTables.get(state.planet.name).parent).setBackground(StyleManager.style.buttonUnselect);
+              ((Table) oplanetTables.get(state.planet.name).parent).setBackground(StyleManager.style.buttonUnselect);
               state.planet = data;
               ((Table) table.parent).setBackground(StyleManager.style.buttonSelect);
               state.zoom = 1f;
@@ -83,7 +93,7 @@ public class OxygenPlanetDialog extends BaseDialog implements PlanetInterfaceRen
       };
     };
 
-    ((Table)oplanetTables.get(state.planet.name).parent).setBackground(StyleManager.style.buttonSelect);
+    ((Table) oplanetTables.get(state.planet.name).parent).setBackground(StyleManager.style.buttonSelect);
     rebuildButtons();
 
     onResize(this::rebuildButtons);
@@ -144,7 +154,7 @@ public class OxygenPlanetDialog extends BaseDialog implements PlanetInterfaceRen
   void rebuildButtons() {
     buttons.clearChildren();
 
-    buttons.bottom();
+    buttons.bottom().left();
     if (Core.graphics.isPortrait()) {
       buttons.add(sectorTop).colspan(2).fillX().row();
       addBack();
@@ -203,7 +213,7 @@ public class OxygenPlanetDialog extends BaseDialog implements PlanetInterfaceRen
         new Table(t -> {
           t.touchable = Touchable.disabled;
           t.top();
-          t.label(() -> mode == Mode.select ? "@sectors.select" : "").style(Styles.outlineLabel).color(Pal.accent);
+          t.label(() -> state.planet.localizedName).style(Styles.outlineLabel).color(Pal.accent);
         }),
         buttons,
         new Table(StyleManager.style.bodyBackground, t -> {
@@ -219,8 +229,17 @@ public class OxygenPlanetDialog extends BaseDialog implements PlanetInterfaceRen
   void rebuildExpand() {
     Table c = expandTable;
     c.clear();
-    c.visible(() -> !(graphics.isPortrait() && mobile));
-
+    c.top().right();
+    c.table(StyleManager.style.titleBarBackground, time -> {
+      time.label(() -> Manager.universe.getTimeString()).grow().left().uniformY()
+          .get().setAlignment(Align.center);
+      time.button(Icon.refreshSmall, () -> {
+        Manager.universe.resetTime();
+      }).size(36f).uniformY();
+    }).uniformX().height(36f).row();
+    c.table(StyleManager.style.titleBarBackground, timeS -> {
+      timeS.add(timeRadio).grow();
+    }).uniformX();
   }
 
   @Override

@@ -16,6 +16,7 @@ public class Orbit {
   /* starts */;
   public OPlanet parent;
   public Color color = Color.white;
+  public float orginMean;
 
   /*
    * 半长轴 a：椭圆轨道长轴的一半，有时可视作平均轨道半径。
@@ -34,7 +35,7 @@ public class Orbit {
     this.inclination = inclination;
     this.periapsis = periapsis;
     this.ascending = ascending;
-    this.mean_anomaly = mean_anomaly;
+    this.mean_anomaly = this.orginMean = mean_anomaly;
     this.parent = planet;
     calculation();
     get_points();
@@ -121,13 +122,15 @@ public class Orbit {
     float sinI = Mathf.sin(i);
     float cosOmegaW = Mathf.cos(omega);
     float sinOmegaW = Mathf.sin(omega);
-    float x = cosOmega * (xPrime * cosOmegaW - yPrime * sinOmegaW) - (xPrime * sinOmegaW + yPrime * cosOmegaW) * cosI * sinOmega;
-    float y = sinOmega * (xPrime * cosOmegaW - yPrime * sinOmegaW) + (xPrime * sinOmegaW + yPrime * cosOmegaW) * cosI * cosOmega;
-    float z = sinI*(xPrime * sinOmegaW + cosOmegaW * yPrime);
+    float x = cosOmega * (xPrime * cosOmegaW - yPrime * sinOmegaW)
+        - (xPrime * sinOmegaW + yPrime * cosOmegaW) * cosI * sinOmega;
+    float y = sinOmega * (xPrime * cosOmegaW - yPrime * sinOmegaW)
+        + (xPrime * sinOmegaW + yPrime * cosOmegaW) * cosI * cosOmega;
+    float z = sinI * (xPrime * sinOmegaW + cosOmegaW * yPrime);
     /*
      *
      * */
-    return new Vec3(x, z,y);
+    return new Vec3(x, z, y);
   }
 
   public Vec3 calculatePositionT(float time) {

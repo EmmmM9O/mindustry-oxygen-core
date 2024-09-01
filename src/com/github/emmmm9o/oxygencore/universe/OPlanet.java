@@ -14,6 +14,8 @@ import arc.math.geom.Mat3D;
 import arc.math.geom.Vec3;
 import arc.struct.Seq;
 import arc.util.Nullable;
+import arc.util.io.Reads;
+import arc.util.io.Writes;
 import mindustry.graphics.Shaders;
 import mindustry.mod.Mods.LoadedMod;
 
@@ -37,6 +39,7 @@ public class OPlanet extends OxygenInfoContent {
   public float atmosphereHeight = 0.14f, refractionIndex = 0.5f, refractionPower = 5f, lightPower = 0.002f, mix = 0.5f,
       innerRadius, outerRadius, pointSize = 0.5f,
       dayPeriod = 24 * 60 * 60, axialTilt = 23.44f, lineHight = 0.1f;
+  public float startRotation = 0f;
 
   public float gravitational_parameter() {
     return mass * OUniverse.gravitational_constant;
@@ -85,7 +88,7 @@ public class OPlanet extends OxygenInfoContent {
   }
 
   public float getRotation() {
-    return 360f * ((Manager.universe.seconds * 1.0f / dayPeriod) % 1);
+    return (360f * ((Manager.universe.seconds * 1.0f / dayPeriod) % 1) + startRotation) % 360f;
   }
 
   public Mat3D getTransform(UniverseParams params, Mat3D mat) {
@@ -98,5 +101,29 @@ public class OPlanet extends OxygenInfoContent {
     rotationMatrix.setToRotation(Vec3.Z, axialTilt);
     tran.rotate(Vec3.Y.cpy().mul(rotationMatrix), getRotation());
     return tran;
+  }
+
+  public void read(Reads read) {
+    this.startRotation = read.f();
+	  if(this.orbit!=null)
+    this.orbit.mean_anomaly = read.f();
+  }
+
+  public void setStart() {
+    this.startRotation = getRotation();
+	  if(this.orbit!=null)
+    this.orbit.mean_anomaly = this.orbit.l_mean_anomaly;
+  }
+
+  public void resetAll() {
+	  if(this.orbit!=null)
+    this.orbit.mean_anomaly = this.orbit.orginMean;
+    this.startRotation = 0;
+  }
+
+  public void write(Writes write) {
+    write.f(this.startRotation);
+	  if(this.orbit!=null)
+    write.f(this.orbit.mean_anomaly);
   }
 }

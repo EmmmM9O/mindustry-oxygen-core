@@ -3,6 +3,7 @@ package com.github.emmmm9o.oxygencore.core;
 import com.github.emmmm9o.oxygencore.graphics.ORenderers;
 import com.github.emmmm9o.oxygencore.graphics.OShaders;
 import com.github.emmmm9o.oxygencore.ui.BlockWindow;
+import com.github.emmmm9o.oxygencore.ui.StyleManager;
 import com.github.emmmm9o.oxygencore.ui.Window;
 import com.github.emmmm9o.oxygencore.ui.WindowManager;
 import com.github.emmmm9o.oxygencore.ui.dialogs.OxygenPlanetDialog;
@@ -19,6 +20,7 @@ import arc.util.Time;
 import mindustry.Vars;
 import mindustry.game.EventType;
 import mindustry.game.EventType.FileTreeInitEvent;
+import mindustry.game.EventType.Trigger;
 import mindustry.mod.Mod;
 import mindustry.mod.Mods.LoadedMod;
 
@@ -88,11 +90,18 @@ public class Manager {
 
   }
 
+  public static void update() {
+    if (universe != null) {
+      universe.update();
+    }
+  }
+
   public static void initUI() {
+    StyleManager.init();
+    StyleManager.load();
     renderers = new ORenderers();
     renderers.init();
     universe = new OUniverse();
-    universe.updateGlobal();
     group = new WidgetGroup();
     group.fillParent = true;
     group.touchable = Touchable.childrenOnly;
@@ -105,12 +114,16 @@ public class Manager {
     Time.run(10, () -> {
       loadManagerPosition();
     });
+
     Events.on(EventType.GameOverEvent.class, e -> {
       for (var w : windowManager.windows.keySet()) {
         if (w instanceof BlockWindow) {
           w.close();
         }
       }
+    });
+    Events.run(Trigger.update, () -> {
+      update();
     });
   }
 }

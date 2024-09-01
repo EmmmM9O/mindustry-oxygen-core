@@ -106,7 +106,7 @@ public class AtmPlanetMesh implements GenericMesh {
       shader2.bind();
       shader2.setUniformMatrix4("u_view", view.val);
       shader2.setUniformMatrix4("u_projection", projection.val);
-      shader2.setUniformMatrix4("u_model", transform.rotate(Vec3.Z, 90f).val);
+      shader2.setUniformMatrix4("u_model", transform.val);
       shader2.setUniformf("u_zoom", params.zoom);
       shader2.setUniformf("u_camera_pos", params.camPos);
       shader2.setUniformf("u_light_pos",

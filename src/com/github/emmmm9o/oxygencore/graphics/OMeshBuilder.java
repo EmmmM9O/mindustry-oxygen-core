@@ -16,7 +16,7 @@ public class OMeshBuilder {
   private static Mesh mesh;
 
   public static Mesh ring(int divisions, float innerRadius, float outerRadius) {
-    int numVertices = divisions * 6;
+    int numVertices = divisions * 4;
     int numIndices = divisions * 6;
     mesh = new Mesh(true, numVertices * 8, numIndices * 2,
         VertexAttribute.position3,
@@ -31,38 +31,42 @@ public class OMeshBuilder {
     for (int i = 0; i < divisions; i++) {
       float angle0 = i * angleStep;
       float angle1 = (i + 1) * angleStep;
-      addRingVertex(i, angle0, innerRadius);
+      addRingVertex(i, angle0, innerRadius,false);
     mesh.getVerticesBuffer().put(0f);
     mesh.getVerticesBuffer().put(0f);
-      addRingVertex(i, angle1, innerRadius);
+      addRingVertex(i, angle1, innerRadius,false);
     mesh.getVerticesBuffer().put(0f);
     mesh.getVerticesBuffer().put(1f);
-      addRingVertex(i, angle0, outerRadius);
+      addRingVertex(i, angle0, outerRadius,false);
     mesh.getVerticesBuffer().put(1f);
     mesh.getVerticesBuffer().put(0f);
-      addRingVertex(i, angle1, outerRadius);
+      addRingVertex(i, angle1, outerRadius,false);
     mesh.getVerticesBuffer().put(1f);
     mesh.getVerticesBuffer().put(1f);
+
       mesh.getIndicesBuffer().put((short) (i * 4));
       mesh.getIndicesBuffer().put((short) (i * 4 + 1));
       mesh.getIndicesBuffer().put((short) (i * 4 + 2));
       mesh.getIndicesBuffer().put((short) (i * 4 + 2));
       mesh.getIndicesBuffer().put((short) (i * 4 + 3));
       mesh.getIndicesBuffer().put((short) (i * 4 + 1));
+
     }
     return mesh;
   }
 
-  private static void addRingVertex(int index, float angle, float radius) {
+  private static void addRingVertex(int index, float angle, float radius,boolean n) {
     float x = (float) (Math.cos(angle) * radius);
-    float y = (float) (Math.sin(angle) * radius);
-    float z = 0;
+    float z = (float) (Math.sin(angle) * radius);
+    float y = 0;
+    if(n) y -= 0.1f;
     mesh.getVerticesBuffer().put(x);
     mesh.getVerticesBuffer().put(y);
     mesh.getVerticesBuffer().put(z);
     mesh.getVerticesBuffer().put(0);
+    if(n) mesh.getVerticesBuffer().put(-1);
+    else mesh.getVerticesBuffer().put(1);
     mesh.getVerticesBuffer().put(0);
-    mesh.getVerticesBuffer().put(1);
 
   }
 

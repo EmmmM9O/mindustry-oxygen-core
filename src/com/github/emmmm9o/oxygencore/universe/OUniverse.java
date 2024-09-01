@@ -152,6 +152,7 @@ public class OUniverse {
       planet.resetAll();
     }
     savePl();
+    updateGlobal();
   }
 
   public DateTimeFormatter formatter;

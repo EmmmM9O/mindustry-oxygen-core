@@ -173,11 +173,11 @@ public class Window {
     table.row();
     bodyContainer = new Table();
     drawBody(bodyContainer);
-    bodyCell = table.table(bodyt -> {
-      bodyScroll = bodyt.add(
-          new ScrollPane(bodyContainer)).uniformX().grow().get();
-    }).uniformX().fillX();
-    bodyCell.get().setBackground(StyleManager.style.bodyBackground);
+    bodyCell = table.table(
+        StyleManager.style.bodyBackground, bodyt -> {
+          bodyScroll = bodyt.add(
+              new ScrollPane(bodyContainer)).uniformX().grow().get();
+        }).uniformX().fillX();
     table.row();
     statusBarContainer = new Table();
     drawStatus(statusBarContainer);

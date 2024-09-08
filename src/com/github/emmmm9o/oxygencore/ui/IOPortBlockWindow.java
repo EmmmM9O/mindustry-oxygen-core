@@ -237,6 +237,7 @@ public class IOPortBlockWindow extends BlockWindow {
 
   @Override
   public void drawStatus(Table tab) {
+	  super.drawStatus(tab);
     tab.table(text -> {
       text.label(() -> currentID == -1 ? "un selected" : Integer.toString(currentID))
           .height(StyleManager.ButtonSize).grow().get().setAlignment(Align.center);

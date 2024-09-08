@@ -43,6 +43,7 @@ public class MessageBlockWindow extends BlockWindow {
 
   @Override
   public void drawStatus(Table tab) {
+	  super.drawStatus(tab);
     tab.label(() -> textArea.getText().length() + " / " + ((OxygenMessageBlock) building.block()).maxTextLength)
         .color(Color.lightGray).grow().left().height(StyleManager.ButtonSize).get().setAlignment(Align.center);
     ;

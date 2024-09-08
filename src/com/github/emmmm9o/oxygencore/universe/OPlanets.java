@@ -43,6 +43,8 @@ public class OPlanets {
                                                                 new Texture(path.child("mercury-normal.png")),
                                                                 null);
                                 Mercury.orbit.color = Color.sky;
+				Mercury.hexDiv=2;
+				Mercury.lineHight=0.05f;
                                 Venus = new OPlanet("Venus", Manager.mod, Sun,
                                                                 new Orbit(0.723332f * 1.496e5f, 0.006772f, 3.39458f
                                                                                                 * Mathf.degreesToRadians,
@@ -79,6 +81,7 @@ public class OPlanets {
                                 Earth.orbit.color = Color.acid;
                                 Earth.lightPower = 0.003f;
                                 Earth.atmosphere = true;
+                                Earth.mix = 0.3f;
                                 Moon = new OPlanet("Moon", Manager.mod, Earth,
                                                                 new Orbit(384.403f, 0.0549f, 18.28f
                                                                                                 * Mathf.degreesToRadians,
@@ -95,6 +98,8 @@ public class OPlanets {
                                                                 null);
                                 Moon.dayPeriod = 27.32f * 60 * 60 * 24;
                                 Moon.axialTilt = 0;
+				Moon.hexDiv=2;
+				Moon.lineHight=0.05f;
                                 Mars = new OPlanet("Mars", Manager.mod, Sun,
                                                                 new Orbit(1.523679f * 1.496e5f, 0.09341233f, 1.850f
                                                                                                 * Mathf.degreesToRadians,
@@ -113,6 +118,7 @@ public class OPlanets {
                                 Mars.mix = 0.05f;
                                 Mars.dayPeriod = 24 * 60 * 60;
                                 Mars.axialTilt = 25.19f;
+				Mars.lineHight=0.08f;
                                 Jupiter = new OPlanet("Jupiter", Manager.mod, Sun, new Orbit(7.784120267e4f,
                                                                 0.04839266f, 0.0227818f,
                                                                 0.257503f - 1.755036f, 1.755036f, 0.600470f, Sun),
@@ -127,6 +133,7 @@ public class OPlanets {
                                 Jupiter.dayPeriod = 10 * 60 * 60;
                                 Jupiter.axialTilt = 3.13f;
                                 Jupiter.lightPower = 0.002f;
+				Jupiter.hex=false;
                                 Io = new OPlanet("Io", Manager.mod, Jupiter,
                                                                 new Orbit(4.218e2f, 0.0041f, 0.0006458f,
                                                                                                 1.7058f-5.46255f,
@@ -136,6 +143,8 @@ public class OPlanets {
                                                                 8.93e-2f,1.821f);
                                 Io.orbit.color = Color.gold;
                                 Io.lightColor = new Color(0.5f, 0.5f, 0.5f, 1.0f);
+				Io.lineHight=0.05f;
+				Io.hexDiv=2;
                                 Io.meshLoader = () -> new AtmPlanetMesh(Io, 32,
                                                                 new Texture(path.child("io.png")),
                                                                 new Texture(path.child("io-normal.png")),
@@ -151,6 +160,7 @@ public class OPlanets {
                                 Saturn.outerRadius = 200f;
                                 Saturn.innerRadius = 66f;
                                 Saturn.lightColor = new Color(0.5f, 0.5f, 0.5f, 1.0f);
+				Saturn.hex=false;
                                 Saturn.meshLoader = () -> new AtmPlanetMesh(Saturn, 48,
                                                                 64, new Texture(path.child("saturn.png")),
                                                                 new Texture(path.child("saturn-ring.png")));
@@ -167,6 +177,7 @@ public class OPlanets {
                                 Uranus.axialTilt = 97.77f;
                                 Uranus.dayPeriod = 17 * 60 * 60;
 				Uranus.gas = true;
+				Uranus.hex=false;
                                 Neptune = new OPlanet("Neptune", Manager.mod, Sun,
                                                                 new Orbit(4.49825291e6f, 0.00858587f, 0.0308778f,
                                                                                                 0.784898f - 2.298977f,
@@ -180,6 +191,7 @@ public class OPlanets {
                                 Neptune.dayPeriod = 16 * 60 * 60;
                                 Neptune.axialTilt = 28.32f;
 				Neptune.gas = true;
+				Neptune.hex=false;
                                 Halley = new OPlanet("Halley", Manager.mod, Sun,
                                                                 new Orbit(17.8f * 1.496e5f, 0.967f, 162.3f
                                                                                                 * Mathf.degreesToRadians,

@@ -88,7 +88,7 @@ public class OShaders {
     atmPlanetMesh = new OShader("planet");
     atmosphere = new OShader("atmosphere");
     ring = new OShader("ring");
-    line = new OShader(file("planet.vert"), file("line.frag"));
+    line = new OShader(file("line.vert"), file("line.frag"));
   }
 
 }

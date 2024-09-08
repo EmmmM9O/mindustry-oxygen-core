@@ -11,6 +11,7 @@ import arc.util.Log;
 import arc.scene.ui.ImageButton;
 import arc.scene.ui.Dialog.DialogStyle;
 import arc.scene.ui.ImageButton.ImageButtonStyle;
+import arc.scene.ui.TextButton.TextButtonStyle;
 import mindustry.gen.Tex;
 import mindustry.graphics.Pal;
 import mindustry.ui.Fonts;
@@ -23,6 +24,7 @@ public class StyleManager {
     public Drawable titleTextBackground,
         statusBarBackground, bodyBackground, titleBarBackground, buttonSelect, buttonUnselect;
     public DialogStyle fullscreenDialogStyle;
+    public TextButtonStyle texti;
 
     public OxygenStyle() {
     }
@@ -51,6 +53,7 @@ public class StyleManager {
         this.select = Styles.selecti;
         this.buttonSelect = Tex.buttonSelect;
         this.buttonUnselect = Styles.none;
+        this.texti = Styles.flatt;
         this.fullscreenDialogStyle = new DialogStyle() {
           {
             this.background = Tex.windowEmpty;

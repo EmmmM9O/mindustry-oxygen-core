@@ -55,13 +55,15 @@ public class OxygenPlanetDialog extends BaseDialog implements PlanetInterfaceRen
   public Radio<Integer> timeRadio;
   public static Seq<Integer> timeScls = new Seq<>(new Integer[] { 1, 2, 5, 10, 60, 60 * 60, 24 * 60 * 60,
       12 * 24 * 60 * 60, 60 * 24 * 60 * 60, 365 * 24 * 60 * 60, 365 * 24 * 60 * 60 * 10 });
+  public static Seq<String> timeNames = new Seq<>(
+      new String[] { "1", "2", "5", "10", "1m", "1h", "1d", "12d", "60d", "1y", "10y" });
 
   public OxygenPlanetDialog() {
     super("", Styles.fullDialog);
 
     shouldPause = true;
     timeRadio = new Radio<Integer>(timeScls, Manager.universe.timeScl, Styles.none, (num, tab) -> tab.table(t -> {
-      t.add(Integer.toString(num)).height(24f).grow().get().setAlignment(Align.center);
+      t.add(timeNames.get(timeScls.indexOf(num))).height(24f).grow().get().setAlignment(Align.center);
     }).uniformY().height(24f).marginLeft(7f).marginRight(8f).get(), (num) -> {
       Manager.universe.timeScl = num;
     }, false);

@@ -1,5 +1,4 @@
 varying vec3 v_position;
-varying vec2 v_texCoord;
 varying vec3 v_normal;
 varying float v_radius;
 varying float v_zoom;
@@ -23,5 +22,5 @@ void main()
 
     vec3 diffuse = diffuseColor * diff;
     vec3 resultColor = diffuse + ambient;
-    gl_FragColor = vec4(resultColor, color);
+    gl_FragColor = color;
 }

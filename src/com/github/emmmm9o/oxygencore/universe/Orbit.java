@@ -82,12 +82,12 @@ public class Orbit {
     float E = l_mean_anomaly;
     float deltaE;
     // M=E- e*sin E
-    for (int i = 0; i <= 100/* 最大迭代次数 */; i++) {
+    for (int i = 0; i <= 200/* 最大迭代次数 */; i++) {
       float f = E - eccentricity * (float) Math.sin(E) - l_mean_anomaly;
       float fPrime = 1f - eccentricity * (float) Math.cos(E);
       deltaE = f / fPrime;
       E -= deltaE;
-      if (Math.abs(deltaE) < 1e-4/* 精度 */) {
+      if (Math.abs(deltaE) < 1e-8/* 精度 */) {
         break;
       }
     }
@@ -139,7 +139,7 @@ public class Orbit {
   }
 
   public Seq<Vec3> points;
-  public int points_num = 50;
+  public int points_num = 100;
 
   public void get_points() {
     points = new Seq<Vec3>();

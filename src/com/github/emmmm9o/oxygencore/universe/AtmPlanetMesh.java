@@ -3,18 +3,22 @@ package com.github.emmmm9o.oxygencore.universe;
 import com.github.emmmm9o.oxygencore.graphics.OMeshBuilder;
 import com.github.emmmm9o.oxygencore.graphics.OShaders;
 
+import arc.Core;
+import arc.graphics.GL20;
 import arc.graphics.Gl;
 import arc.graphics.Mesh;
 import arc.graphics.Texture;
 import arc.graphics.gl.Shader;
 import arc.math.geom.Mat3D;
 import arc.math.geom.Vec3;
+import mindustry.graphics.Pal;
+import mindustry.graphics.g3d.MeshBuilder;
 
 /**
  * SolarMesh
  */
 public class AtmPlanetMesh implements GenericMesh {
-  public Mesh mesh, ringMesh;
+  public Mesh mesh, ringMesh, lineMesh;
   public OPlanet planet;
   public Shader shader, shader2;
   public Texture texture, normal, cloud, ring;
@@ -26,6 +30,7 @@ public class AtmPlanetMesh implements GenericMesh {
     this.normal = normal;
     this.cloud = cloud;
     this.shader = OShaders.atmPlanetMesh;
+    if(planet.hex)this.lineMesh = MeshBuilder.buildHex(Pal.accent,planet.hexDiv,true,1);
   }
 
   public AtmPlanetMesh(OPlanet planet, int divisions, int ri, Texture texture, Texture ring) {
@@ -36,6 +41,7 @@ public class AtmPlanetMesh implements GenericMesh {
     this.shader = OShaders.atmPlanetMesh;
     this.shader2 = OShaders.ring;
     this.ringMesh = OMeshBuilder.ring(ri, planet.innerRadius, planet.outerRadius);
+    if(planet.hex)this.lineMesh = MeshBuilder.buildHex(Pal.accent,planet.hexDiv,true,1);
   }
 
   public void preRender(UniverseParams params) {
@@ -82,14 +88,16 @@ public class AtmPlanetMesh implements GenericMesh {
     mesh.render(shader, Gl.triangles);
 
     Gl.disable(Gl.cullFace);
+    if(params.planet==planet&&planet.hex&&params.zoom<=1){
     var lineShader = OShaders.line;
+    Core.gl.glLineWidth(10f/params.zoom);
     lineShader.bind();
     lineShader.setUniformf("u_radius", (planet.radius + planet.atmosphereHeight + planet.lineHight) / params.zoom);
     lineShader.setUniformMatrix4("u_view", view.val);
     lineShader.setUniformMatrix4("u_projection", projection.val);
-    lineShader.setUniformMatrix4("u_model", transform.rotate(Vec3.X, 90f).val);
+    lineShader.setUniformMatrix4("u_model", transform.val);
     lineShader.setUniformf("u_zoom", params.zoom);
-    lineShader.setUniformf("color", planet.lineColor);
+    lineShader.setUniformf("color", Pal.accent.cpy().a(0.4f));
     lineShader.setUniformf("u_camera_pos", params.camPos);
     lineShader.setUniformf("u_light_pos",
         new Vec3(planet.solarSystem.position).sub(params.planet.position).scl(1f / params.zoom));
@@ -99,7 +107,10 @@ public class AtmPlanetMesh implements GenericMesh {
 
     lineShader.setUniformf("u_light_power", planet.lightPower);
     lineShader.apply();
-    mesh.render(lineShader, Gl.lines);
+
+    lineMesh.render(lineShader, Gl.lines);
+    Core.gl.glLineWidth(1f);
+    }
 
     if (ring != null) {
       Gl.disable(Gl.cullFace);

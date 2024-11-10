@@ -2,7 +2,7 @@ plugins {
   id 'com.diffplug.spotless' version '6.25.0'
 }
 repositories {
-    mavenLocal()
+  mavenLocal()
   maven { url 'https://maven.aliyun.com/repository/public/' }
   maven{ url 'https://maven.aliyun.com/nexus/content/repositories/central/' }
   maven{ url 'https://repo.huaweicloud.com/repository/maven/' }
@@ -12,15 +12,14 @@ repositories {
     url 'https://www.jitpack.io'
   }
   maven{ url "https://raw.kkgithub.com/Zelaux/MindustryRepo/master/repository" }
-
 }
 
-spotless {
-  format 'styling', {
-    target '*.json','**/*.json'
-    prettier().config(['tabWidth': 2])
-  }
-}
+//spotless {
+//  format 'styling', {
+//    target '*.json','**/*.json'
+//    prettier().config(['tabWidth': 2])
+//  }
+//}
 allprojects {
   apply plugin: "java"
   apply plugin: "com.diffplug.spotless"
@@ -82,11 +81,9 @@ allprojects {
     from{
       configurations.runtimeClasspath.collect{ it.isDirectory() ? it : zipTree(it) }
     }
-
-    from(projectDir){
-      include "mod.json"
+    from("build/generated/assets"){
+      include "**"
     }
-
     from("assets/"){
       include "**"
     }
@@ -113,8 +110,11 @@ allprojects {
           .execute(null, new File("$buildDir/libs")).waitForProcessOutput(System.out, System.err)
     }
   }
-
-
+  task generate {
+    doLast {
+      println 'Generating files from annotated classes'
+    }
+  }
 
   task deploy(type: Jar){
     dependsOn jarAndroid
@@ -144,10 +144,21 @@ configurations.all{
     }
   }
 }
+
+project(":annotations"){
+  ext{
+    gsonVersion= "2.11.0" 
+  }
+  dependencies{
+    implementation "com.google.code.gson:gson:$gsonVersion"
+  }
+}
 project(":core"){
   ext{
   }
   dependencies{
+    annotationProcessor project(":annotations")
   }
 }
+
 

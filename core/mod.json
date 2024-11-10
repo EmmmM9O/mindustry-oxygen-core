@@ -1,0 +1,11 @@
+{
+  "displayName": "Mindustry Oxygen Core",
+  "name": "oxygencore",
+  "author": "emmmM9O",
+  "main": "com.github.emmmm9o.oxygen.core.CoreMain",
+  "description": "oxygen core",
+  "version": 1.0,
+  "minGameVersion": 145,
+  "java": true,
+  "hidden": true
+}

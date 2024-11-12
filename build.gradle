@@ -71,6 +71,7 @@ allprojects {
     compileOnly "com.github.Anuken.Arc:arc-core:$mindustryVersion"
     compileOnly "com.github.Anuken.Mindustry:core:$mindustryVersion"
 
+
     annotationProcessor "com.github.Anuken:jabel:$jabelVersion"
   }
 
@@ -146,17 +147,31 @@ configurations.all{
 }
 
 project(":annotations"){
+  tasks.named('deploy').configure {
+    enabled = false
+  }
+  tasks.named('jarAndroid').configure {
+    enabled = false
+  }
   ext{
-    gsonVersion= "2.11.0" 
+    gsonVersion= "2.11.0"
   }
   dependencies{
     implementation "com.google.code.gson:gson:$gsonVersion"
+    implementation "com.google.auto.service:auto-service:1.0-rc6"
+    annotationProcessor "com.google.auto.service:auto-service:1.0-rc6"
   }
 }
+
 project(":core"){
+  /*
+   tasks.withType(JavaCompile){
+   options.compilerArgs<<"-verbose"<<"-XprintRounds"<<"-XprintProcessorInfo"
+   }*/
   ext{
   }
   dependencies{
+    compileOnly project(":annotations")
     annotationProcessor project(":annotations")
   }
 }

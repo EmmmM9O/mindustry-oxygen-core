@@ -1,12 +1,10 @@
 /* (C) 2024 */
 package oxygen.annotations;
 
-import mindustry.mod.*;
-
 /**
  * ModMetaObj
  */
-public class ModMetaObj {
+public class ModMetadata {
     public String name, minGameVersion, displayName, author, version, description, repo, subtitle;
     public String[] dependencies;
     public String main;
@@ -45,12 +43,12 @@ public class ModMetaObj {
         subtitle = subtitle.isEmpty() ? null : subtitle;
     }
 
-    public ModMetaObj(ModMeta meta, String clazz, boolean Null) {
+    public ModMetadata(ModMeta meta, String clazz, boolean Null) {
         this(meta, clazz);
         Null();
     }
 
-    public ModMetaObj(ModMeta meta, String clazz) {
+    public ModMetadata(ModMeta meta, String clazz) {
         set(meta);
         this.main = clazz;
     }

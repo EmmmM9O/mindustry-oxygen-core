@@ -4,7 +4,6 @@ package oxygen.annotations;
 import com.google.auto.service.*;
 import com.google.gson.*;
 import java.io.*;
-import java.lang.reflect.*;
 import java.util.Set;
 import javax.annotation.processing.*;
 import javax.lang.model.*;
@@ -27,15 +26,16 @@ public class ModMetaGenerator extends AbstractProcessor {
             if (element.getKind() == ElementKind.CLASS) {
                 TypeElement typeElement = ((TypeElement) element);
                 ModMeta meta = typeElement.getAnnotation(ModMeta.class);
-                ModMetaObj obj = new ModMetaObj(meta, typeElement.getQualifiedName().toString(), true);
+                ModMetadata obj = new ModMetadata(meta, typeElement.getQualifiedName().toString(), true);
 
                 try {
-                    FileObject file =
-                            processingEnv.getFiler().createResource(StandardLocation.CLASS_OUTPUT, "", "mod.json");
+                    FileObject file = processingEnv.getFiler().createResource(StandardLocation.CLASS_OUTPUT, "",
+                            "mod.json");
                     String con = gson.toJson(obj);
                     processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "generate mod.json : " + con);
                     BufferedWriter bufferedWriter = new BufferedWriter(file.openWriter());
                     bufferedWriter.write(con);
+                    bufferedWriter.close();
 
                 } catch (IOException error) {
                     processingEnv
@@ -44,8 +44,14 @@ public class ModMetaGenerator extends AbstractProcessor {
                                     Diagnostic.Kind.ERROR,
                                     "error while generate mod.json from @ModMeta :" + error.getMessage());
                 }
+            } else {
+                processingEnv
+                        .getMessager()
+                        .printMessage(
+                                Diagnostic.Kind.ERROR,
+                                "@ModMeta only support class");
             }
         }
-        return false;
+        return true;
     }
 }

@@ -2,7 +2,6 @@
 package oxygen.annotations;
 
 import java.lang.annotation.*;
-import mindustry.mod.*;
 
 /**
  * ModMeta
@@ -39,4 +38,5 @@ public @interface ModMeta {
     String subtitle() default "";
 
     String[] dependencies() default {};
+
 }

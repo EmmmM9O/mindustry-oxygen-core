@@ -38,5 +38,4 @@ public @interface ModMeta {
     String subtitle() default "";
 
     String[] dependencies() default {};
-
 }

@@ -1,3 +1,4 @@
+/* (C) 2024 */
 package oxygen.annotations;
 
 import java.lang.annotation.*;
@@ -5,8 +6,6 @@ import java.lang.annotation.*;
 /**
  * AMark
  */
-@Retention(RetentionPolicy.SOURCE)
+@Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.ANNOTATION_TYPE)
-public @interface AMark {
-
-}
+public @interface AMark {}

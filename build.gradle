@@ -163,6 +163,15 @@ project(":annotations"){
   }
 }
 
+project(":utils"){
+  ext{
+  }
+  dependencies{
+    compileOnly project(":annotations")
+    annotationProcessor project(":annotations")
+  }
+}
+
 project(":core"){
   /*
    tasks.withType(JavaCompile){
@@ -171,6 +180,7 @@ project(":core"){
   ext{
   }
   dependencies{
+    implementation project(":utils")
     compileOnly project(":annotations")
     annotationProcessor project(":annotations")
   }

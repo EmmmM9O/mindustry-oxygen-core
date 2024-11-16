@@ -17,7 +17,7 @@ import javax.tools.*;
 @SupportedAnnotationTypes("oxygen.annotations.ModMeta")
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
 public class ModMetaGenerator extends AbstractProcessor {
-    private Gson gson = new GsonBuilder().create();
+    private Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
@@ -26,11 +26,12 @@ public class ModMetaGenerator extends AbstractProcessor {
             if (element.getKind() == ElementKind.CLASS) {
                 TypeElement typeElement = ((TypeElement) element);
                 ModMeta meta = typeElement.getAnnotation(ModMeta.class);
-                ModMetadata obj = new ModMetadata(meta, typeElement.getQualifiedName().toString(), true);
+                ModMetadata obj =
+                        new ModMetadata(meta, typeElement.getQualifiedName().toString(), true);
 
                 try {
-                    FileObject file = processingEnv.getFiler().createResource(StandardLocation.CLASS_OUTPUT, "",
-                            "mod.json");
+                    FileObject file =
+                            processingEnv.getFiler().createResource(StandardLocation.CLASS_OUTPUT, "", "mod.json");
                     String con = gson.toJson(obj);
                     processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "generate mod.json : " + con);
                     BufferedWriter bufferedWriter = new BufferedWriter(file.openWriter());
@@ -42,14 +43,10 @@ public class ModMetaGenerator extends AbstractProcessor {
                             .getMessager()
                             .printMessage(
                                     Diagnostic.Kind.ERROR,
-                                    "error while generate mod.json from @ModMeta :" + error.getMessage());
+                                    "error while generate mod.json from @ModMeta :" + error.toString());
                 }
             } else {
-                processingEnv
-                        .getMessager()
-                        .printMessage(
-                                Diagnostic.Kind.ERROR,
-                                "@ModMeta only support class");
+                processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, "@ModMeta only support class");
             }
         }
         return true;

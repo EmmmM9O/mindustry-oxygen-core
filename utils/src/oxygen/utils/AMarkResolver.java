@@ -7,6 +7,7 @@ import arc.struct.ObjectMap.*;
 import arc.util.*;
 import arc.util.serialization.*;
 import arc.util.serialization.Jval.*;
+import mindustry.mod.Mods.*;
 
 /**
  * AMarkReslover
@@ -53,7 +54,9 @@ public class AMarkResolver {
                     for (Jval value : pair.value.asArray()) {
                         list.add(parserElememt(value));
                     }
-                    maps.put(clazz, list);
+                    if (maps.containsKey(clazz)) {
+                        maps.get(clazz).addAll(list);
+                    } else maps.put(clazz, list);
                 } catch (Throwable err) {
                     Log.err("AMarkResolver err load class @ @", pair.key, err.toString());
                 }
@@ -61,6 +64,12 @@ public class AMarkResolver {
         } catch (Throwable error) {
             Log.err("AMarkResolver load error @", error.toString());
         }
+        return this;
+    }
+
+    public AMarkResolver resolve(LoadedMod mod) {
+        Fi file = mod.root.child("marks.json");
+        if (file.exists() && !file.isDirectory()) resolve(file);
         return this;
     }
 

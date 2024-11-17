@@ -1,13 +1,11 @@
 /* (C) 2024 */
 package oxygen.core;
 
+import arc.*;
 import arc.util.*;
-import mindustry.*;
+import mindustry.game.*;
 import mindustry.mod.*;
-import mindustry.mod.Mods.LoadedMod;
 import oxygen.annotations.*;
-import oxygen.loader.*;
-import oxygen.utils.*;
 
 /**
  * OCMain
@@ -25,10 +23,11 @@ public class OCMain extends Mod {
             version = "1.0.0",
             displayName = "Oxygen Core";
 
-    @ML.ModInstance(name)
-    public LoadedMod mod;
-
-    public OCMain() {}
+    public OCMain() {
+        Events.on(EventType.FileTreeInitEvent.class, event -> {
+            OCVars.init();
+        });
+    }
 
     @Override
     public void init() {

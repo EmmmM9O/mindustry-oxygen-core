@@ -18,7 +18,7 @@ public @interface ML {
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.FIELD)
     @AMark
-    public @interface ModInstance {
+    public @interface Instance {
         String value();
     }
 }

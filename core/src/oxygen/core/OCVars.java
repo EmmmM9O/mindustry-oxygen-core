@@ -15,8 +15,11 @@ public class OCVars {
 
     public static EventBus bus = new EventBus();
 
+    public static void preinit() {
+        bus.events.putEvents();
+    }
+
     public static void init() {
         bus.init();
-        Log.info("test @", mod.name);
     }
 }

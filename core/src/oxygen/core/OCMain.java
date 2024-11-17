@@ -24,6 +24,7 @@ public class OCMain extends Mod {
             displayName = "Oxygen Core";
 
     public OCMain() {
+        OCVars.preinit();
         Events.on(EventType.FileTreeInitEvent.class, event -> {
             OCVars.init();
         });

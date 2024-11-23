@@ -11,14 +11,11 @@ public class EventBus {
 
     public MLProcessor processor;
     public OEvents events;
-    public EventProcessor eventProcessor;
 
     public EventBus() {
         events = new OEvents();
         processor = new MLProcessor();
-        processor.standardProcessors();
-        eventProcessor = new EventProcessor(events);
-        processor.annotationProcessors.put(ML.Event.class, eventProcessor);
+        AnnotationProcessors.setStandardProcessor(processor);
     }
 
     public void init() {

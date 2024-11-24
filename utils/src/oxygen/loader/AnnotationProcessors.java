@@ -83,25 +83,30 @@ public class AnnotationProcessors {
     }
 
     public class EventAnnotatonProcessor extends MethodAnnotationProcessor<Event> {
-        public static interface EventProcessor {
-            public String process(Event annotation, Method method);
+        public static interface EventResolver {
+            public String resolve(Event annotation, Method method);
         }
-
-        public Seq<EventProcessor> processors;
+        public static EventResolver idResolver=(event,method)->{
+            if(!event.event().isEmpty()){
+                return event.event();
+            }
+            return null;
+        };
+        public Seq<EventResolver> resolvers;
         public OEvents events;
 
         public EventAnnotatonProcessor(OEvents events) {
             super(Event.class, true);
-            processors = Seq.with();
+            resolvers = Seq.with();
             this.events = events;
         }
 
-        public void standardProcessors() {}
+        public void standardResolvers() {}
 
         @Override
         public void process(Event annotation, Method value) throws Throwable {
-            for (EventProcessor processor : processors) {
-                String res = processor.process(annotation, value);
+            for (EventResolver processor : resolvers) {
+                String res = processor.resolve(annotation, value);
                 if (res == null || res.isEmpty()) continue;
                 events.on(
                         res,

@@ -84,14 +84,46 @@ public class AnnotationProcessors {
 
     public class EventAnnotatonProcessor extends MethodAnnotationProcessor<Event> {
         public static interface EventResolver {
-            public String resolve(Event annotation, Method method);
+            public String resolve(Event annotation, Method method, EventAnnotatonProcessor self);
         }
-        public static EventResolver idResolver=(event,method)->{
-            if(!event.event().isEmpty()){
-                return event.event();
-            }
-            return null;
-        };
+
+        public static EventResolver
+                idResolver =
+                        new EventResolver() {
+                            public String resolve(Event event, Method method, EventAnnotatonProcessor self) {
+                                if (!event.event().isEmpty()) {
+                                    return event.event();
+                                }
+                                return null;
+                            }
+                        },
+                idEnumResolver =
+                        new EventResolver() {
+                            public String resolve(Event event, Method method, EventAnnotatonProcessor self) {
+
+                                if (method.getParameterTypes().length != 0) {
+                                    return null;
+                                }
+                                for (String tar : self.events.events.keys()) {}
+
+                                return null;
+                            }
+                        },
+                enumResolver =
+                        new EventResolver() {
+                            public String resolve(Event event, Method method, EventAnnotatonProcessor self) {
+
+                                return null;
+                            }
+                        },
+                classResolver =
+                        new EventResolver() {
+
+                            public String resolve(Event event, Method method, EventAnnotatonProcessor self) {
+
+                                return null;
+                            }
+                        };
         public Seq<EventResolver> resolvers;
         public OEvents events;
 
@@ -99,14 +131,17 @@ public class AnnotationProcessors {
             super(Event.class, true);
             resolvers = Seq.with();
             this.events = events;
+            standardResolvers();
         }
 
-        public void standardResolvers() {}
+        public void standardResolvers() {
+            resolvers.addAll(idResolver, enumResolver, idEnumResolver, classResolver);
+        }
 
         @Override
         public void process(Event annotation, Method value) throws Throwable {
             for (EventResolver processor : resolvers) {
-                String res = processor.resolve(annotation, value);
+                String res = processor.resolve(annotation, value, this);
                 if (res == null || res.isEmpty()) continue;
                 events.on(
                         res,
@@ -116,6 +151,7 @@ public class AnnotationProcessors {
                         annotation.value());
                 return;
             }
+            throw new RuntimeException("can not resolve event method");
         }
     }
 

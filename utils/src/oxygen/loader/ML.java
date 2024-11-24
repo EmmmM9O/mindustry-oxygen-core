@@ -10,7 +10,7 @@ import oxygen.utils.*;
  */
 public @interface ML {
     @Retention(RetentionPolicy.RUNTIME)
-    @Target(ElementType.TYPE)
+    @Target(ElementType.METHOD)
     @AMark
     public @interface Event {
         int value() default StandardEventPriority.NORMAL;

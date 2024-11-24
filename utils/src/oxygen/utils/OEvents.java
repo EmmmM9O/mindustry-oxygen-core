@@ -37,11 +37,11 @@ public class OEvents {
     }
 
     public <T> void on(Class<T> type, Func<T, Boolean> listener, int priority) {
-        on("class:"+type.getName(), listener, priority);
+        on("class:" + type.getName(), listener, priority);
     }
 
     public String getName(Object type) {
-        return "enum:"+type.getClass().getName() + "." + type.toString();
+        return "enum:" + type.getClass().getName() + "." + type.toString();
     }
 
     public void run(Object type, Prov<Boolean> listener, int priority) {
@@ -57,7 +57,7 @@ public class OEvents {
     }
 
     public void mark(Class<?> type) {
-        mark("class:"+type.getName());
+        mark("class:" + type.getName());
     }
 
     public void markEnum(Object type) {

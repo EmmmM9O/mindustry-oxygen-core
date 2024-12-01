@@ -11,7 +11,7 @@ public class ModMetadata {
     public Boolean pregenerated, hidden, keepOutlines, java;
     public Float texturescale;
 
-    public void set(ModMeta meta) {
+    public void set(ModMetaG meta) {
         name = meta.name();
         minGameVersion = meta.minGameVersion();
         displayName = meta.displayName();
@@ -43,12 +43,12 @@ public class ModMetadata {
         subtitle = subtitle.isEmpty() ? null : subtitle;
     }
 
-    public ModMetadata(ModMeta meta, String clazz, boolean Null) {
+    public ModMetadata(ModMetaG meta, String clazz, boolean Null) {
         this(meta, clazz);
         Null();
     }
 
-    public ModMetadata(ModMeta meta, String clazz) {
+    public ModMetadata(ModMetaG meta, String clazz) {
         set(meta);
         this.main = clazz;
     }

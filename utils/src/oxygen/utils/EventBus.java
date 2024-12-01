@@ -2,7 +2,6 @@
 package oxygen.utils;
 
 import oxygen.loader.*;
-import oxygen.loader.MLProcessor.*;
 
 /**
  * EventBus
@@ -10,12 +9,13 @@ import oxygen.loader.MLProcessor.*;
 public class EventBus {
 
     public MLProcessor processor;
-    public OEvents events;
+    public OEvent events;
 
-    public EventBus() {
-        events = new OEvents();
+    public EventBus(OEvent events) {
+        this.events = events;
         processor = new MLProcessor();
         AnnotationProcessors.setStandardProcessor(processor);
+        AnnotationProcessors.setEventProcessor(processor, events);
     }
 
     public void init() {

@@ -8,7 +8,7 @@ import java.lang.annotation.*;
  */
 @Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.TYPE)
-public @interface ModMeta {
+public @interface ModMetaG {
     String name();
 
     String minGameVersion();

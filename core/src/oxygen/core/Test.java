@@ -3,15 +3,20 @@ package oxygen.core;
 
 import static oxygen.utils.StandardEventPriority.*;
 
+import arc.util.Log;
 import oxygen.loader.*;
 
 /**
  * Test
  */
 public class Test {
-    @ML.Event(value = LOW, event = "Oxygen")
-    public static void init() {}
+    public static boolean flag = false;
 
     @ML.Event(value = HIGHEST, event = "Trigger")
-    public static void update() {}
+    public static void update() {
+        if (!flag) {
+            flag = true;
+            Log.info("test event");
+        }
+    }
 }

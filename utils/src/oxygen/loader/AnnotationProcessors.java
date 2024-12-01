@@ -6,8 +6,10 @@ import arc.util.Log;
 import java.lang.annotation.*;
 import java.lang.reflect.*;
 import mindustry.*;
+import mindustry.mod.*;
+import mindustry.mod.Mods.*;
 import oxygen.loader.ML.*;
-import oxygen.utils.OEvents;
+import oxygen.utils.*;
 
 /**
  * AnnotationProcessors
@@ -22,8 +24,7 @@ public class AnnotationProcessors {
             this.isStatic = isStatic;
         }
 
-        public void process(T annotation, Method value) throws Throwable {
-        }
+        public void process(T annotation, Method value) throws Throwable {}
 
         @Override
         public void process(Object obj) throws Throwable {
@@ -52,8 +53,7 @@ public class AnnotationProcessors {
             this.isStatic = isStatic;
         }
 
-        public void process(T annotation, Field value) throws Throwable {
-        }
+        public void process(T annotation, Field value) throws Throwable {}
 
         @Override
         public void process(Object obj) throws Throwable {
@@ -81,216 +81,194 @@ public class AnnotationProcessors {
         @Override
         public void process(Instance annotation, Field field) throws Throwable {
             field.setAccessible(true);
-            field.set(null, Vars.mods.getMod(annotation.value()));
+            if (LoadedMod.class.isAssignableFrom(field.getType()))
+                field.set(null, Vars.mods.getMod(annotation.value()));
+            if (ModMeta.class.isAssignableFrom(field.getType()))
+                field.set(null, Vars.mods.getMod(annotation.value()).meta);
+            if (Mod.class.isAssignableFrom(field.getType())) field.set(null, Vars.mods.getMod(annotation.value()).main);
         }
     }
 
-    public class EventAnnotatonProcessor extends MethodAnnotationProcessor<Event> {
-        public static interface EventResolver {
-            public String resolve(Event annotation, Method method, EventAnnotatonProcessor self);
+    public static class EventAnnotationProcessor extends MethodAnnotationProcessor<Event> {
+        public OEvent event;
+
+        public EventAnnotationProcessor(OEvent event) {
+            super(Event.class, true);
+            this.event = event;
+            filters = Seq.with();
         }
+
+        public static interface EventFilter {
+            public Seq<String> filter(
+                    Event annotation, Method method, OEvent event, Seq<String> keys, EventAnnotationProcessor self)
+                    throws Throwable;
+        }
+
+        public static EventFilter
+                idFilter =
+                        new EventFilter() {
+                            public Seq<String> filter(
+                                    Event annotation,
+                                    Method method,
+                                    OEvent event,
+                                    Seq<String> keys,
+                                    EventAnnotationProcessor self)
+                                    throws Throwable {
+                                if (annotation.event().isEmpty()) return keys;
+                                if (event.isMarked(annotation.event())) return Seq.with(annotation.event());
+                                if (event.isMarked(event.getClassPre(annotation.event())))
+                                    return Seq.with(event.getClassPre(annotation.event()));
+                                if (event.isMarked(event.getEnumPre(annotation.event())))
+                                    return Seq.with(event.getEnumPre(annotation.event()));
+                                return keys.select(str -> str.contains(annotation.event()));
+                            }
+                        },
+                dirClassFilter =
+                        new EventFilter() {
+                            public Seq<String> filter(
+                                    Event annotation,
+                                    Method method,
+                                    OEvent event,
+                                    Seq<String> keys,
+                                    EventAnnotationProcessor self)
+                                    throws Throwable {
+                                if (method.getParameterCount() == 1) {
+                                    Class<?> type = method.getParameterTypes()[0];
+                                    if (event.isMarked(event.getClassKey(type))) {
+                                        return Seq.with(event.getClassKey(type));
+                                    }
+                                }
+                                return keys;
+                            }
+                            ;
+                        },
+                paramsFilter =
+                        new EventFilter() {
+                            public Seq<String> filter(
+                                    Event annotation,
+                                    Method method,
+                                    OEvent event,
+                                    Seq<String> keys,
+                                    EventAnnotationProcessor self)
+                                    throws Throwable {
+                                return keys.select(str -> {
+                                    if (event.isEnumKey(str) && method.getParameterCount() == 0) {
+                                        return true;
+                                    }
+                                    if (event.isClassKey(str)) {
+                                        try {
+                                            Class<?> type = Class.forName(event.getClassFromKey(str));
+                                            Field[] fields = type.getDeclaredFields();
+                                            if (fields.length < method.getParameterCount()) {
+                                                return false;
+                                            }
+                                            Class<?>[] params = method.getParameterTypes();
+                                            for (int i = 0; i < method.getParameterCount(); i++) {
+                                                if (params[i] != fields[i].getType()) return false;
+                                            }
+                                            return true;
+                                        } catch (Throwable err) {
+                                            throw new RuntimeException(err);
+                                        }
+                                    }
+                                    return false;
+                                });
+                            }
+                        },
+                nameFilter =
+                        new EventFilter() {
+                            public Seq<String> filter(
+                                    Event annotation,
+                                    Method method,
+                                    OEvent event,
+                                    Seq<String> keys,
+                                    EventAnnotationProcessor self)
+                                    throws Throwable {
+                                return keys.select(str -> str.contains(method.getName()));
+                            }
+                        };
 
         public static interface EventExecutor {
-            public Boolean execute(Event annotation, Method method, Object eve, EventAnnotatonProcessor self,
-                    String res);
+            public Boolean execute(String res, Method method, OEvent event, Object obj, EventAnnotationProcessor self);
         }
 
-        public static EventResolver idResolver = new EventResolver() {
-            public String resolve(Event event, Method method, EventAnnotatonProcessor self) {
-                if (!event.event().isEmpty()) {
-                    return event.event();
+        public static EventExecutor baseExectuor = new EventExecutor() {
+            public boolean invoke(Method method, Object[] objs) throws Throwable {
+                Object res = method.invoke(null, objs);
+                if (Boolean.class.isAssignableFrom(method.getReturnType())) {
+                    return (Boolean) (res);
                 }
-                return null;
+                return false;
             }
-        },
-                idEventResolver = new EventResolver() {
-                    public String resolve(Event event, Method method, EventAnnotatonProcessor self) {
-                        if (method.getParameterCount() != 0) {
-                            return null;
-                        }
-                        Seq<String> arr = Seq.with();
-                        for (String tar : self.events.events.keys()) {
-                            if (tar.indexOf(event.event()) != -1) {
-                                arr.add(tar);
-                            }
-                        }
-                        if (arr.size == 0) {
-                            return null;
-                        }
-                        if (arr.size != 1) {
-                            Seq<String> tmp = Seq.select(arr.toArray(), data -> {
-                                return data.indexOf(method.getName()) != -1;
-                            });
-                            arr = tmp;
-                        }
-                        if (arr.size == 1) {
-                            return arr.get(0);
-                        }
-                        return null;
+
+            public Boolean execute(String res, Method method, OEvent event, Object obj, EventAnnotationProcessor self) {
+                try {
+                    if (event.isEnumKey(res)) {
+                        return invoke(method, new Object[] {});
                     }
-                },
-                paramsResolver = new EventResolver() {
-                    public String resolve(Event event, Method method, EventAnnotatonProcessor self) {
-                        Seq<String> res = Seq.with();
-                        if (method.getParameterCount() == 0) {
-                            return null;
+                    if (event.isClassKey(res)) {
+                        if (method.getParameterCount() == 1
+                                && event.getClassFromKey(res) == method.getParameterTypes()[0].getName()) {
+                            return invoke(method, new Object[] {obj});
                         }
-                        for (String id : self.events.events.keys()) {
-                            if (!id.startsWith("class:")) {
-                                continue;
+                        Class<?> type = Class.forName(event.getClassFromKey(res));
+                        Field[] fields = type.getDeclaredFields();
+                        if (fields.length >= method.getParameterCount()) {
+                            boolean flag = true;
+                            Class<?>[] params = method.getParameterTypes();
+                            for (int i = 0; i < method.getParameterCount(); i++) {
+                                if (params[i] != fields[i].getType()) flag = false;
                             }
-                            try {
-                                Class<?>[] params = method.getParameterTypes();
-                                Class<?> clazz = Class.forName(id.substring(6));
-                                Field[] fields = clazz.getDeclaredFields();
-                                if (fields.length < method.getParameterCount()) {
-                                    continue;
-                                }
-                                boolean flag = false;
+                            if (flag) {
+                                Seq<Object> objs = Seq.with();
                                 for (int i = 0; i < method.getParameterCount(); i++) {
-                                    if (fields[i].getName() != params[i].getName()) {
-                                        flag = true;
-                                        break;
-                                    }
+                                    objs.add(fields[i].get(obj));
                                 }
-                                if (flag)
-                                    continue;
-                                res.add(id);
-                                if (!event.event().isEmpty()) {
-                                    if (res.size == 0) {
-                                        return null;
-                                    }
-                                    if (res.size != 1) {
-                                        Seq<String> tmp = Seq.select(res.toArray(), data -> {
-                                            return data.indexOf(event.event()) != -1;
-                                        });
-                                        res = tmp;
-                                    }
-                                }
-                                if (res.size == 0) {
-                                    return null;
-                                }
-                                if (res.size != 1) {
-                                    Seq<String> tmp = Seq.select(res.toArray(), data -> {
-                                        return data.indexOf(method.getName()) != -1;
-                                    });
-                                    res = tmp;
-                                }
-                            } catch (Throwable err) {
-                                Log.err("find class error @", err);
+                                return invoke(method, objs.toArray());
                             }
                         }
-                        return null;
                     }
-                },
-                classResolver = new EventResolver() {
-                    public String resolve(Event event, Method method, EventAnnotatonProcessor self) {
-                        if (method.getParameterCount() != 1) {
-                            return null;
-                        }
-                        String res = self.events.getClassName(method.getParameterTypes()[0]);
-                        return self.events.events.keys().toSeq().indexOf(res) != -1 ? res : null;
-                    }
-                };
-        public static EventExecutor enumExectuor = new EventExecutor() {
-            public Boolean execute(Event annotation, Method method, Object eve, EventAnnotatonProcessor self,
-                    String res) {
-                if (!res.startsWith("enum:") || method.getParameterCount() != 0) {
-                    return null;
-                }
-                Object obj = null;
-                try {
-                    obj = method.invoke(null);
+                    return false;
                 } catch (Throwable err) {
                     throw new RuntimeException(err);
                 }
-                if (Boolean.class.isAssignableFrom(method.getReturnType())) {
-                    return (Boolean) obj;
-                }
-                return false;
-            }
-        }, classExectuor = new EventExecutor() {
-            public Boolean execute(Event annotation, Method method, Object eve, EventAnnotatonProcessor self,
-                    String res) {
-                if (!res.startsWith("class:") || method.getParameterCount() != 1
-                        || res.indexOf(eve.getClass().getName()) == -1) {
-                    return null;
-                }
-                Object obj = null;
-                try {
-                    obj = method.invoke(eve);
-                } catch (Throwable err) {
-                    throw new RuntimeException(err);
-                }
-                if (Boolean.class.isAssignableFrom(method.getReturnType())) {
-                    return (Boolean) obj;
-                }
-                return false;
-            }
-        }, paramasExecutor = new EventExecutor() {
-            public Boolean execute(Event annotation, Method method, Object eve, EventAnnotatonProcessor self,
-                    String res) {
-                if (!res.startsWith("class:") || method.getParameterCount() == 0
-                        || eve.getClass().getDeclaredFields().length < method.getParameterCount()) {
-                    return null;
-                }
-                Object obj = null;
-                try {
-                    Seq<Object> objs = Seq.with();
-                    Field[] fields = eve.getClass().getDeclaredFields();
-                    for (int i = 0; i < method.getParameterCount(); i++) {
-                        objs.add(fields[i].get(eve));
-                    }
-                    obj = method.invoke(eve, objs.toArray());
-                } catch (Throwable err) {
-                    throw new RuntimeException(err);
-                }
-                if (Boolean.class.isAssignableFrom(method.getReturnType())) {
-                    return (Boolean) obj;
-                }
-                return false;
             }
         };
-        public Seq<EventResolver> resolvers;
-        public Seq<EventExecutor> executors;
-        public OEvents events;
-
-        public EventAnnotatonProcessor(OEvents events) {
-            super(Event.class, true);
-            resolvers = Seq.with();
-            executors = Seq.with();
-            this.events = events;
-            standardResolvers();
-        }
-
-        public void standardResolvers() {
-            resolvers.addAll(idResolver, paramsResolver, idEventResolver, classResolver);
-        }
-
-        public void standardExectuor() {
-            executors.addAll(enumExectuor, classExectuor, paramasExecutor);
-        }
+        public EventExecutor executor;
+        public Seq<EventFilter> filters;
 
         @Override
-        public void process(Event annotation, Method value) throws Throwable {
-            for (EventResolver processor : resolvers) {
-                String res = processor.resolve(annotation, value, this);
-                if (res == null || res.isEmpty())
-                    continue;
-                events.on(
-                        res,
-                        obj -> {
-                            for (EventExecutor executor : executors) {
-                                Boolean re = executor.execute(annotation, value, obj, this, res);
-                                if (re != null)
-                                    return re;
-                            }
-                            return false;
-                        },
-                        annotation.value());
-                return;
+        public void process(Event annotation, Method method) throws Throwable {
+            Seq<String> keys = event.getKeys();
+            for (EventFilter filter : filters) {
+                try {
+                    keys = filter.filter(annotation, method, event, keys, this);
+                    if (keys.size == 0) {
+                        throw new RuntimeException("no such event");
+                    }
+                    if (keys.size == 1) {
+                        String key = keys.get(0);
+                        event.on(
+                                key,
+                                obj -> {
+                                    if (executor != null) {
+                                        return executor.execute(key, method, event, obj, this);
+                                    }
+                                    return false;
+                                },
+                                annotation.value());
+                        return;
+                    }
+                } catch (Throwable err) {
+                    Log.err("error @", err);
+                }
             }
-            throw new RuntimeException("can not resolve event method");
+            throw new RuntimeException("no such event");
+        }
+
+        public void standardProcessors() {
+            filters = Seq.with(dirClassFilter, idFilter, paramsFilter, nameFilter);
+            executor = baseExectuor;
         }
     }
 
@@ -303,5 +281,11 @@ public class AnnotationProcessors {
 
     public static void setStandardProcessor(MLProcessor processor) {
         processor.annotationProcessors.putAll(standardProcessors);
+    }
+
+    public static void setEventProcessor(MLProcessor processor, OEvent event) {
+        EventAnnotationProcessor process = new EventAnnotationProcessor(event);
+        process.standardProcessors();
+        processor.annotationProcessors.put(Event.class, process);
     }
 }

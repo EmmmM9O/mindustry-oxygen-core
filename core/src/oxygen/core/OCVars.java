@@ -1,7 +1,6 @@
 /* (C) 2024 */
 package oxygen.core;
 
-import arc.util.*;
 import mindustry.mod.Mods.*;
 import oxygen.loader.*;
 import oxygen.utils.*;
@@ -13,10 +12,17 @@ public class OCVars {
     @ML.Instance(OCMain.name)
     public static LoadedMod mod;
 
-    public static EventBus bus = new EventBus();
+    @ML.Instance(OCMain.name)
+    public static OCMain instance;
+
+    @ML.Instance(OCMain.name)
+    public static ModMeta meta;
+
+    public static OPQEvent events = new OPQEvent();
+    public static EventBus bus = new EventBus(events);
 
     public static void preinit() {
-        bus.events.putEvents();
+        events.putEvents();
     }
 
     public static void init() {

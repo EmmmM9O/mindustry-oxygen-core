@@ -161,6 +161,7 @@ project(":annotations"){
     implementation "com.google.code.gson:gson:$gsonVersion"
     implementation "com.palantir.javapoet:javapoet:$javapoetVersion"
     implementation "com.google.auto.service:auto-service:1.0-rc6"
+    implementation "com.palantir.javaformat:palantir-java-format:2.50.0"
     annotationProcessor "com.google.auto.service:auto-service:1.0-rc6"
   }
 }

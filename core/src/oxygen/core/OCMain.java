@@ -10,7 +10,7 @@ import oxygen.annotations.*;
 /**
  * OCMain
  */
-@ModMeta(
+@ModMetaG(
         name = OCMain.name,
         minGameVersion = "146",
         author = OCMain.author,

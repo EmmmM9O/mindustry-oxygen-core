@@ -2,6 +2,7 @@
 package oxygen.annotations;
 
 import static oxygen.annotations.GenType.*;
+import static oxygen.annotations.Utils.*;
 
 import com.google.auto.service.*;
 import com.palantir.javaformat.java.*;
@@ -22,12 +23,6 @@ import javax.tools.*;
 @SupportedAnnotationTypes("oxygen.annotations.AutoGen")
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
 public class AutoGenerator extends AbstractProcessor {
-    public boolean isTypeElement(Element element) {
-        return element.getKind() == ElementKind.CLASS
-                || element.getKind() == ElementKind.INTERFACE
-                || element.getKind() == ElementKind.ANNOTATION_TYPE
-                || element.getKind() == ElementKind.ENUM;
-    }
 
     public static JavaFormatterOptions option = JavaFormatterOptions.builder()
             .style(JavaFormatterOptions.Style.PALANTIR)
@@ -42,6 +37,7 @@ public class AutoGenerator extends AbstractProcessor {
                 .printMessage(Diagnostic.Kind.NOTE, "Auto Generate with " + annotatedElements.toString());
         for (Element element : annotatedElements) {
             AutoGen annotation = element.getAnnotation(AutoGen.class);
+            toMark.clear();
             if (isTypeElement(element)) {
                 TypeElement typeElement = ((TypeElement) element);
                 if (!isOuterClass(typeElement))
@@ -97,11 +93,6 @@ public class AutoGenerator extends AbstractProcessor {
         return false;
     }
 
-    public boolean isOuterClass(TypeElement typeElement) {
-        return typeElement.getEnclosingElement() == null
-                || typeElement.getEnclosingElement().getKind() == ElementKind.PACKAGE;
-    }
-
     public static String[] suffixs = new String[] {"Comp", "Meta", "Gen"};
 
     public String getMetaName(TypeElement element, AutoGen annotation) {
@@ -119,9 +110,26 @@ public class AutoGenerator extends AbstractProcessor {
                     "Generate by AutoGenerator \nfrom $N \nwith $N",
                     element.getQualifiedName().toString(),
                     annotation.toString());
+            if(!annotation.withB()){
+                MethodSpec.Builder mb=MethodSpec.methodBuilder("mark")
+                    .returns(void.class)
+                    .addModifiers(Modifier.STATIC,Modifier.PUBLIC) 
+                    .addParameter(getEventType(annotation),"event");
+                for(TypeElement nmark:toMark){
+                    mb.addStatement("event.mark");
+                }
+            builder.addMethod(mb.build());}
         });
     }
 
+    public Set<TypeElement> toMark = new HashSet<>();
+    public TypeName getEventType(AutoGen annotation){
+       String str=annotation.with();
+       if(str.isEmpty()||!str.contains(":")) 
+           return ClassName.get("oxygen.utils","OEvent");
+       String[] list=str.split(":");
+       return ClassName.get(list[0],list[1]);
+    }
     public TypeSpec genEventTypeN(
             TypeElement element,
             RoundEnvironment roundEnv,
@@ -130,7 +138,10 @@ public class AutoGenerator extends AbstractProcessor {
             Cons<TypeSpec.Builder> cons) {
         TypeSpec.Builder builder = null;
         if (element.getKind() == ElementKind.CLASS) builder = TypeSpec.classBuilder(metaName);
-        if (element.getKind() == ElementKind.ENUM) builder = TypeSpec.enumBuilder(metaName);
+        if (element.getKind() == ElementKind.ENUM) {
+            builder = TypeSpec.enumBuilder(metaName);
+            toMark.add(element);
+        }
         if (element.getKind() == ElementKind.INTERFACE) {
             processingEnv
                     .getMessager()
@@ -175,7 +186,8 @@ public class AutoGenerator extends AbstractProcessor {
                             TypeName.get(fieldElement.asType()),
                             fieldElement.getSimpleName().toString());
                     constructorBuilder.addStatement(
-                            "this.$1N = $1N", fieldElement.getSimpleName().toString());
+                            "this.$1N=$1N", fieldElement.getSimpleName().toString());
+                    toMark.add(element);
                     // formatter will resolve it  LoL
                 }
             }

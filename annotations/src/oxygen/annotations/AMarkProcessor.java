@@ -1,6 +1,8 @@
 /* (C) 2024 */
 package oxygen.annotations;
 
+import static oxygen.annotations.Utils.*;
+
 import com.google.auto.service.*;
 import com.google.gson.*;
 import java.io.*;
@@ -85,10 +87,7 @@ public class AMarkProcessor extends AbstractProcessor {
 
                 Set<Object> set = new HashSet<Object>();
                 for (Element annotatedElement : roundEnv.getElementsAnnotatedWith(element)) {
-                    if (annotatedElement.getKind() == ElementKind.CLASS
-                            || annotatedElement.getKind() == ElementKind.INTERFACE
-                            || annotatedElement.getKind() == ElementKind.ANNOTATION_TYPE
-                            || annotatedElement.getKind() == ElementKind.ENUM) {
+                    if (isTypeElement(annotatedElement)) {
                         set.add(new TypeObj(
                                 getClassPath((TypeElement) annotatedElement),
                                 annotatedElement.getKind().toString()));

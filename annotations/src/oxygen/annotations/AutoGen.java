@@ -14,4 +14,10 @@ public @interface AutoGen {
     String path() default "";
 
     String className() default "";
+    String with() default "";
+    /*
+     * For EventTypeG true to unmark
+     * */
+    boolean withB() default false;
+    
 }

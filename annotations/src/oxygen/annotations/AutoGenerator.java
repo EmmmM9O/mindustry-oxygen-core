@@ -110,26 +110,28 @@ public class AutoGenerator extends AbstractProcessor {
                     "Generate by AutoGenerator \nfrom $N \nwith $N",
                     element.getQualifiedName().toString(),
                     annotation.toString());
+            /*
             if(!annotation.withB()){
                 MethodSpec.Builder mb=MethodSpec.methodBuilder("mark")
                     .returns(void.class)
-                    .addModifiers(Modifier.STATIC,Modifier.PUBLIC) 
+                    .addModifiers(Modifier.STATIC,Modifier.PUBLIC)
                     .addParameter(getEventType(annotation),"event");
                 for(TypeElement nmark:toMark){
                     mb.addStatement("event.mark");
                 }
-            builder.addMethod(mb.build());}
+            builder.addMethod(mb.build());}*/
         });
     }
 
     public Set<TypeElement> toMark = new HashSet<>();
-    public TypeName getEventType(AutoGen annotation){
-       String str=annotation.with();
-       if(str.isEmpty()||!str.contains(":")) 
-           return ClassName.get("oxygen.utils","OEvent");
-       String[] list=str.split(":");
-       return ClassName.get(list[0],list[1]);
+
+    public TypeName getEventType(AutoGen annotation) {
+        String str = annotation.with();
+        if (str.isEmpty() || !str.contains(":")) return ClassName.get("oxygen.utils", "OEvent");
+        String[] list = str.split(":");
+        return ClassName.get(list[0], list[1]);
     }
+
     public TypeSpec genEventTypeN(
             TypeElement element,
             RoundEnvironment roundEnv,

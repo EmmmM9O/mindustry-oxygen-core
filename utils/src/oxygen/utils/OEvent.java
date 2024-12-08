@@ -66,6 +66,19 @@ public interface OEvent {
         fire(getClassKey(type), obj);
     }
 
+    public default void markAll(Class<?> clazz) {
+        if (clazz.isEnum()) {
+            for (Object obj : clazz.getEnumConstants()) {
+                markEnum(obj);
+            }
+        } else if (clazz.getDeclaredFields().length != 0) {
+            mark(clazz);
+        }
+        for (Class<?> subclass : clazz.getDeclaredClasses()) {
+            markAll(subclass);
+        }
+    }
+
     public default void putEvents() {
         for (Class<?> subclass : EventType.class.getDeclaredClasses()) {
             if (subclass.isEnum()) {

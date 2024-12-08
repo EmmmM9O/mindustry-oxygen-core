@@ -24,4 +24,9 @@ public @interface ML {
     public @interface Instance {
         String value();
     }
+
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(ElementType.TYPE)
+    @AMark
+    public @interface EventType {}
 }

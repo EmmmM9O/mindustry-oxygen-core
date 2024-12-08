@@ -4,10 +4,8 @@ package oxygen.annotations;
 import java.lang.annotation.*;
 
 /**
- * AMark
+ * NoCopy
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.ANNOTATION_TYPE)
-public @interface AMark {
-    boolean needStatic() default true;
-}
+public @interface NoCopy {}

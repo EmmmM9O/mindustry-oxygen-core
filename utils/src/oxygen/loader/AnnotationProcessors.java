@@ -9,6 +9,7 @@ import mindustry.*;
 import mindustry.mod.*;
 import mindustry.mod.Mods.*;
 import oxygen.loader.ML.*;
+import oxygen.loader.MLProcessor.*;
 import oxygen.utils.*;
 
 /**
@@ -70,6 +71,49 @@ public class AnnotationProcessors {
                 return;
             }
             throw new RuntimeException(" must be FIELD");
+        }
+    }
+
+    public static class ClassAnnotationProcessor<T extends Annotation> implements RuntimeAnnotationProcessor {
+        public Class<T> annotationClass;
+        public boolean isStatic;
+
+        public ClassAnnotationProcessor(Class<T> aClass, boolean isStatic) {
+            this.annotationClass = aClass;
+            this.isStatic = isStatic;
+        }
+
+        public void process(T annotation, Class<?> value) throws Throwable {}
+
+        @Override
+        public void process(Object obj) throws Throwable {
+            if (obj instanceof Class<?> clazz) {
+                T annotation = clazz.getAnnotation(annotationClass);
+
+                if (annotation == null) {
+                    throw new RuntimeException(" marks.json mark " + clazz.getName() + " but it has not");
+                }
+                if (isStatic && !Modifier.isStatic(clazz.getModifiers())) {
+                    throw new RuntimeException("must be static");
+                }
+                process(annotation, clazz);
+                return;
+            }
+            throw new RuntimeException(" must be class");
+        }
+    }
+
+    public static class EventTypeAnnotationProcessor extends ClassAnnotationProcessor<EventType> {
+        public OEvent event;
+
+        public EventTypeAnnotationProcessor(OEvent event) {
+            super(EventType.class, true);
+            this.event = event;
+        }
+
+        @Override
+        public void process(EventType annotation, Class<?> value) throws Throwable {
+            event.markAll(value);
         }
     }
 
@@ -273,10 +317,10 @@ public class AnnotationProcessors {
     }
 
     public static InstanceAnnotationProcessor instanceProcessor = new InstanceAnnotationProcessor();
-    public static ObjectMap<Class<?>, RuntimeAnnotationProcessor> standardProcessors = new ObjectMap<>();
+    public static ObjectMap<Key, RuntimeAnnotationProcessor> standardProcessors = new ObjectMap<>();
 
     {
-        standardProcessors.put(Instance.class, instanceProcessor);
+        standardProcessors.put(new Key(Instance.class, 1), instanceProcessor);
     }
 
     public static void setStandardProcessor(MLProcessor processor) {
@@ -286,6 +330,7 @@ public class AnnotationProcessors {
     public static void setEventProcessor(MLProcessor processor, OEvent event) {
         EventAnnotationProcessor process = new EventAnnotationProcessor(event);
         process.standardProcessors();
-        processor.annotationProcessors.put(Event.class, process);
+        processor.annotationProcessors.put(new Key(Event.class, 10000), process);
+        processor.annotationProcessors.put(new Key(EventType.class, 1), new EventTypeAnnotationProcessor(event));
     }
 }

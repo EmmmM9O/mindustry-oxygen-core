@@ -70,14 +70,6 @@ public class AMarkProcessor extends AbstractProcessor {
         }
     }
 
-    public String getClassPath(TypeElement typeElement) {
-        if (typeElement.getNestingKind().isNested()) {
-            return getClassPath((TypeElement) (typeElement.getEnclosingElement())) + "$"
-                    + typeElement.getSimpleName().toString();
-        }
-        return typeElement.getQualifiedName().toString();
-    }
-
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         for (TypeElement element : annotations) {
@@ -93,11 +85,31 @@ public class AMarkProcessor extends AbstractProcessor {
                                 annotatedElement.getKind().toString()));
                     } else if (annotatedElement.getKind() == ElementKind.FIELD
                             || annotatedElement.getKind() == ElementKind.ENUM_CONSTANT) {
+                        if (annotatedElement.getKind() == ElementKind.FIELD
+                                && !element.getModifiers().contains(Modifier.STATIC)
+                                && mark.needStatic()) {
+                            processingEnv
+                                    .getMessager()
+                                    .printMessage(
+                                            Diagnostic.Kind.ERROR,
+                                            "FIELD must be static "
+                                                    + element.toString() + " for "
+                                                    + annotatedElement.toString());
+                        }
                         set.add(new FieldObj(
                                 annotatedElement.getSimpleName().toString(),
                                 getClassPath((TypeElement) annotatedElement.getEnclosingElement()),
                                 annotatedElement.getKind().toString()));
                     } else if (annotatedElement.getKind() == ElementKind.METHOD) {
+                        if (!element.getModifiers().contains(Modifier.STATIC) && mark.needStatic()) {
+                            processingEnv
+                                    .getMessager()
+                                    .printMessage(
+                                            Diagnostic.Kind.ERROR,
+                                            "METHOD must be static "
+                                                    + element.toString() + " for "
+                                                    + annotatedElement.toString());
+                        }
                         List<? extends VariableElement> paramsV =
                                 ((ExecutableElement) annotatedElement).getParameters();
                         List<String> params = new ArrayList<>();

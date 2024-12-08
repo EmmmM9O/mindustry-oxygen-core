@@ -9,16 +9,12 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.TYPE)
 @NoCopy
-public @interface AutoGen {
-    GenType value();
+public @interface AutoComponent {
+    ComponentType[] value();
 
     String path() default "";
 
     String className() default "";
 
-    String withS() default "";
-    /*
-     * For EventTypeG true to unmark
-     * */
-    boolean withB() default false;
+    String configure() default "{}";
 }

@@ -2,7 +2,6 @@
 package oxygen.annotations;
 
 import com.google.auto.service.*;
-import com.google.gson.*;
 import java.io.*;
 import java.util.*;
 import javax.annotation.processing.*;
@@ -17,7 +16,6 @@ import javax.tools.*;
 @SupportedAnnotationTypes("oxygen.annotations.ModMetaG")
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
 public class ModMetaGenerator extends AbstractProcessor {
-    private Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
@@ -32,7 +30,7 @@ public class ModMetaGenerator extends AbstractProcessor {
                 try {
                     FileObject file =
                             processingEnv.getFiler().createResource(StandardLocation.CLASS_OUTPUT, "", "mod.json");
-                    String con = gson.toJson(obj);
+                    String con = Utils.gson.toJson(obj);
                     processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "generate mod.json : " + con);
                     BufferedWriter bufferedWriter = new BufferedWriter(file.openWriter());
                     bufferedWriter.write(con);

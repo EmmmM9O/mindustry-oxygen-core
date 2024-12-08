@@ -1,20 +1,18 @@
 /* (C) 2024 */
-package oxygen.utils;
+package oxygen.comp;
 
 import static oxygen.annotations.GenType.*;
 
 import oxygen.annotations.*;
+import oxygen.loader.*;
 
 /**
  * OEventTypeComp
  */
-@AutoGen(EventTypeG)
+@AutoGen(value = EventTypeG, path = "oxygen.game")
+@ML.EventType
 public class OEventTypeComp {
     public enum OTrigger {
         init,
-    }
-
-    public static class test {
-        String str;
     }
 }

@@ -4,6 +4,9 @@ package oxygen.annotations;
 import static oxygen.annotations.ComponentType.*;
 import static oxygen.annotations.Utils.*;
 
+import com.github.javaparser.*;
+import com.github.javaparser.ast.*;
+import com.github.javaparser.ast.body.*;
 import com.google.auto.service.*;
 import com.google.gson.reflect.*;
 import java.io.*;
@@ -14,8 +17,7 @@ import javax.annotation.processing.Processor;
 import javax.lang.model.*;
 import javax.lang.model.element.*;
 import javax.tools.*;
-import com.github.javaparser.*;
-import com.github.javaparser.ast.*;
+
 /*
  * AutoComponentGenerator
  */
@@ -24,6 +26,28 @@ import com.github.javaparser.ast.*;
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
 public class AutoComponentGenerator extends AbstractProcessor {
     Map<String, Object> configure;
+
+    public boolean context(String context, AutoComponent annotation, TypeElement element) throws Throwable{
+        CompilationUnit compilationUnit = StaticJavaParser.parse(context);
+        String origin=processingEnv.getElementUtils().getPackageOf(element).toString();
+        String packageName = getMetaPath(
+                origin , annotation.path());
+        String metaName=
+                getMetaName(element, annotation.className());
+        compilationUnit.setPackageDeclaration(new PackageDeclaration().setName(packageName));
+        compilationUnit.addImport(origin,false,true);
+        ClassOrInterfaceDeclaration classDecl = compilationUnit.getClassByName(element.getSimpleName().toString()).orElseThrow(NoSuchElementException::new);
+        classDecl.setName(metaName);
+        for (ComponentType type : annotation.value()) {}
+        writeTo(
+                compilationUnit.toString(),
+                metaName,
+                packageName,
+                element,
+                null,
+                processingEnv);
+        return true;
+    }
 
     @Override
     public boolean process(Set<? extends TypeElement> sets, RoundEnvironment roundEnv) {
@@ -53,7 +77,7 @@ public class AutoComponentGenerator extends AbstractProcessor {
                         while ((line = reader.readLine()) != null) {
                             fileContent.append(line).append("\n");
                         }
-                        for (ComponentType type : annotation.value()) {}
+                        if (context(fileContent.toString(), annotation, typeElement)) return false;
                     }
                 } catch (Throwable err) {
                     processingEnv

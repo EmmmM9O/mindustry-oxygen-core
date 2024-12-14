@@ -1,7 +1,8 @@
 /* (C) 2024 */
-package oxygen.annotations;
+package oxygen.annotations.generator;
 
 import java.lang.annotation.*;
+import oxygen.annotations.mark.*;
 
 /**
  * RecordGen
@@ -17,8 +18,9 @@ public @interface AutoGen {
     String className() default "";
 
     String withS() default "";
+
     /*
      * For EventTypeG true to unmark
-     * */
+     */
     boolean withB() default false;
 }

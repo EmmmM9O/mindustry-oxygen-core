@@ -1,9 +1,9 @@
 /* (C) 2024 */
 package oxygen.comp;
 
-import static oxygen.annotations.GenType.*;
+import static oxygen.annotations.generator.GenType.*;
 
-import oxygen.annotations.*;
+import oxygen.annotations.generator.*;
 import oxygen.loader.*;
 
 /**

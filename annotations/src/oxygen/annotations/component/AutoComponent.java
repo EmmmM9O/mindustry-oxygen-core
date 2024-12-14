@@ -1,7 +1,8 @@
 /* (C) 2024 */
-package oxygen.annotations;
+package oxygen.annotations.component;
 
 import java.lang.annotation.*;
+import oxygen.annotations.mark.*;
 
 /**
  * RecordGen

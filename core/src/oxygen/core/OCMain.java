@@ -5,7 +5,7 @@ import arc.*;
 import arc.util.*;
 import mindustry.game.*;
 import mindustry.mod.*;
-import oxygen.annotations.*;
+import oxygen.annotations.generator.*;
 
 /**
  * OCMain

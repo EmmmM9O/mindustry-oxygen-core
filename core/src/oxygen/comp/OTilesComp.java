@@ -1,12 +1,21 @@
+/* (C) 2024 */
 package oxygen.comp;
 
-import oxygen.annotations.*;
-import static oxygen.annotations.ComponentType.*;
+import static oxygen.annotations.component.ComponentType.*;
+
+import mindustry.world.*;
+import oxygen.annotations.component.*;
+
 /**
  * OTilesComp
  */
-@AutoComponent(value={Abstract},path="oxygen.world")
-public class OTilesComp {
+@AutoComponent(
+        value = {Abstract},
+        path = "oxygen.world",
+        configure = "resource:compConfigure.json:OTilesComp")
+public abstract class OTilesComp extends Tiles {
 
-  
+    public OTilesComp() {
+        super(0, 0);
+    }
 }

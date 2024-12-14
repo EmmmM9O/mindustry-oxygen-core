@@ -5,12 +5,10 @@ import com.google.gson.*;
 import com.palantir.javaformat.java.*;
 import com.palantir.javaformat.java.Formatter;
 import com.palantir.javapoet.*;
-import java.io.*;
 import java.lang.annotation.*;
 import java.util.*;
-import javax.annotation.processing.*;
 import javax.lang.model.element.*;
-import javax.tools.*;
+import oxygen.annotations.mark.*;
 
 /**
  * Utils
@@ -221,68 +219,7 @@ public class Utils {
         return formatter.formatSource(str);
     }
 
-    public static void writeTo(TypeSpec spec, String path, TypeElement element, ProcessingEnvironment processingEnv) {
-
-        String packageName = getMetaPath(
-                processingEnv.getElementUtils().getPackageOf(element).toString(), path);
-        writeTo(
-                JavaFile.builder(packageName, spec).build().toString(),
-                spec.name(),
-                path,
-                element,
-                spec.originatingElements(),
-                processingEnv);
-    }
-
-    public static void writeTo(
-            String context,
-            String name,
-            String path,
-            TypeElement element,
-            List<Element> originatingElements,
-            ProcessingEnvironment processingEnv) {
-        if (!isOuterClass(element))
-            processingEnv
-                    .getMessager()
-                    .printMessage(Diagnostic.Kind.ERROR, "TypeElement must be outer " + element.toString());
-        String packageName = getMetaPath(
-                processingEnv.getElementUtils().getPackageOf(element).toString(), path);
-        try {
-            String formatted = format(context);
-            String fileName = packageName.isEmpty() ? name : packageName + "." + name;
-            Filer filer = processingEnv.getFiler();
-            JavaFileObject filerSourceFile = null;
-            if (originatingElements != null)
-                filerSourceFile = filer.createSourceFile(
-                        fileName, originatingElements.toArray(new Element[originatingElements.size()]));
-            else filerSourceFile = filer.createSourceFile(fileName);
-            try (Writer writer = filerSourceFile.openWriter()) {
-                writer.write(formatted);
-            } catch (Exception e) {
-                try {
-                    filerSourceFile.delete();
-                } catch (Exception ignored) {
-                }
-                throw e;
-            }
-
-        } catch (Throwable e) {
-            processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, "Error generating file: " + e.getMessage());
-        }
-    }
-
     public static String formatJson(String json) {
         return gson.toJson(gson.fromJson(json, Object.class));
-    }
-
-    public static FileObject fromSource(TypeElement element, ProcessingEnvironment processingEnv) throws IOException {
-        String className = element.getSimpleName().toString();
-        String packageName = processingEnv
-                .getElementUtils()
-                .getPackageOf(element)
-                .getQualifiedName()
-                .toString();
-        String fileName = packageName.replace('.', '/') + "/" + className + ".java";
-        return processingEnv.getFiler().getResource(StandardLocation.SOURCE_PATH, "", fileName);
     }
 }

@@ -1,5 +1,5 @@
 /* (C) 2024 */
-package oxygen.annotations;
+package oxygen.annotations.generator;
 
 /**
  * ModMetaObj

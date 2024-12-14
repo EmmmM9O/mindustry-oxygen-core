@@ -1,8 +1,9 @@
 /* (C) 2024 */
-package oxygen.annotations;
+package oxygen.annotations.mark;
 
 import static oxygen.annotations.Utils.*;
 
+import arc.util.*;
 import com.google.auto.service.*;
 import com.google.gson.*;
 import java.io.*;
@@ -11,6 +12,7 @@ import javax.annotation.processing.*;
 import javax.lang.model.*;
 import javax.lang.model.element.*;
 import javax.tools.*;
+import oxygen.annotations.*;
 
 /**
  * AnnotationsProcessor
@@ -18,7 +20,7 @@ import javax.tools.*;
 @AutoService(Processor.class)
 @SupportedAnnotationTypes("*")
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
-public class AMarkProcessor extends AbstractProcessor {
+public class AMarkProcessor extends BaseProcessor {
     public Map<String, Set<Object>> classMap = new HashMap<>();
     private Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
@@ -71,7 +73,7 @@ public class AMarkProcessor extends AbstractProcessor {
     }
 
     @Override
-    public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+    public boolean processR(RoundEnvironment roundEnv, Set<? extends TypeElement> annotations) throws Exception {
         for (TypeElement element : annotations) {
             AMark mark = element.getAnnotation(AMark.class);
 
@@ -88,13 +90,9 @@ public class AMarkProcessor extends AbstractProcessor {
                         if (annotatedElement.getKind() == ElementKind.FIELD
                                 && !element.getModifiers().contains(Modifier.STATIC)
                                 && mark.needStatic()) {
-                            processingEnv
-                                    .getMessager()
-                                    .printMessage(
-                                            Diagnostic.Kind.ERROR,
-                                            "FIELD must be static "
-                                                    + element.toString() + " for "
-                                                    + annotatedElement.toString());
+                            throw new ArcRuntimeException("FIELD must be static "
+                                    + element.toString() + " for "
+                                    + annotatedElement.toString());
                         }
                         set.add(new FieldObj(
                                 annotatedElement.getSimpleName().toString(),
@@ -102,13 +100,10 @@ public class AMarkProcessor extends AbstractProcessor {
                                 annotatedElement.getKind().toString()));
                     } else if (annotatedElement.getKind() == ElementKind.METHOD) {
                         if (!element.getModifiers().contains(Modifier.STATIC) && mark.needStatic()) {
-                            processingEnv
-                                    .getMessager()
-                                    .printMessage(
-                                            Diagnostic.Kind.ERROR,
-                                            "METHOD must be static "
-                                                    + element.toString() + " for "
-                                                    + annotatedElement.toString());
+
+                            throw new ArcRuntimeException("METHOD must be static "
+                                    + element.toString() + " for "
+                                    + annotatedElement.toString());
                         }
                         List<? extends VariableElement> paramsV =
                                 ((ExecutableElement) annotatedElement).getParameters();
@@ -133,39 +128,22 @@ public class AMarkProcessor extends AbstractProcessor {
                                 getClassPath((TypeElement) annotatedElement.getEnclosingElement()),
                                 annotatedElement.getKind().toString()));
                     } else {
-                        processingEnv
-                                .getMessager()
-                                .printMessage(
-                                        Diagnostic.Kind.ERROR,
-                                        "@AMark unsupport pass Element Kind:"
-                                                + annotatedElement.getKind().toString() + " for "
-                                                + annotatedElement.toString());
+                        throw new ArcRuntimeException("@AMark unsupport pass Element Kind:"
+                                + annotatedElement.getKind().toString() + " for "
+                                + annotatedElement.toString());
                     }
                 }
                 classMap.put(getClassPath(element), set);
             }
         }
         if (roundEnv.processingOver()) {
-            try {
-                FileObject file =
-                        processingEnv.getFiler().createResource(StandardLocation.CLASS_OUTPUT, "", "marks.json");
-                String con = gson.toJson(classMap);
-                processingEnv
-                        .getMessager()
-                        .printMessage(
-                                Diagnostic.Kind.NOTE,
-                                "generate mark.json with :" + classMap.keySet().toString());
-                BufferedWriter bufferedWriter = new BufferedWriter(file.openWriter());
-                bufferedWriter.write(con);
-                bufferedWriter.close();
+            FileObject file = filer.createResource(StandardLocation.CLASS_OUTPUT, "", "marks.json");
+            String con = gson.toJson(classMap);
 
-            } catch (IOException error) {
-                processingEnv
-                        .getMessager()
-                        .printMessage(
-                                Diagnostic.Kind.ERROR,
-                                "error while generate marks.json from @AMark :" + error.toString());
-            }
+            info("generate mark.json with :" + classMap.keySet().toString());
+            BufferedWriter bufferedWriter = new BufferedWriter(file.openWriter());
+            bufferedWriter.write(con);
+            bufferedWriter.close();
         }
         return false;
     }

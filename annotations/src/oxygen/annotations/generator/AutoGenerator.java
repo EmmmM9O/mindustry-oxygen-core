@@ -1,54 +1,45 @@
 /* (C) 2024 */
-package oxygen.annotations;
+package oxygen.annotations.generator;
 
-import static oxygen.annotations.GenType.*;
 import static oxygen.annotations.Utils.*;
+import static oxygen.annotations.generator.GenType.*;
 
+import arc.util.*;
 import com.google.auto.service.*;
 import com.palantir.javapoet.*;
 import com.palantir.javapoet.TypeSpec.*;
 import java.util.*;
 import javax.annotation.processing.*;
-import javax.lang.model.*;
 import javax.lang.model.element.*;
-import javax.tools.*;
+import oxygen.annotations.*;
 import oxygen.annotations.Utils.BuilderVisitor;
 
 /**
  * RecordGenerator
  */
 @AutoService(Processor.class)
-@SupportedAnnotationTypes("oxygen.annotations.AutoGen")
-@SupportedSourceVersion(SourceVersion.RELEASE_8)
-public class AutoGenerator extends AbstractProcessor {
+@SupportedAnnotationTypes("oxygen.annotations.generator.AutoGen")
+public class AutoGenerator extends BaseProcessor {
 
     @Override
-    public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+    public boolean process(RoundEnvironment roundEnv) throws Exception {
         Set<? extends Element> annotatedElements = roundEnv.getElementsAnnotatedWith(AutoGen.class);
-        processingEnv
-                .getMessager()
-                .printMessage(Diagnostic.Kind.NOTE, "Auto Generate with " + annotatedElements.toString());
+        info("Auto Generate with " + annotatedElements.toString());
         for (Element element : annotatedElements) {
             AutoGen annotation = element.getAnnotation(AutoGen.class);
             if (isTypeElement(element)) {
                 TypeElement typeElement = ((TypeElement) element);
                 if (!isOuterClass(typeElement))
-                    processingEnv
-                            .getMessager()
-                            .printMessage(
-                                    Diagnostic.Kind.ERROR,
-                                    "TypeElement must be outer " + annotation.toString() + " " + element.toString());
+                    throw new ArcRuntimeException(
+                            "TypeElement must be outer " + annotation.toString() + " " + element.toString());
                 TypeSpec res = null;
                 if (annotation.value() == EventTypeG) res = genEventType(typeElement, roundEnv, annotation);
                 if (res != null) {
-                    writeTo(res, annotation.path(), typeElement, processingEnv);
+                    writeTo(res, annotation.path(), typeElement);
                     return false;
                 }
-                processingEnv
-                        .getMessager()
-                        .printMessage(
-                                Diagnostic.Kind.ERROR,
-                                "TypeElement not resolve with " + annotation.toString() + " " + element.toString());
+                throw new ArcRuntimeException(
+                        "TypeElement not resolve with " + annotation.toString() + " " + element.toString());
             }
         }
         return false;
@@ -77,7 +68,7 @@ public class AutoGenerator extends AbstractProcessor {
                                     constructorBuilder.addStatement(
                                             "this.$1N=$1N",
                                             fieldElement.getSimpleName().toString());
-                                    // formatter will resolve it  LoL
+                                    // formatter will resolve it LoL
                                 }
                             }
                             if (flag) {

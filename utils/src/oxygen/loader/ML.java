@@ -2,7 +2,7 @@
 package oxygen.loader;
 
 import java.lang.annotation.*;
-import oxygen.annotations.*;
+import oxygen.annotations.mark.*;
 import oxygen.utils.*;
 
 /**

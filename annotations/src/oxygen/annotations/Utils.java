@@ -1,6 +1,10 @@
 /* (C) 2024 */
 package oxygen.annotations;
 
+import arc.func.Cons2;
+import com.github.javaparser.ast.body.*;
+import com.github.javaparser.ast.expr.*;
+import com.github.javaparser.ast.nodeTypes.*;
 import com.google.gson.*;
 import com.palantir.javaformat.java.*;
 import com.palantir.javaformat.java.Formatter;
@@ -220,6 +224,26 @@ public class Utils {
     }
 
     public static String formatJson(String json) {
-        return gson.toJson(gson.fromJson(json, Object.class));
+        return gson.toJson(gson.toJsonTree(json));
+    }
+
+    public static void forEachAnnotations(
+            Element element, NodeWithAnnotations<?> classDecl, Cons2<AnnotationMirror, AnnotationExpr> func) {
+        for (AnnotationMirror mirror : element.getAnnotationMirrors()) {
+            func.get(
+                    mirror,
+                    classDecl
+                            .getAnnotationByName(
+                                    mirror.getAnnotationType().asElement().toString())
+                            .orElseThrow(NoSuchElementException::new));
+        }
+    }
+
+    public static void removeAnnotations(Element element, NodeWithAnnotations<?> classDecl) {
+        forEachAnnotations(element, classDecl, (mirror, expr) -> {
+            if (mirror.getAnnotationType().asElement().getAnnotation(NoCopy.class) != null) {
+                expr.remove();
+            }
+        });
     }
 }

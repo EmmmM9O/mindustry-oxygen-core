@@ -8,6 +8,7 @@ import arc.func.*;
 import arc.struct.*;
 import arc.util.*;
 import arc.util.Log.*;
+import arc.util.serialization.*;
 import com.google.gson.reflect.*;
 import com.palantir.javapoet.*;
 import java.io.*;
@@ -142,17 +143,22 @@ public class BaseProcessor extends AbstractProcessor {
     }
 
     public Fi find(String path, Func<Fi, Boolean> func) {
-        Seq<Fi> list =
-                rootDirectory.findAll(fi -> func.get(fi) && fi.absolutePath().contains(path));
-        if (list.size != 1) {
+        Seq<Fi> list = rootDirectory.findAll(fi -> func.get(fi)
+                && fi.absolutePath().contains(path)
+                && !fi.absolutePath().contains(rootDirectory.child("build").absolutePath())
+                && !fi.absolutePath().contains(rootDirectory.child("bin").absolutePath()));
+        if (list.size == 1) {
             return list.get(0);
         }
         throw new ArcRuntimeException("can not find source file " + path + " from " + list.toString());
     }
 
     public Fi fromSource(String packageName, String className) {
-        String path = packageName.replace(".", "/");
-        return find(path, fi -> fi.nameWithoutExtension().equals(className));
+        String path = packageName.replace(".", "/") + "/" + className;
+        return find(
+                path,
+                fi -> fi.nameWithoutExtension().equals(className)
+                        && fi.extension().equals("java"));
     }
 
     public Fi fromSource(TypeElement element) {
@@ -168,15 +174,20 @@ public class BaseProcessor extends AbstractProcessor {
             String s = str.substring(resourcePrefix.length());
             String[] spi = s.split(":");
             if (spi.length == 1) {
-                return find(spi[1], fi -> true).readString();
+                return find(spi[0], fi -> true).readString();
             }
-            if (spi.length == 2 && spi[1].endsWith("json")) {
+            if (spi.length == 2 && spi[0].endsWith("json")) {
+                /*
                 return gson.toJson(((Map<String, Object>) gson.fromJson(
-                                find(spi[1], fi -> true).readString(),
+                                find(spi[0], fi -> true).readString(),
                                 new TypeToken<Map<String, Object>>() {}.getType()))
-                        .get(spi[2]));
+                        .get(spi[1]));
+                        */
+                return Jval.read(find(spi[0], fi -> true).readString())
+                        .get(spi[1])
+                        .toString();
             }
-            throw new ArcRuntimeException("unknown path " + str);
+            throw new ArcRuntimeException("unknown path " + str + " with " + spi.toString());
         }
         return str;
     }

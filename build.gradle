@@ -104,14 +104,7 @@ allprojects {
        */
       def dependencies = (configurations.compileClasspath.asList() + configurations.runtimeClasspath.asList()).collect{ "--classpath $it.path" }.join(" ")
 
-      def d8 = isWindows ? "d8.bat" : "d8"
-      /*
-       exec{
-       commandLine "d8","$dependencies","--min-api","14","--output","${project.archivesBaseName}Android.jar","${project.archivesBaseName}Desktop.jar"
-       errorOutput = System.err 
-       standardOutput = System.out 
-       workingDir = new File("$buildDir/libs")
-       }*/
+
       //dex and desugar files - this requires d8 in your PATH
       "d8 $dependencies --min-api 14 --output ${project.archivesBaseName}Android.jar ${project.archivesBaseName}Desktop.jar"
           .execute(null, new File("$buildDir/libs")).waitForProcessOutput(System.out, System.err)

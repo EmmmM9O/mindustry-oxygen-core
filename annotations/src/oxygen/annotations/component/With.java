@@ -5,13 +5,13 @@ import java.lang.annotation.*;
 import oxygen.annotations.mark.*;
 
 /**
- * RecordGen
+ * With
  */
 @Retention(RetentionPolicy.SOURCE)
-@Target(ElementType.TYPE)
+@Target({ElementType.TYPE, ElementType.FIELD, ElementType.METHOD})
 @NoCopy
-public @interface AutoComponent {
-    ComponentType[] value();
+public @interface With {
+    OperationType[] value();
 
     String path() default "";
 

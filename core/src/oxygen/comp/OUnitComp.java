@@ -23,17 +23,15 @@ import oxygen.annotations.component.*;
 /**
  * OUnitComp
  */
-@AutoComponent(
-        value = {},
-        configure = "resource:comp_configure.json:OUnitComp")
+@AutoComponent(value = {}, configure = "resource:comp_configure.json:OUnitComp")
 abstract class OUnitComp extends UnitEntity {
-    @With({Gettter, Setter})
+    @With({ Gettter, Setter })
     public float height = 0.1f;
 
-    @With({Gettter, Setter})
+    @With({ Gettter, Setter })
     public float flyingElevation = 10f;
-    /*speed max elevation*/
-    @With({Gettter, Setter})
+    /* speed max elevation */
+    @With({ Gettter, Setter })
     public float speedElevation = 2f;
 
     @Override
@@ -50,7 +48,8 @@ abstract class OUnitComp extends UnitEntity {
     }
 
     @Override
-    public void wobble() {}
+    public void wobble() {
+    }
 
     @Override
     public float speed() {
@@ -252,15 +251,13 @@ abstract class OUnitComp extends UnitEntity {
         }
 
         this.applied.clear();
-        this.speedMultiplier = this.damageMultiplier =
-                this.healthMultiplier = this.reloadMultiplier = this.buildSpeedMultiplier = this.dragMultiplier = 1.0F;
+        this.speedMultiplier = this.damageMultiplier = this.healthMultiplier = this.reloadMultiplier = this.buildSpeedMultiplier = this.dragMultiplier = 1.0F;
         this.disarmed = false;
         int index;
         if (!this.statuses.isEmpty()) {
             index = 0;
 
-            label318:
-            while (true) {
+            label318: while (true) {
                 while (true) {
                     if (index >= this.statuses.size) {
                         break label318;

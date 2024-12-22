@@ -33,9 +33,9 @@ import oxygen.annotations.mark.*;
 public class AutoComponentGenerator extends BaseProcessor {
     Map<String, Object> configure;
     public boolean withAnnotation(Class<? extends Annotation> clazz,AnnotationMirror mirror){
-        return  mirror.getAnnotationType().toString().equals(clazz.getCanonicalName());
+        return mirror.getAnnotationType().toString().equals(clazz.getCanonicalName());
     }
-    public void work(AutoComponent annotation, Element element,ClassOrInterfaceDeclaration classDecl, CompilationUnit compilationUnit){
+    public void workType(AutoComponent annotation, TypeElement element,ClassOrInterfaceDeclaration classDecl, CompilationUnit compilationUnit){
         forEachAnnotations(element, classDecl, (mirror, expr) -> {
             Element annotationElement = mirror.getAnnotationType().asElement();
             if (annotationElement.getAnnotation(NoCopy.class) != null) {
@@ -50,17 +50,36 @@ public class AutoComponentGenerator extends BaseProcessor {
             }
         });
     }
+    public void workField(AutoComponent annotation, TypeElement type,ClassOrInterfaceDeclaration classDecl, CompilationUnit compilationUnit,
+            VariableElement field,FieldDeclaration fieldDecl){
+        forEachAnnotations(field, classDecl, (mirror, expr) -> {
+            Element annotationElement = mirror.getAnnotationType().asElement();
+            if (annotationElement.getAnnotation(NoCopy.class) != null) {
+                if(withAnnotation(With.class, mirror)){
+                    With anno=field.getAnnotation(With.class);
+                    if(anno==null){
+                        throw new ArcRuntimeException("with is not found");
+                    }
+                    for(OperationType operation:anno.value()){
+
+                    }
+                }
+                expr.remove();
+            }
+        });
+    }
     public void resolve(AutoComponent annotation, TypeElement element, CompilationUnit compilationUnit)
             throws Exception {
         ClassOrInterfaceDeclaration classDecl = compilationUnit
                 .getClassByName(element.getSimpleName().toString())
                 .orElseThrow(NoSuchElementException::new);
-        work(annotation, element, classDecl, compilationUnit);
+        workType(annotation, element, classDecl, compilationUnit);
         for (Element enclosedElement : element.getEnclosedElements()) {
             if (isTypeElement(enclosedElement)) {
                 resolve(annotation, (TypeElement) enclosedElement, compilationUnit);
-            }else{
-                work(annotation, element, classDecl, compilationUnit);
+            }
+            if(enclosedElement.getKind()==ElementKind.FIELD){
+                workField(annotation, element, classDecl, compilationUnit, (VariableElement)enclosedElement, classDecl.getFieldByName(enclosedElement.getSimpleName().toString()).orElseThrow(NoSuchElementException::new));
             }
         }
     }

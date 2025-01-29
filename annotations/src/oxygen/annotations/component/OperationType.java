@@ -5,6 +5,5 @@ package oxygen.annotations.component;
  * OperationType
  */
 public enum OperationType {
-    Gettter,
-    Setter
+  Gettter, Setter
 }

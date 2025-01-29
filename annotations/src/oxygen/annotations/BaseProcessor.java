@@ -25,170 +25,150 @@ import javax.tools.Diagnostic.*;
  */
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
 public class BaseProcessor extends AbstractProcessor {
-    public static Filer filer;
-    public static Messager messager;
-    public static Elements elementu;
-    public String key = "no";
-    protected int round;
-    protected int rounds = 1;
-    protected RoundEnvironment env;
-    protected Fi rootDirectory;
+  public static Filer filer;
+  public static Messager messager;
+  public static Elements elementu;
+  public String key = "no";
+  protected int round;
+  protected int rounds = 1;
+  protected RoundEnvironment env;
+  protected Fi rootDirectory;
 
-    public static void info(String message) {
-        messager.printMessage(Kind.NOTE, message);
-        Log.err("[CODEGEN INFO] " + message);
+  public static void info(String message) {
+    messager.printMessage(Kind.NOTE, message);
+    Log.err("[CODEGEN INFO] " + message);
+  }
+
+  public static void err(String message) {
+    messager.printMessage(Kind.ERROR, message);
+    Log.err("[CODEGEN ERROR] " + message);
+  }
+
+  public static void err(String message, Element elem) {
+    messager.printMessage(Kind.ERROR, message, elem);
+    Log.err("[CODEGEN ERROR] " + message + ": " + elem);
+  }
+
+  @Override
+  public synchronized void init(ProcessingEnvironment env) {
+    super.init(env);
+    filer = env.getFiler();
+    messager = env.getMessager();
+    elementu = env.getElementUtils();
+    Log.level = LogLevel.info;
+
+    if (System.getProperty("debug") != null) {
+      Log.level = LogLevel.debug;
+    }
+  }
+
+  @Override
+  public boolean process(Set<? extends TypeElement> an, RoundEnvironment roundEnv) {
+    if (rootDirectory == null) {
+      try {
+        String path = Fi
+            .get(filer.getResource(StandardLocation.CLASS_OUTPUT, key, key).toUri().toURL()
+                .toString().substring(OS.isWindows ? 6 : "file:".length()))
+            .parent().parent().parent().parent().parent().parent().toString().replace("%20", " ");
+        rootDirectory = Fi.get(path);
+        info(toString() + " work at " + rootDirectory.toString());
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
     }
 
-    public static void err(String message) {
-        messager.printMessage(Kind.ERROR, message);
-        Log.err("[CODEGEN ERROR] " + message);
+    this.env = roundEnv;
+    try {
+      return processR(roundEnv, an);
+    } catch (Throwable e) {
+      err(e.toString());
+      // e.printStackTrace();
+      throw new RuntimeException(e);
     }
+  }
 
-    public static void err(String message, Element elem) {
-        messager.printMessage(Kind.ERROR, message, elem);
-        Log.err("[CODEGEN ERROR] " + message + ": " + elem);
+  @Override
+  public SourceVersion getSupportedSourceVersion() {
+    return SourceVersion.RELEASE_8;
+  }
+
+  public boolean processR(RoundEnvironment env, Set<? extends TypeElement> arg0) throws Exception {
+    return process(env);
+  }
+
+  public boolean process(RoundEnvironment env) throws Exception {
+    return false;
+  }
+
+  public void writeTo(String context, String name, String path, TypeElement element,
+      List<Element> originatingElements) throws Exception {
+    if (!isOuterClass(element))
+      throw new ArcRuntimeException("TypeElement must be outer " + element.toString());
+    String packageName = getMetaPath(elementu.getPackageOf(element).toString(), path);
+    String formatted = format(context);
+    String fileName = packageName.isEmpty() ? name : packageName + "." + name;
+    JavaFileObject filerSourceFile = null;
+    if (originatingElements != null)
+      filerSourceFile = filer.createSourceFile(fileName,
+          originatingElements.toArray(new Element[originatingElements.size()]));
+    else
+      filerSourceFile = filer.createSourceFile(fileName);
+    try (Writer writer = filerSourceFile.openWriter()) {
+      writer.write(formatted);
+    } catch (Exception e) {
+      try {
+        filerSourceFile.delete();
+      } catch (Exception ignored) {
+      }
+      throw e;
     }
+  }
 
-    @Override
-    public synchronized void init(ProcessingEnvironment env) {
-        super.init(env);
-        filer = env.getFiler();
-        messager = env.getMessager();
-        elementu = env.getElementUtils();
-        Log.level = LogLevel.info;
+  public void writeTo(TypeSpec spec, String path, TypeElement element) throws Exception {
+    String packageName = getMetaPath(elementu.getPackageOf(element).toString(), path);
+    writeTo(JavaFile.builder(packageName, spec).build().toString(), spec.name(), path, element,
+        spec.originatingElements());
+  }
 
-        if (System.getProperty("debug") != null) {
-            Log.level = LogLevel.debug;
-        }
+  public Fi find(String path, Func<Fi, Boolean> func) {
+    Seq<Fi> list = rootDirectory.findAll(fi -> func.get(fi) && fi.absolutePath().contains(path)
+        && !fi.absolutePath().contains(rootDirectory.child("build").absolutePath())
+        && !fi.absolutePath().contains(rootDirectory.child("bin").absolutePath()));
+    if (list.size == 1) {
+      return list.get(0);
     }
+    throw new ArcRuntimeException("can not find source file " + path + " from " + list.toString());
+  }
 
-    @Override
-    public boolean process(Set<? extends TypeElement> an, RoundEnvironment roundEnv) {
-        if (rootDirectory == null) {
-            try {
-                String path = Fi.get(filer.getResource(StandardLocation.CLASS_OUTPUT, key, key)
-                                .toUri()
-                                .toURL()
-                                .toString()
-                                .substring(OS.isWindows ? 6 : "file:".length()))
-                        .parent()
-                        .parent()
-                        .parent()
-                        .parent()
-                        .parent()
-                        .parent()
-                        .toString()
-                        .replace("%20", " ");
-                rootDirectory = Fi.get(path);
-                info(toString() + " work at " + rootDirectory.toString());
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
+  public Fi fromSource(String packageName, String className) {
+    String path = packageName.replace(".", "/") + "/" + className;
+    return find(path,
+        fi -> fi.nameWithoutExtension().equals(className) && fi.extension().equals("java"));
+  }
 
-        this.env = roundEnv;
-        try {
-            return processR(roundEnv, an);
-        } catch (Throwable e) {
-            err(e.toString());
-            // e.printStackTrace();
-            throw new RuntimeException(e);
-        }
+  public Fi fromSource(TypeElement element) {
+    return fromSource(elementu.getPackageOf(element).toString(),
+        element.getSimpleName().toString());
+  }
+
+  public static String resourcePrefix = "resource:";
+
+  public String getContext(String str) {
+    if (str.startsWith(resourcePrefix)) {
+      String s = str.substring(resourcePrefix.length());
+      String[] spi = s.split(":");
+      if (spi.length == 1) {
+        return find(spi[0], fi -> true).readString();
+      }
+      if (spi.length == 2 && spi[0].endsWith("json")) {
+        /*
+         * return gson.toJson(((Map<String, Object>) gson.fromJson( find(spi[0], fi ->
+         * true).readString(), new TypeToken<Map<String, Object>>() {}.getType())) .get(spi[1]));
+         */
+        return Jval.read(find(spi[0], fi -> true).readString()).get(spi[1]).toString();
+      }
+      throw new ArcRuntimeException("unknown path " + str + " with " + spi.toString());
     }
-
-    @Override
-    public SourceVersion getSupportedSourceVersion() {
-        return SourceVersion.RELEASE_8;
-    }
-
-    public boolean processR(RoundEnvironment env, Set<? extends TypeElement> arg0) throws Exception {
-        return process(env);
-    }
-
-    public boolean process(RoundEnvironment env) throws Exception {
-        return false;
-    }
-
-    public void writeTo(
-            String context, String name, String path, TypeElement element, List<Element> originatingElements)
-            throws Exception {
-        if (!isOuterClass(element)) throw new ArcRuntimeException("TypeElement must be outer " + element.toString());
-        String packageName = getMetaPath(elementu.getPackageOf(element).toString(), path);
-        String formatted = format(context);
-        String fileName = packageName.isEmpty() ? name : packageName + "." + name;
-        JavaFileObject filerSourceFile = null;
-        if (originatingElements != null)
-            filerSourceFile = filer.createSourceFile(
-                    fileName, originatingElements.toArray(new Element[originatingElements.size()]));
-        else filerSourceFile = filer.createSourceFile(fileName);
-        try (Writer writer = filerSourceFile.openWriter()) {
-            writer.write(formatted);
-        } catch (Exception e) {
-            try {
-                filerSourceFile.delete();
-            } catch (Exception ignored) {
-            }
-            throw e;
-        }
-    }
-
-    public void writeTo(TypeSpec spec, String path, TypeElement element) throws Exception {
-        String packageName = getMetaPath(elementu.getPackageOf(element).toString(), path);
-        writeTo(
-                JavaFile.builder(packageName, spec).build().toString(),
-                spec.name(),
-                path,
-                element,
-                spec.originatingElements());
-    }
-
-    public Fi find(String path, Func<Fi, Boolean> func) {
-        Seq<Fi> list = rootDirectory.findAll(fi -> func.get(fi)
-                && fi.absolutePath().contains(path)
-                && !fi.absolutePath().contains(rootDirectory.child("build").absolutePath())
-                && !fi.absolutePath().contains(rootDirectory.child("bin").absolutePath()));
-        if (list.size == 1) {
-            return list.get(0);
-        }
-        throw new ArcRuntimeException("can not find source file " + path + " from " + list.toString());
-    }
-
-    public Fi fromSource(String packageName, String className) {
-        String path = packageName.replace(".", "/") + "/" + className;
-        return find(
-                path,
-                fi -> fi.nameWithoutExtension().equals(className)
-                        && fi.extension().equals("java"));
-    }
-
-    public Fi fromSource(TypeElement element) {
-        return fromSource(
-                elementu.getPackageOf(element).toString(),
-                element.getSimpleName().toString());
-    }
-
-    public static String resourcePrefix = "resource:";
-
-    public String getContext(String str) {
-        if (str.startsWith(resourcePrefix)) {
-            String s = str.substring(resourcePrefix.length());
-            String[] spi = s.split(":");
-            if (spi.length == 1) {
-                return find(spi[0], fi -> true).readString();
-            }
-            if (spi.length == 2 && spi[0].endsWith("json")) {
-                /*
-                return gson.toJson(((Map<String, Object>) gson.fromJson(
-                                find(spi[0], fi -> true).readString(),
-                                new TypeToken<Map<String, Object>>() {}.getType()))
-                        .get(spi[1]));
-                        */
-                return Jval.read(find(spi[0], fi -> true).readString())
-                        .get(spi[1])
-                        .toString();
-            }
-            throw new ArcRuntimeException("unknown path " + str + " with " + spi.toString());
-        }
-        return str;
-    }
+    return str;
+  }
 }

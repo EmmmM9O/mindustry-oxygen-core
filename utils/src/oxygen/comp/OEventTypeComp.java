@@ -12,7 +12,7 @@ import oxygen.loader.*;
 @AutoGen(value = EventTypeG, path = "oxygen.game")
 @ML.EventType
 public class OEventTypeComp {
-    public enum OTrigger {
-        init,
-    }
+  public enum OTrigger {
+    init,
+  }
 }

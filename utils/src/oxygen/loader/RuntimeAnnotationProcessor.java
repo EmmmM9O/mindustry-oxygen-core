@@ -5,5 +5,5 @@ package oxygen.loader;
  * RuntimeAnnotationProcessor
  */
 public interface RuntimeAnnotationProcessor {
-    public void process(Object obj) throws Throwable;
+  public void process(Object obj) throws Throwable;
 }

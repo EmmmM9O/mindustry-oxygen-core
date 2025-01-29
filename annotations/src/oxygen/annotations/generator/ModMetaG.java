@@ -9,33 +9,33 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.TYPE)
 public @interface ModMetaG {
-    String name();
+  String name();
 
-    String minGameVersion();
+  String minGameVersion();
 
-    // Class<?> main() default Mod.class;
+  // Class<?> main() default Mod.class;
 
-    boolean pregenerated() default false;
+  boolean pregenerated() default false;
 
-    boolean hidden() default false;
+  boolean hidden() default false;
 
-    boolean keepOutlines() default false;
+  boolean keepOutlines() default false;
 
-    boolean java() default true;
+  boolean java() default true;
 
-    float texturescale() default 1.0f;
+  float texturescale() default 1.0f;
 
-    String displayName() default "";
+  String displayName() default "";
 
-    String author() default "";
+  String author() default "";
 
-    String version() default "";
+  String version() default "";
 
-    String description() default "";
+  String description() default "";
 
-    String repo() default "";
+  String repo() default "";
 
-    String subtitle() default "";
+  String subtitle() default "";
 
-    String[] dependencies() default {};
+  String[] dependencies() default {};
 }

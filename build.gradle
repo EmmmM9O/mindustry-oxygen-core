@@ -11,7 +11,6 @@ repositories {
   maven {
     url 'https://www.jitpack.io'
   }
-  //maven{ url "https://raw.kkgithub.com/Zelaux/MindustryRepo/master/repository" }
   maven{ url "https://gh.llkk.cc/https://raw.githubusercontent.com/Zelaux/MindustryRepo/master/repository" }
 }
 
@@ -20,7 +19,25 @@ spotless {
     target '*.json','**/*.json'
     prettier().config(['tabWidth': 2])
   }
+  flexmark {
+    target '**/*.md'
+    flexmark()
+  }
 }
+ext{
+  versions = [:]
+  libraries = [:]
+}
+versions.arc = "1.0"
+libraries.getArc = { String moduleName ->
+  return "com.github.emmmm9o:$moduleName:${versions.arc}"
+}
+versions.mdt = "1.0"
+libraries.getMdt = { String moduleName ->
+  return "com.github.emmmm9o.Mindustry:$moduleName:${versions.mdt}"
+}
+libraries.arcCore = libraries.getArc("arc-core")
+libraries.mdtCore = libraries.getMdt("core")
 allprojects {
   apply plugin: "java"
   apply plugin: "com.diffplug.spotless"
@@ -32,7 +49,8 @@ allprojects {
       greclipse().configFile("${rootProject.projectDir}/greclipse.properties")
     }
     java {
-      palantirJavaFormat()
+      eclipse()
+          .configFile("${rootProject.projectDir}/eclipse-prefs.xml")
       licenseHeader '/* (C) $YEAR */'
     }
   }
@@ -45,7 +63,6 @@ allprojects {
     mavenCentral()
     maven{ url "https://raw.kkgithub.com/Zelaux/MindustryRepo/master/repository" }
 
-    // maven{ url "https://gh.llkk.cc/https://raw.githubusercontent.com/Zelaux/MindustryRepo/master/repository" }
     maven {
       url 'https://www.jitpack.io'
     }
@@ -57,23 +74,19 @@ allprojects {
   }
 
   ext {
-    //the build number that this mod is made for
     mindustryVersion = 'v146'
     jabelVersion = "0.9.0"
-    //windows sucks
     isWindows = System.getProperty("os.name").toLowerCase().contains("windows")
     sdkRoot = System.getenv("ANDROID_HOME") ?: System.getenv("ANDROID_SDK_ROOT")
   }
 
-  //java 8 backwards compatibility flag
   tasks.withType(JavaCompile){
     options.compilerArgs.addAll(['--release', '8'])
   }
 
   dependencies{
-    compileOnly "com.github.Anuken.Arc:arc-core:$mindustryVersion"
-    compileOnly "com.github.Anuken.Mindustry:core:$mindustryVersion"
-
+    compileOnly libraries.mdtCore 
+    compileOnly libraries.arcCore 
 
     annotationProcessor "com.github.Anuken:jabel:$jabelVersion"
   }
@@ -96,23 +109,12 @@ allprojects {
     dependsOn "jar"
 
     doLast{
-      /*
-       if(!sdkRoot || !new File(sdkRoot).exists()) throw new GradleException("No valid Android SDK found. Ensure that ANDROID_HOME is set to your Android SDK directory.")
-       def platformRoot = new File("$sdkRoot/platforms/").listFiles().sort().reverse().find{ f -> new File(f, "android.jar").exists()}
-       if(!platformRoot) throw new GradleException("No android.jar found. Ensure that you have an Android platform installed.")
-       //collect dependencies needed for desugaring
-       */
+
       def dependencies = (configurations.compileClasspath.asList() + configurations.runtimeClasspath.asList()).collect{ "--classpath $it.path" }.join(" ")
 
 
-      //dex and desugar files - this requires d8 in your PATH
       "d8 $dependencies --min-api 14 --output ${project.archivesBaseName}Android.jar ${project.archivesBaseName}Desktop.jar"
           .execute(null, new File("$buildDir/libs")).waitForProcessOutput(System.out, System.err)
-    }
-  }
-  task generate {
-    doLast {
-      println 'Generating files from annotated classes'
     }
   }
 
@@ -135,8 +137,6 @@ allprojects {
       }
     }
   }
-}
-
 configurations.all{
   resolutionStrategy.eachDependency { details ->
     if(details.requested.group == 'com.github.Anuken.Arc'){
@@ -144,6 +144,9 @@ configurations.all{
     }
   }
 }
+}
+
+
 
 project(":annotations"){
   tasks.named('deploy').configure {
@@ -157,7 +160,7 @@ project(":annotations"){
     javapoetVersion ="0.5.0"
   }
   dependencies{
-    implementation "com.github.Anuken.Arc:arc-core:$mindustryVersion"
+    implementation libraries.arcCore
     implementation "com.google.code.gson:gson:$gsonVersion"
     implementation "com.palantir.javapoet:javapoet:$javapoetVersion"
     implementation "com.google.auto.service:auto-service:1.0-rc6"
@@ -175,16 +178,21 @@ project(":utils"){
     annotationProcessor project(":annotations")
   }
 }
-
+project(":ui"){
+  ext{
+  }
+  dependencies{
+    compileOnly project(":utils")
+    compileOnly project(":annotations")
+    annotationProcessor project(":annotations")
+  }
+}
 project(":core"){
-  /*
-   tasks.withType(JavaCompile){
-   options.compilerArgs<<"-verbose"<<"-XprintRounds"<<"-XprintProcessorInfo"
-   }*/
   ext{
   }
   dependencies{
     implementation project(":utils")
+    implementation project(":ui")
     compileOnly project(":annotations")
     annotationProcessor project(":annotations")
   }

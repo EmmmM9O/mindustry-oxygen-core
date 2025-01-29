@@ -10,13 +10,13 @@ import oxygen.loader.*;
  * Test
  */
 public class Test {
-    public static boolean flag = false;
+  public static boolean flag = false;
 
-    @ML.Event(value = HIGHEST, event = "Trigger")
-    public static void update() {
-        if (!flag) {
-            flag = true;
-            Log.info("test event");
-        }
+  @ML.Event(value = HIGHEST, event = "Trigger")
+  public static void update() {
+    if (!flag) {
+      flag = true;
+      Log.info("test event");
     }
+  }
 }

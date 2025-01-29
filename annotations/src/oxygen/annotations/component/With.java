@@ -11,11 +11,11 @@ import oxygen.annotations.mark.*;
 @Target({ElementType.TYPE, ElementType.FIELD, ElementType.METHOD})
 @NoCopy
 public @interface With {
-    OperationType[] value();
+  OperationType[] value();
 
-    String path() default "";
+  String path() default "";
 
-    String className() default "";
+  String className() default "";
 
-    String configure() default "resource:comp_configure.json:default";
+  String configure() default "resource:comp_configure.json:default";
 }

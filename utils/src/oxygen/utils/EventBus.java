@@ -8,17 +8,17 @@ import oxygen.loader.*;
  */
 public class EventBus {
 
-    public MLProcessor processor;
-    public OEvent events;
+  public MLProcessor processor;
+  public OEvent events;
 
-    public EventBus(OEvent events) {
-        this.events = events;
-        processor = new MLProcessor();
-        AnnotationProcessors.setStandardProcessor(processor);
-        AnnotationProcessors.setEventProcessor(processor, events);
-    }
+  public EventBus(OEvent events) {
+    this.events = events;
+    processor = new MLProcessor();
+    AnnotationProcessors.setStandardProcessor(processor);
+    AnnotationProcessors.setEventProcessor(processor, events);
+  }
 
-    public void init() {
-        processor.init();
-    }
+  public void init() {
+    processor.init();
+  }
 }

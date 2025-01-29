@@ -9,24 +9,25 @@ import oxygen.utils.*;
  * OL
  */
 public @interface ML {
-    @Retention(RetentionPolicy.RUNTIME)
-    @Target(ElementType.METHOD)
-    @AMark
-    public @interface Event {
-        int value() default StandardEventPriority.NORMAL;
+  @Retention(RetentionPolicy.RUNTIME)
+  @Target(ElementType.METHOD)
+  @AMark
+  public @interface Event {
+    int value() default StandardEventPriority.NORMAL;
 
-        String event() default "";
-    }
+    String event() default "";
+  }
 
-    @Retention(RetentionPolicy.RUNTIME)
-    @Target(ElementType.FIELD)
-    @AMark
-    public @interface Instance {
-        String value();
-    }
+  @Retention(RetentionPolicy.RUNTIME)
+  @Target(ElementType.FIELD)
+  @AMark
+  public @interface Instance {
+    String value();
+  }
 
-    @Retention(RetentionPolicy.RUNTIME)
-    @Target(ElementType.TYPE)
-    @AMark
-    public @interface EventType {}
+  @Retention(RetentionPolicy.RUNTIME)
+  @Target(ElementType.TYPE)
+  @AMark
+  public @interface EventType {
+  }
 }

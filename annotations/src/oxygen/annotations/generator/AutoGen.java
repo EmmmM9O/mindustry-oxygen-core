@@ -11,16 +11,16 @@ import oxygen.annotations.mark.*;
 @Target(ElementType.TYPE)
 @NoCopy
 public @interface AutoGen {
-    GenType value();
+  GenType value();
 
-    String path() default "";
+  String path() default "";
 
-    String className() default "";
+  String className() default "";
 
-    String withS() default "";
+  String withS() default "";
 
-    /*
-     * For EventTypeG true to unmark
-     */
-    boolean withB() default false;
+  /*
+   * For EventTypeG true to unmark For TexSG true to not generate style
+   */
+  boolean withB() default false;
 }

@@ -1,2 +1,2 @@
-include 'core','annotations','utils'
+include 'core','annotations','utils','ui'
 rootProject.name="oxygen"

@@ -1,5 +1,6 @@
 package oxygen.ui;
 
+import arc.util.*;
 import mindustry.core.*;
 import mindustry.ui.fragments.*;
 import oxygen.ui.fragments.*;
@@ -11,6 +12,7 @@ public class OCUI {
   public static MenuFragmentI menuFragment;
 
   public static void load() {
+    Log.info("OC UI Initlize");
     menuFragment = new OCMenuFragment();
   }
 

@@ -32,6 +32,7 @@ public class OCMain extends Mod implements ModModifier {
 
   @Override
   public void modifyUI(UI ui) {
+    OCUI.load();
     OCUI.modifyUI(ui);
   }
 }

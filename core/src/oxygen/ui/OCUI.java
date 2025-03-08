@@ -1,3 +1,4 @@
+/* (C) 2025 */
 package oxygen.ui;
 
 import arc.util.*;
@@ -13,6 +14,7 @@ public class OCUI {
 
   public static void load() {
     Log.info("OC UI Initlize");
+    OCStyles.load();
     menuFragment = new OCMenuFragment();
   }
 

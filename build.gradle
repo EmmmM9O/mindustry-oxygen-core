@@ -85,8 +85,8 @@ allprojects {
   }
 
   dependencies{
-    compileOnly libraries.mdtCore 
-    compileOnly libraries.arcCore 
+    compileOnly libraries.mdtCore
+    compileOnly libraries.arcCore
 
     annotationProcessor "com.github.Anuken:jabel:$jabelVersion"
   }
@@ -137,13 +137,13 @@ allprojects {
       }
     }
   }
-configurations.all{
-  resolutionStrategy.eachDependency { details ->
-    if(details.requested.group == 'com.github.Anuken.Arc'){
-      details.useVersion "$mindustryVersion"
+  configurations.all{
+    resolutionStrategy.eachDependency { details ->
+      if(details.requested.group == 'com.github.Anuken.Arc'){
+        details.useVersion "$mindustryVersion"
+      }
     }
   }
-}
 }
 
 

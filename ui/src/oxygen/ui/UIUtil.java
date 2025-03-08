@@ -1,3 +1,4 @@
+/* (C) 2025 */
 package oxygen.ui;
 
 import mindustry.*;
@@ -9,7 +10,7 @@ public class UIUtil {
       return true;
     else
       return false;
-    //or return Vars.launcher != null;
+    // or return Vars.launcher != null;
   }
 
   public static ClientLauncher getClient() {

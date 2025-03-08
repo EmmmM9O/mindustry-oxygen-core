@@ -1,3 +1,4 @@
+/* (C) 2025 */
 package oxygen.ui;
 
 import mindustry.graphics.*;

@@ -22,9 +22,10 @@ public class OCVars {
   public static OPQEvent events = new OPQEvent();
   public static EventBus bus = new EventBus(events);
   public static OCLoadRenderer loader;
+
   public static void preinit() {
-	  loader=new OCLoadRenderer();
-	  UIUtil.setLoadRenderer(loader);
+    loader = new OCLoadRenderer();
+    UIUtil.setLoadRenderer(loader);
     events.putEvents();
   }
 

@@ -76,6 +76,7 @@ public class AutoGenerator extends BaseProcessor {
           var varname = capitalize(name);
           builder.addField(ClassName.bestGuess(dtype), varname, Modifier.STATIC, Modifier.PUBLIC);
           load.addStatement(varname + " = arc.Core.atlas.drawable($S)", name);
+          Log.info("add sprite @", name);
         });
 
     builder.addMethod(loadStyles.build()).addMethod(load.build());

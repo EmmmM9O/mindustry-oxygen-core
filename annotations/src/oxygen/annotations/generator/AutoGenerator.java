@@ -52,7 +52,8 @@ public class AutoGenerator extends BaseProcessor {
 
   public TypeSpec genTex(TypeElement element, RoundEnvironment roundEnv, AutoGen annotation) {
     var builder =
-        TypeSpec.classBuilder(annotation.className().isEmpty() ? "Tex" : annotation.className()).addModifiers(Modifier.PUBLIC);
+        TypeSpec.classBuilder(annotation.className().isEmpty() ? "Tex" : annotation.className())
+            .addModifiers(Modifier.PUBLIC);
     var loadStyles =
         MethodSpec.methodBuilder("loadStyles").addModifiers(Modifier.STATIC, Modifier.PUBLIC);
     var load = MethodSpec.methodBuilder("load").addModifiers(Modifier.STATIC, Modifier.PUBLIC);
@@ -75,7 +76,7 @@ public class AutoGenerator extends BaseProcessor {
           var dtype = "arc.scene.style.Drawable";
           var varname = capitalize(name);
           builder.addField(ClassName.bestGuess(dtype), varname, Modifier.STATIC, Modifier.PUBLIC);
-          load.addStatement(varname + " = arc.Core.atlas.drawable($S)", annotation.withS2()+name);
+          load.addStatement(varname + " = arc.Core.atlas.drawable($S)", annotation.withS2() + name);
           Log.info("add sprite @", name);
         });
 

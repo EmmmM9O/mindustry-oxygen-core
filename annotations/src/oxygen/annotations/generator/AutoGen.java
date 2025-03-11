@@ -18,6 +18,7 @@ public @interface AutoGen {
   String className() default "";
 
   String withS() default "";
+
   String withS2() default "";
 
   /*

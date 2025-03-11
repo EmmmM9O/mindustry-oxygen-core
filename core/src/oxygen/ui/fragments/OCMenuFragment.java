@@ -32,9 +32,7 @@ public class OCMenuFragment extends MenuFragmentI {
     parent.addChild(group);
     parent = group;
     /*
-     * Image img = new Image();
-     * img.setFillParent(true);
-     * group.addChildAt(0, img);
+     * Image img = new Image(); img.setFillParent(true); group.addChildAt(0, img);
      */
     parent.fill((x, y, w, h) -> {
       if (renderer != null)

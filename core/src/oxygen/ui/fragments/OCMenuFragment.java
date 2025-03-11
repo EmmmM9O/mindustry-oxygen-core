@@ -2,11 +2,9 @@
 package oxygen.ui.fragments;
 
 import arc.*;
-import arc.math.*;
 import arc.util.*;
 import arc.scene.*;
 import arc.scene.style.*;
-import arc.scene.ui.*;
 import arc.scene.event.*;
 import arc.scene.ui.layout.*;
 import arc.graphics.*;
@@ -16,8 +14,7 @@ import mindustry.gen.*;
 import mindustry.ui.*;
 import mindustry.core.*;
 import mindustry.ui.fragments.*;
-import mindustry.graphics.*;
-import oxygen.core.OCMain;
+
 import oxygen.graphics.*;
 
 public class OCMenuFragment extends MenuFragmentI {
@@ -34,9 +31,11 @@ public class OCMenuFragment extends MenuFragmentI {
     group.visible(() -> true);
     parent.addChild(group);
     parent = group;
-    Image img = new Image(Core.atlas.drawable(OCMain.name + "-background"));
-    img.setFillParent(true);
-    group.addChildAt(0, img);
+    /*
+     * Image img = new Image();
+     * img.setFillParent(true);
+     * group.addChildAt(0, img);
+     */
     parent.fill((x, y, w, h) -> {
       if (renderer != null)
         renderer.render();
@@ -52,25 +51,7 @@ public class OCMenuFragment extends MenuFragmentI {
         pane.setOverscroll(false, false);
       }).grow();
     });
-    String versionText = ((Version.build == -1) ? "[#fc8140aa]" : "[#ffffffba]") + Version.combined();
-    parent.fill((x, y, w, h) -> {
-      TextureRegion logo = Core.atlas.find("logo");
-      float width = Core.graphics.getWidth(),
-          height = Core.graphics.getHeight() - Core.scene.marginTop;
-      float logoscl = Scl.scl(0.6f) * logo.scale;
-      float logow = Math.min(logo.width * logoscl, Core.graphics.getWidth() - Scl.scl(20));
-      float logoh = logow * (float) logo.height / logo.width;
 
-      float fx = logow/2+10f;
-      float fy =
-          (int) (height - 6 - logoh) + logoh / 2 - (Core.graphics.isPortrait() ? Scl.scl(30f) : 0f)-90f;
-
-      Draw.color();
-      Draw.rect(logo, fx, fy, logow, logoh);
-
-      Fonts.outline.setColor(Color.white);
-      Fonts.outline.draw(versionText, fx, fy - logoh / 2f - Scl.scl(2f), Align.center);
-    }).touchable = Touchable.disabled;
   }
 
   public void buildButtons() {
@@ -79,7 +60,7 @@ public class OCMenuFragment extends MenuFragmentI {
     float width = 230f;
     Drawable background = Styles.black6;
     container.left();
-    container.add().width(/*Core.graphics.getWidth() / 10f*/10f);
+    container.add().width(/* Core.graphics.getWidth() / 10f */10f);
     container.table(background, t -> {
       t.defaults().width(width).height(70f);
       t.name = "buttons";

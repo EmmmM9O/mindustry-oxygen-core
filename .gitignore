@@ -163,3 +163,4 @@ Thumbs.db
 android/libs/
 **/build
 **/bin/
+**/gen/

@@ -1,4 +1,4 @@
 sourceSets.main.java.srcDirs = [
   "src/",
-  "/build/generated/sources/annotationProcessor/java/main/"
+  "build/generated/sources/annotationProcessor/java/main/"
 ]

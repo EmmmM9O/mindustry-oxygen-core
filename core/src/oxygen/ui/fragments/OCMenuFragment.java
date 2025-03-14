@@ -55,28 +55,20 @@ public class OCMenuFragment extends MenuFragmentI {
   public void buildButtons() {
     container.clear();
     container.setSize(Core.graphics.getWidth(), Core.graphics.getHeight());
-    float width = 230f;
-    Drawable background = Styles.black6;
+    float width = 140f;
     container.left();
-    container.add().width(/* Core.graphics.getWidth() / 10f */10f);
-    container.table(background, t -> {
-      t.defaults().width(width).height(70f);
+    container.add().width(Core.graphics.getWidth() / 25f);
+    container.table(t -> {
+      t.defaults().width(width).height(40f);
       t.name = "buttons";
-      t.button("@play", Icon.play, Styles.flatToggleMenut, () -> {
+      t.button("@play", Styles.cleart, () -> {
       }).marginLeft(11f).row();
-      t.button("@database.button", Icon.menu, Styles.flatToggleMenut, () -> {
+      t.button("@database.button", Styles.cleart, () -> {
       }).marginLeft(11f).row();
-      t.button("@mods", Icon.book, Styles.flatToggleMenut, () -> {
+      t.button("@mods", Styles.cleart, () -> {
       }).marginLeft(11f).row();
-      t.button("@settings", Icon.settings, Styles.flatToggleMenut, () -> {
+      t.button("@settings", Styles.cleart, () -> {
       }).marginLeft(11f).row();
-    }).width(width).growY();
-    container.table(background, t -> {
-      t.name = "submenu";
-      t.color.a = 0f;
-      t.top();
-      t.defaults().width(width).height(70f);
-      t.visible(() -> !t.getChildren().isEmpty());
     }).width(width).growY();
   }
 }

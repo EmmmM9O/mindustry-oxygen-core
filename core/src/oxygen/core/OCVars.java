@@ -1,7 +1,9 @@
 /* (C) 2024 */
 package oxygen.core;
 
+import arc.*;
 import mindustry.mod.Mods.*;
+import oxygen.graphics.*;
 import oxygen.loader.*;
 import oxygen.ui.*;
 import oxygen.utils.*;
@@ -22,11 +24,13 @@ public class OCVars {
   public static OPQEvent events = new OPQEvent();
   public static EventBus bus = new EventBus(events);
   public static OCLoadRenderer loader;
+  public static OCRenderer renderer;
 
   public static void preinit() {
     loader = new OCLoadRenderer();
     UIUtil.setLoadRenderer(loader);
     events.putEvents();
+    Core.app.addListener(renderer = new OCRenderer());
   }
 
   public static void init() {

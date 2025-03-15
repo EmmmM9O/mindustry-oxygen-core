@@ -7,6 +7,7 @@ import mindustry.core.UI;
 import mindustry.game.*;
 import mindustry.mod.*;
 import oxygen.annotations.generator.*;
+import oxygen.content.*;
 import oxygen.ui.*;
 
 /**
@@ -35,5 +36,10 @@ public class OCMain extends Mod implements ModModifier {
   public void modifyUI(UI ui) {
     OCUI.load();
     OCUI.modifyUI(ui);
+  }
+
+  @Override
+  public void loadContent() {
+    OUnitTypes.load();
   }
 }

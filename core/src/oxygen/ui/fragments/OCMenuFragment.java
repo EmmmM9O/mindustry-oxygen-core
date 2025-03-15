@@ -47,21 +47,30 @@ public class OCMenuFragment extends MenuFragmentI {
   public void buildButtons() {
     container.clear();
     container.setSize(Core.graphics.getWidth(), Core.graphics.getHeight());
-    float width = 170f;
+    float width = 180f;
     container.left();
     container.add().width(Core.graphics.getWidth() / 30f);
     container.table(t -> {
       t.defaults().width(width).height(40f);
       t.name = "buttons";
-      t.add(ocTButton("@play", () -> {
+      t.add(ocTButton("@oxygen.play", () -> {
       })).marginLeft(11f).row();
-      t.add(ocTButton("@database.button", () -> {
+      t.add(ocTButton("@oxygen.continue", () -> {
       })).marginLeft(11f).row();
-      t.add(ocTButton("@mods", () -> {
+      t.add(ocTButton("@oxygen.load", () -> {
       })).marginLeft(11f).row();
-      t.add(ocTButton("@settings", () -> {
+      t.add(ocTButton("@oxygen.mods", () -> {
       })).marginLeft(11f).row();
-
+      t.add(ocTButton("@oxygen.database", () -> {
+      })).marginLeft(11f).row();
+      t.add(ocTButton("@oxygen.settings", () -> {
+      })).marginLeft(11f).row();
+      t.add(ocTButton("@oxygen.changelog", () -> {
+      })).marginLeft(11f).row();
+      t.add(ocTButton("@oxygen.contributors", () -> {
+      })).marginLeft(11f).row();
+      t.add(ocTButton("@oxygen.exit", () -> {
+      })).marginLeft(11f).row();
     }).width(width).growY();
   }
 }

@@ -2,20 +2,14 @@
 package oxygen.ui.fragments;
 
 import arc.*;
-import arc.util.*;
 import arc.scene.*;
-import arc.scene.style.*;
-import arc.scene.event.*;
 import arc.scene.ui.layout.*;
-import arc.graphics.*;
-import arc.graphics.g2d.*;
 import mindustry.game.EventType.*;
-import mindustry.gen.*;
 import mindustry.ui.*;
-import mindustry.core.*;
 import mindustry.ui.fragments.*;
 
 import oxygen.graphics.*;
+import static oxygen.ui.OCStyles.*;
 
 public class OCMenuFragment extends MenuFragmentI {
   public OCMenuRendererI renderer;
@@ -31,9 +25,7 @@ public class OCMenuFragment extends MenuFragmentI {
     group.visible(() -> true);
     parent.addChild(group);
     parent = group;
-    /*
-     * Image img = new Image(); img.setFillParent(true); group.addChildAt(0, img);
-     */
+    // Image img = new Image(); img.setFillParent(true); group.addChildAt(0, img);
     parent.fill((x, y, w, h) -> {
       if (renderer != null)
         renderer.render();
@@ -55,20 +47,21 @@ public class OCMenuFragment extends MenuFragmentI {
   public void buildButtons() {
     container.clear();
     container.setSize(Core.graphics.getWidth(), Core.graphics.getHeight());
-    float width = 140f;
+    float width = 170f;
     container.left();
-    container.add().width(Core.graphics.getWidth() / 25f);
+    container.add().width(Core.graphics.getWidth() / 30f);
     container.table(t -> {
       t.defaults().width(width).height(40f);
       t.name = "buttons";
-      t.button("@play", Styles.cleart, () -> {
-      }).marginLeft(11f).row();
-      t.button("@database.button", Styles.cleart, () -> {
-      }).marginLeft(11f).row();
-      t.button("@mods", Styles.cleart, () -> {
-      }).marginLeft(11f).row();
-      t.button("@settings", Styles.cleart, () -> {
-      }).marginLeft(11f).row();
+      t.add(ocTButton("@play", () -> {
+      })).marginLeft(11f).row();
+      t.add(ocTButton("@database.button", () -> {
+      })).marginLeft(11f).row();
+      t.add(ocTButton("@mods", () -> {
+      })).marginLeft(11f).row();
+      t.add(ocTButton("@settings", () -> {
+      })).marginLeft(11f).row();
+
     }).width(width).growY();
   }
 }

@@ -65,10 +65,6 @@ public class OCMenuFragment extends MenuFragmentI {
       })).marginLeft(11f).row();
       t.add(ocTButton("@oxygen.settings", () -> {
       })).marginLeft(11f).row();
-      t.add(ocTButton("@oxygen.changelog", () -> {
-      })).marginLeft(11f).row();
-      t.add(ocTButton("@oxygen.contributors", () -> {
-      })).marginLeft(11f).row();
       t.add(ocTButton("@oxygen.exit", () -> {
       })).marginLeft(11f).row();
     }).width(width).growY();

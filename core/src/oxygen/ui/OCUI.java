@@ -6,9 +6,7 @@ import mindustry.core.*;
 import mindustry.ui.fragments.*;
 import oxygen.ui.fragments.*;
 
-/**
- * OCUI
- */
+
 public class OCUI {
   public static MenuFragmentI menuFragment;
 
@@ -19,6 +17,6 @@ public class OCUI {
   }
 
   public static void modifyUI(UI ui) {
-    // ui.menufrag = menuFragment;
+    ui.menufrag = menuFragment;
   }
 }

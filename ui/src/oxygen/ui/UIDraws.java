@@ -5,6 +5,8 @@ import arc.func.*;
 import arc.math.*;
 import arc.scene.*;
 import arc.scene.style.*;
+import arc.scene.ui.*;
+import arc.scene.ui.layout.*;
 import oxygen.ui.draw.*;
 
 public class UIDraws {
@@ -120,4 +122,30 @@ public class UIDraws {
     });
   }
 
+  @SafeVarargs
+  public static <T extends Element> Cons<T> combineCons(Cons<T>... funcs) {
+    return t -> {
+      for (Cons<T> func : funcs) {
+        func.get(t);
+      }
+    };
+  }
+
+  public static <T extends Table> Cons<T> leftText(CharSequence text) {
+    return leftText(text, 15f);
+  }
+
+  public static <T extends Table> Cons<T> leftText(CharSequence text, float marginLeft) {
+    return tab -> {
+      tab.add(text).marginLeft(marginLeft).left();
+      tab.add().grow();
+    };
+  }
+
+  public static <T extends Table> Cons<T> leftText(CharSequence text, Label.LabelStyle style, float marginLeft) {
+    return tab -> {
+      tab.add(text, style).marginLeft(marginLeft).left();
+      tab.add().grow();
+    };
+  }
 }

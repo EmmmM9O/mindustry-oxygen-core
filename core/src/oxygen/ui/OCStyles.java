@@ -33,10 +33,7 @@ public class OCStyles {
   public static final Interp startInterp = Interp.exp5Out, endInterp = Interp.exp5In;
 
   public static OButton ocTButton(String text, Runnable func) {
-    OButton res = obutton(combineDraw(loadDraw(button -> {
-      button.add(text).marginLeft(15f).left();
-      button.add().grow();
-    }), overTimeDraw(startDuration, endDuration,
+    OButton res = obutton(combineDraw(loadDraw(leftText(text)), overTimeDraw(startDuration, endDuration,
         self -> combineDraw(
             slideBackgroundDraw(Direction.right, oacid3,
                 timeProgress(startInterp, endInterp, self)),

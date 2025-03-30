@@ -15,6 +15,7 @@ import mindustry.ui.fragments.*;
 
 import oxygen.graphics.*;
 import static oxygen.ui.OCStyles.*;
+import static oxygen.ui.OCUI.*;
 
 public class OCMenuFragment extends MenuFragmentI {
   public OCMenuRendererI renderer;
@@ -49,7 +50,7 @@ public class OCMenuFragment extends MenuFragmentI {
     String versionText = ((Version.build == -1) ? "[#fc8140aa]" : "[#ffffffba]") + Version.combined();
     parent.fill((x, y, w, h) -> {
       TextureRegion logo = Core.atlas.find("logo");
-      float width = Core.graphics.getWidth(), height = Core.graphics.getHeight() - Core.scene.marginTop;
+      float height = Core.graphics.getHeight() - Core.scene.marginTop;
       float topX = (height - buttonListHeight()) / 2 + buttonListHeight();
       float logoh = (height - topX) * logoScl;
       float logow = logoh / logo.height * logo.width;
@@ -85,8 +86,7 @@ public class OCMenuFragment extends MenuFragmentI {
       })).marginLeft(11f).row();
       t.add(ocTButton("@oxygen.database", () -> {
       })).marginLeft(11f).row();
-      t.add(ocTButton("@oxygen.settings", () -> {
-      })).marginLeft(11f).row();
+      t.add(ocTButton("@oxygen.settings",settingsDialog::show)).marginLeft(11f).row();
       t.add(ocTButton("@oxygen.exit", () -> {
       })).marginLeft(11f).row();
     }).width(menuButtonWidth).growY();

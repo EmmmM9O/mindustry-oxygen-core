@@ -1,5 +1,9 @@
 package oxygen.ui.dialogs;
 
-public class OCSettingsDialog {
 
+public class OCSettingsDialog extends OCDialog{
+  public OCSettingsDialog(){
+    super();
+
+  }
 }

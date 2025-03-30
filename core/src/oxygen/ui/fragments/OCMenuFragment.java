@@ -47,7 +47,8 @@ public class OCMenuFragment extends MenuFragmentI {
         pane.setOverscroll(false, false);
       }).grow();
     });
-    String versionText = ((Version.build == -1) ? "[#fc8140aa]" : "[#ffffffba]") + Version.combined();
+    String versionText =
+        ((Version.build == -1) ? "[#fc8140aa]" : "[#ffffffba]") + Version.combined();
     parent.fill((x, y, w, h) -> {
       TextureRegion logo = Core.atlas.find("logo");
       float height = Core.graphics.getHeight() - Core.scene.marginTop;
@@ -86,7 +87,7 @@ public class OCMenuFragment extends MenuFragmentI {
       })).marginLeft(11f).row();
       t.add(ocTButton("@oxygen.database", () -> {
       })).marginLeft(11f).row();
-      t.add(ocTButton("@oxygen.settings",settingsDialog::show)).marginLeft(11f).row();
+      t.add(ocTButton("@oxygen.settings", settingsDialog::show)).marginLeft(11f).row();
       t.add(ocTButton("@oxygen.exit", () -> {
       })).marginLeft(11f).row();
     }).width(menuButtonWidth).growY();

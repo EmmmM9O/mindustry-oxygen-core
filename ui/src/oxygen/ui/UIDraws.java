@@ -122,6 +122,14 @@ public class UIDraws {
     });
   }
 
+  public static <T extends Element> UIDraw<T> backgroundDraw(Drawable background) {
+    return new BackgroundDraw<T>(background);
+  }
+
+  public static <T extends Element> UIDraw<T> stageBackgroundDraw(Drawable background) {
+    return new StageBackgroundDraw<T>(background);
+  }
+
   @SafeVarargs
   public static <T extends Element> Cons<T> combineCons(Cons<T>... funcs) {
     return t -> {
@@ -131,21 +139,28 @@ public class UIDraws {
     };
   }
 
-  public static <T extends Table> Cons<T> leftText(CharSequence text) {
-    return leftText(text, 15f);
+  public static <T extends Table> Cons<T> leftTextCons(CharSequence text) {
+    return leftTextCons(text, 15f);
   }
 
-  public static <T extends Table> Cons<T> leftText(CharSequence text, float marginLeft) {
+  public static <T extends Table> Cons<T> leftTextCons(CharSequence text, float marginLeft) {
     return tab -> {
       tab.add(text).marginLeft(marginLeft).left();
       tab.add().grow();
     };
   }
 
-  public static <T extends Table> Cons<T> leftText(CharSequence text, Label.LabelStyle style, float marginLeft) {
+  public static <T extends Table> Cons<T> leftTextCons(CharSequence text, Label.LabelStyle style,
+      float marginLeft) {
     return tab -> {
       tab.add(text, style).marginLeft(marginLeft).left();
       tab.add().grow();
+    };
+  }
+
+  public static <T extends Table> Cons<T> textCons(CharSequence text) {
+    return tab -> {
+      tab.add(text);
     };
   }
 }

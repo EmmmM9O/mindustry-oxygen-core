@@ -1,3 +1,4 @@
+/* (C) 2025 */
 package oxygen.ui.dialogs;
 
 import arc.*;
@@ -22,9 +23,9 @@ import static arc.Core.*;
 import static mindustry.Vars.*;
 
 public class OCDialog extends Table {
-  private static Prov<Action> defaultShowAction = () -> Actions.sequence(Actions.alpha(0),
-      Actions.fadeIn(0.4f, Interp.fade)),
-      defaultHideAction = () -> Actions.fadeOut(0.4f, Interp.fade);
+  private static Prov<Action> defaultShowAction =
+      () -> Actions.sequence(Actions.alpha(0), Actions.fadeIn(0.1f, Interp.fade)),
+      defaultHideAction = () -> Actions.fadeOut(0.05f, Interp.fade);
   protected InputListener ignoreTouchDown = new InputListener() {
     @Override
     public boolean touchDown(InputEvent event, float x, float y, int pointer, KeyCode button) {
@@ -75,12 +76,14 @@ public class OCDialog extends Table {
         if (isModal && stage != null && stage.root.getChildren().size > 0
             && stage.root.getChildren().peek() == OCDialog.this) {
           Element newFocusedActor = event.relatedActor;
-          if (newFocusedActor != null && !newFocusedActor.isDescendantOf(OCDialog.this) &&
-              !(newFocusedActor.equals(previousKeyboardFocus) || newFocusedActor.equals(previousScrollFocus)))
+          if (newFocusedActor != null && !newFocusedActor.isDescendantOf(OCDialog.this)
+              && !(newFocusedActor.equals(previousKeyboardFocus)
+                  || newFocusedActor.equals(previousScrollFocus)))
             event.cancel();
         }
       }
     };
+    setOrigin(Align.center);
     shown(this::updateScrollFocus);
     hidden(() -> {
       if (shouldPause && state.isGame() && !net.active() && !wasPaused) {
@@ -109,8 +112,11 @@ public class OCDialog extends Table {
   }
 
   public void centerWindow() {
-    setPosition(Math.round(((Core.scene.getWidth() - scene.marginLeft - scene.marginRight) - getWidth()) / 2),
-        Math.round(((Core.scene.getHeight() - scene.marginTop - scene.marginBottom) - getHeight()) / 2));
+    setPosition(
+        Math.round(
+            ((Core.scene.getWidth() - scene.marginLeft - scene.marginRight) - getWidth()) / 2),
+        Math.round(
+            ((Core.scene.getHeight() - scene.marginTop - scene.marginBottom) - getHeight()) / 2));
   }
 
   public OCDialog show(Scene stage, Action action) {
@@ -185,13 +191,14 @@ public class OCDialog extends Table {
     }
     if (action != null) {
       addCaptureListener(ignoreTouchDown);
-      addAction(Actions.sequence(action, Actions.removeListener(ignoreTouchDown, true), Actions.remove()));
+      addAction(Actions.sequence(action, Actions.removeListener(ignoreTouchDown, true),
+          Actions.remove()));
     } else
       remove();
   }
 
   public void updateScrollFocus() {
-    boolean[] done = { false };
+    boolean[] done = {false};
 
     Core.app.post(() -> forEach(child -> {
       if (done[0])

@@ -10,7 +10,7 @@ import static oxygen.ui.OCPal.*;
 public class OCMenuRenderer implements OCMenuRendererI {
   @Override
   public void render() {
-    Draw.color(obeige);
+    Draw.color(odark);
     Fill.crect(0, 0, Core.graphics.getWidth(), Core.graphics.getHeight());
     Draw.color();
   }

@@ -14,16 +14,14 @@ import oxygen.ui.*;
  * OCMain
  */
 @ModMetaG(name = OCMain.name, minGameVersion = "146", author = OCMain.author,
-    displayName = OCMain.displayName, version = OCMain.version, hidden = true)
+    displayName = OCMain.displayName, version = OCMain.version, hidden = false)
 public class OCMain extends Mod implements ModModifier {
   public static final String name = "oxygencore", author = "emmmm9o(novarc)", version = "1.0.0",
       displayName = "Oxygen Core";
 
   public OCMain() {
     OCVars.preinit();
-    Events.on(EventType.FileTreeInitEvent.class, event -> {
-      OCVars.init();
-    });
+    Events.on(EventType.FileTreeInitEvent.class, event -> OCVars.init());
   }
 
   @Override
@@ -42,4 +40,7 @@ public class OCMain extends Mod implements ModModifier {
   public void loadContent() {
     OUnitTypes.load();
   }
+
 }
+
+

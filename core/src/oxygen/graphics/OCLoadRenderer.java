@@ -1,5 +1,5 @@
 /* (C) 2025 */
-package oxygen.ui;
+package oxygen.graphics;
 
 import mindustry.graphics.*;
 import arc.graphics.*;

@@ -3,15 +3,11 @@ package oxygen.ui.dialogs;
 
 import arc.*;
 import arc.func.*;
-import arc.graphics.*;
-import arc.graphics.g2d.*;
 import arc.input.*;
 import arc.math.*;
-import arc.math.geom.*;
 import arc.scene.*;
 import arc.scene.actions.*;
 import arc.scene.event.*;
-import arc.scene.style.*;
 import arc.scene.ui.*;
 import arc.scene.ui.layout.*;
 import arc.util.*;
@@ -23,8 +19,8 @@ import static arc.Core.*;
 import static mindustry.Vars.*;
 
 public class OCDialog extends Table {
-  private static Prov<Action> defaultShowAction =
-      () -> Actions.sequence(Actions.alpha(0), Actions.fadeIn(0.1f, Interp.fade)),
+  private static Prov<Action> defaultShowAction = () -> Actions.sequence(Actions.alpha(0),
+      Actions.fadeIn(0.1f, Interp.fade)),
       defaultHideAction = () -> Actions.fadeOut(0.05f, Interp.fade);
   protected InputListener ignoreTouchDown = new InputListener() {
     @Override
@@ -198,7 +194,7 @@ public class OCDialog extends Table {
   }
 
   public void updateScrollFocus() {
-    boolean[] done = {false};
+    boolean[] done = { false };
 
     Core.app.post(() -> forEach(child -> {
       if (done[0])
@@ -266,15 +262,15 @@ public class OCDialog extends Table {
 
   @Override
   public void draw() {
-    super.draw();
     if (drawer != null)
       drawer.draw(this);
+    super.draw();
   }
 
   @Override
   public void act(float delta) {
-    super.act(delta);
     if (drawer != null)
       drawer.act(this, delta);
+    super.act(delta);
   }
 }

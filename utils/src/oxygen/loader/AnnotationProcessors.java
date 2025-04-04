@@ -2,7 +2,7 @@
 package oxygen.loader;
 
 import arc.struct.*;
-import arc.util.Log;
+import arc.util.*;
 import java.lang.annotation.*;
 import java.lang.reflect.*;
 import mindustry.*;
@@ -128,6 +128,7 @@ public class AnnotationProcessors {
     @Override
     public void process(Instance annotation, Field field) throws Throwable {
       field.setAccessible(true);
+      Log.info("set value of @", field);
       if (LoadedMod.class.isAssignableFrom(field.getType()))
         field.set(null, Vars.mods.getMod(annotation.value()));
       if (ModMeta.class.isAssignableFrom(field.getType()))
@@ -297,11 +298,10 @@ public class AnnotationProcessors {
   public static ObjectMap<Key, RuntimeAnnotationProcessor> standardProcessors = new ObjectMap<>();
 
   {
-    standardProcessors.put(new Key(Instance.class, 1), instanceProcessor);
   }
 
   public static void setStandardProcessor(MLProcessor processor) {
-    processor.annotationProcessors.putAll(standardProcessors);
+    processor.annotationProcessors.put(new Key(Instance.class, 1), instanceProcessor);
   }
 
   public static void setEventProcessor(MLProcessor processor, OEvent event) {

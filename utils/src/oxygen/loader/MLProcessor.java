@@ -55,6 +55,7 @@ public class MLProcessor {
   public void loadAnnotation(Key key) {
     try {
       RuntimeAnnotationProcessor processor = annotationProcessors.get(key);
+      Log.info("load annotation @", key.clazz);
       if (processor == null)
         throw new RuntimeException("has no processor");
       Seq<Object> list = resolver.get(key.clazz, null);

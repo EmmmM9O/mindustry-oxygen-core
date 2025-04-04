@@ -2,6 +2,8 @@
 package oxygen.core;
 
 import arc.*;
+import arc.files.*;
+import mindustry.*;
 import mindustry.mod.Mods.*;
 import oxygen.graphics.*;
 import oxygen.loader.*;
@@ -34,10 +36,16 @@ public class OCVars {
   }
 
   public static void init() {
+    mod = Vars.mods.getMod(OCMain.name);
     bus.init();
+    OCShaders.init();
   }
 
   public static void laterInit() {
 
+  }
+
+  public static Fi getTexture(String name) {
+    return Vars.tree.get("textures/" + name);
   }
 }

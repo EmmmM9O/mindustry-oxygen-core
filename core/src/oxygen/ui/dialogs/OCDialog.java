@@ -19,8 +19,8 @@ import static arc.Core.*;
 import static mindustry.Vars.*;
 
 public class OCDialog extends Table {
-  private static Prov<Action> defaultShowAction = () -> Actions.sequence(Actions.alpha(0),
-      Actions.fadeIn(0.1f, Interp.fade)),
+  private static Prov<Action> defaultShowAction =
+      () -> Actions.sequence(Actions.alpha(0), Actions.fadeIn(0.1f, Interp.fade)),
       defaultHideAction = () -> Actions.fadeOut(0.05f, Interp.fade);
   protected InputListener ignoreTouchDown = new InputListener() {
     @Override
@@ -194,7 +194,7 @@ public class OCDialog extends Table {
   }
 
   public void updateScrollFocus() {
-    boolean[] done = { false };
+    boolean[] done = {false};
 
     Core.app.post(() -> forEach(child -> {
       if (done[0])

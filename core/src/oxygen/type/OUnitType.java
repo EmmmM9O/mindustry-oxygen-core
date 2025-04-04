@@ -33,7 +33,7 @@ public class OUnitType extends UnitType {
 
 
     float height = unit.elevation * maxHeight;
-    if (height >= renderer.caremaHeight) {
+    if (height >= renderer.cameraHeight) {
       if (!isPayload && (unit.isFlying() || shadowElevation > 0)) {
         Draw.z(Math.min(Layer.darkness, z - 1f));
         drawShadow(unit);
@@ -43,12 +43,12 @@ public class OUnitType extends UnitType {
       return;
     }
     drawX =
-        (unit.x - Core.camera.position.x) / (renderer.caremaHeight - height) * renderer.caremaHeight
+        (unit.x - Core.camera.position.x) / (renderer.cameraHeight - height) * renderer.cameraHeight
             + Core.camera.position.x;
     drawY =
-        (unit.y - Core.camera.position.y) / (renderer.caremaHeight - height) * renderer.caremaHeight
+        (unit.y - Core.camera.position.y) / (renderer.cameraHeight - height) * renderer.cameraHeight
             + Core.camera.position.y;
-    drawScl = renderer.caremaHeight / (renderer.caremaHeight - height) / 4f;
+    drawScl = renderer.cameraHeight / (renderer.cameraHeight - height) / 4f;
 
     Mechc mech = unit instanceof Mechc ? (Mechc) unit : null;
     if (unit.controller().isBeingControlled(Vars.player.unit())) {

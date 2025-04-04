@@ -2,21 +2,23 @@
 package oxygen.graphics;
 
 
-import arc.*;
-import arc.graphics.g2d.*;
+import oxygen.graphics.universe.*;
 
-import static oxygen.ui.OCPal.*;
 
 public class OCMenuRenderer implements OCMenuRendererI {
+  public BlackHoleRenderer blackHoleRenderer;
+
+  public OCMenuRenderer() {
+    blackHoleRenderer = new BlackHoleRenderer();
+  }
+
   @Override
   public void render() {
-    Draw.color(odark);
-    Fill.crect(0, 0, Core.graphics.getWidth(), Core.graphics.getHeight());
-    Draw.color();
+    blackHoleRenderer.render();
   }
 
   @Override
   public void dispose() {
-
+    blackHoleRenderer.dispose();
   }
 }

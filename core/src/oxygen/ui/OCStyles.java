@@ -50,10 +50,9 @@ public class OCStyles {
   }
 
   public static OButton ocCloseButton(String text, Runnable func) {
-    OButton res = obutton(
-        combineDraw(loadDraw(textCons(text)),
-            overTimeDraw(startDuration, endDuration, self -> slideBackgroundDraw(Direction.right, oacid3,
-                timeProgress(startInterp, endInterp, self)))));
+    OButton res = obutton(combineDraw(loadDraw(textCons(text)),
+        overTimeDraw(startDuration, endDuration, self -> slideBackgroundDraw(Direction.right,
+            oacid3, timeProgress(startInterp, endInterp, self)))));
     res.clicked(func);
     return res;
   }

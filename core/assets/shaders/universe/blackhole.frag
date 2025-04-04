@@ -1,4 +1,5 @@
 varying vec2 uv;
+precision highp float;
 
 uniform vec2 resolution;
 uniform vec3 camera_pos;
@@ -159,7 +160,6 @@ void adisk_color(vec3 pos, inout vec3 color, inout float alpha) { //吸积盘
         vec3 dustColor =
             texture(color_map, vec2(sphericalCoord.x / adisk_outer_radius, 0.5)).rgb;
 
-    //vec3 dustColor = mix(vec3(0.8f), vec3(1.0f), sphericalCoord.x / adisk_outer_radius);
 
     color += density * adisk_lit * dustColor * alpha * abs(noise);
 }

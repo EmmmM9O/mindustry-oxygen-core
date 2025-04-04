@@ -116,7 +116,7 @@ public class OCMenuFragment extends MenuFragmentI {
           blackhole.adiskHeight = r;
         }).row();
         tab.add("lit");
-        tab.slider(0.05f, 1.0f, 0.01f, blackhole.adiskLit, r -> {
+        tab.slider(0.00f, 1.0f, 0.01f, blackhole.adiskLit, r -> {
           blackhole.adiskLit = r;
         }).row();
         tab.add("particle");

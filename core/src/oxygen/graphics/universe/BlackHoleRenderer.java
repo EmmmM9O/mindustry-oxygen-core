@@ -19,13 +19,13 @@ public class BlackHoleRenderer implements Disposable {
   public final Texture colorMap;
   public final Mesh screen;
   public FrameBuffer fboBlackhole, fboBrightness, fboBloomed;
-  int width = Core.graphics.getWidth() ;
-  int height = Core.graphics.getHeight() ;
+  int width = Core.graphics.getWidth()/3;
+  int height = Core.graphics.getHeight()/3 ;
   public static final int bloomIter = 8;
   public FrameBuffer[] fboDownsampled;
   public FrameBuffer[] fboUpsampled;
   public Mat view;
-  public Vec3 pos = new Vec3(14f, 3f, 4f);
+  public Vec3 pos = new Vec3(18f, 3f, 4f);
   public float roll = 36f * Mathf.degreesToRadians;
 
   public static int bloomIterations = 8;

@@ -12,7 +12,7 @@ import mindustry.core.*;
 import mindustry.game.EventType.*;
 import mindustry.ui.*;
 import mindustry.ui.fragments.*;
-
+import oxygen.core.*;
 import oxygen.graphics.*;
 import oxygen.graphics.universe.*;
 
@@ -63,32 +63,53 @@ public class OCMenuFragment extends MenuFragmentI {
       info.label(() -> fps.get(Core.graphics.getFramesPerSecond())).left()
           .style(Styles.outlineLabel).name("fps");
     });
-    // String versionText =
-    // ((Version.build == -1) ? "[#fc8140aa]" : "[#ffffffba]") + Version.combined();
-    /*
-     * parent.fill((x, y, w, h) -> { TextureRegion logo = Core.atlas.find("logo"); float height =
-     * Core.graphics.getHeight() - Core.scene.marginTop; float topX = (height - buttonListHeight())
-     * / 2 + buttonListHeight(); float logoh = (height - topX) * logoScl; float logow = logoh /
-     * logo.height * logo.width; float fx = logow / 2 + 40f; float fy = height / 2 + topX / 2 + 40f;
-     * Draw.color(); Draw.rect(logo, fx, fy, logow, logoh); Fonts.outline.setColor(Color.orange);
-     * Fonts.outline.draw(versionText, fx, fy - logoh / 2f - Scl.scl(2f), Align.center);
-     * }).touchable = Touchable.disabled;
-     */
+    String versionText = "[#fc8140aa]" + Version.combined() + "\n先行测试版本 并不代表最终效果";
+
+    parent.fill((x, y, w, h) -> {
+      TextureRegion logo = Core.atlas.find("logo");
+      float height = Core.graphics.getHeight() - Core.scene.marginTop;
+      float topX = (height - buttonListHeight()) / 2 + buttonListHeight();
+      float logoh = (height - topX) * logoScl;
+      float logow = logoh / logo.height * logo.width;
+      float fx = logow / 2 + 40f;
+      float fy = height / 2 + topX / 2 + 40f;
+      Draw.color();
+      Draw.rect(logo, fx, fy, logow, logoh);
+      Fonts.outline.setColor(Color.orange);
+      Fonts.outline.draw(versionText, fx, fy - logoh / 2f - Scl.scl(2f), Align.center);
+    }).touchable = Touchable.disabled;
     parent.fill(t -> {
       t.right().bottom();
       t.table(tab -> {
         tab.add("bloomIterations");
-        tab.slider(1.0f, 8.0f, 1.0f, BlackHoleRenderer.bloomIterations * 1.0f, r -> {
-          BlackHoleRenderer.bloomIterations = (int) r;
-        }).row();
+        tab.slider(1.0f, 8.0f, 1.0f, OCVars.renderer.blackHoleRenderer.bloom.bloomIterations * 1.0f,
+            r -> {
+              OCVars.renderer.blackHoleRenderer.bloom.bloomIterations = (int) r;
+            }).row();
         tab.add("gamma");
         tab.slider(1.0f, 4.0f, 0.1f, tonemapping.gamma, r -> {
           tonemapping.gamma = r;
         }).row();
         tab.add("bloom_strength");
-        tab.slider(0.0f, 4.0f, 0.1f, bloomComposite.bloom_strength, r -> {
-          bloomComposite.bloom_strength = r;
-        }).row();
+        tab.slider(0.0f, 4.0f, 0.01f,
+            OCVars.renderer.blackHoleRenderer.bloom.bloomComposite.bloom_strength, r -> {
+              OCVars.renderer.blackHoleRenderer.bloom.bloomComposite.bloom_strength = r;
+            }).row();
+        tab.add("softEdgeRange");
+        tab.slider(0.0f, 2.0f, 0.05f,
+            OCVars.renderer.blackHoleRenderer.bloom.bloomBrightness.softEdgeRange, r -> {
+              OCVars.renderer.blackHoleRenderer.bloom.bloomBrightness.softEdgeRange = r;
+            }).row();
+        tab.add("threshold");
+        tab.slider(0.1f, 1.0f, 0.01f,
+            OCVars.renderer.blackHoleRenderer.bloom.bloomBrightness.threshold, r -> {
+              OCVars.renderer.blackHoleRenderer.bloom.bloomBrightness.threshold = r;
+            }).row();
+        tab.add("tone");
+        tab.slider(0.0f, 4.0f, 0.1f, OCVars.renderer.blackHoleRenderer.bloom.bloomComposite.tone,
+            r -> {
+              OCVars.renderer.blackHoleRenderer.bloom.bloomComposite.tone = r;
+            }).row();
         tab.add("noise_LOD");
         tab.slider(1.0f, 8.0f, 1.0f, blackhole.adiskNoiseLOD * 1.0f, r -> {
           blackhole.adiskNoiseLOD = (int) r;
@@ -106,17 +127,26 @@ public class OCMenuFragment extends MenuFragmentI {
           blackhole.maxLength = r;
         }).row();
         tab.add("fov_scl");
-        tab.slider(0.2f, 4.0f, 0.1f, blackhole.horizonRadius, r -> {
-          blackhole.horizonRadius = r;
+        tab.slider(0.2f, 4.0f, 0.1f, blackhole.fovScale, r -> {
+          blackhole.fovScale = r;
         }).row();
       });
       t.table(tab -> {
+        tab.add("len");
+        tab.slider(0.1f, 5.0f, 0.1f, OCVars.renderer.blackHoleRenderer.len, r -> {
+          OCVars.renderer.blackHoleRenderer.len = r;
+        }).row();
+        tab.add("scl");
+        tab.slider(1.0f, 8.0f, 1.0f, OCVars.renderer.blackHoleRenderer.scl, r -> {
+          OCVars.renderer.blackHoleRenderer.scl = r;
+          OCVars.renderer.blackHoleRenderer.resize();
+        }).row();
         tab.add("height");
         tab.slider(0.1f, 2.0f, 0.05f, blackhole.adiskHeight, r -> {
           blackhole.adiskHeight = r;
         }).row();
         tab.add("lit");
-        tab.slider(0.00f, 1.0f, 0.01f, blackhole.adiskLit, r -> {
+        tab.slider(0.00001f, 1.0f, 0.0001f, blackhole.adiskLit, r -> {
           blackhole.adiskLit = r;
         }).row();
         tab.add("particle");
@@ -124,15 +154,15 @@ public class OCMenuFragment extends MenuFragmentI {
           blackhole.adiskParticle = r;
         }).row();
         tab.add("noise_scale");
-        tab.slider(0.1f, 3f, 0.05f, blackhole.adiskNoiseScale, r -> {
+        tab.slider(0.1f, 5f, 0.01f, blackhole.adiskNoiseScale, r -> {
           blackhole.adiskNoiseScale = r;
         }).row();
         tab.add("adiskDensityV");
-        tab.slider(1f, 10f, 0.5f, blackhole.adiskDensityV, r -> {
+        tab.slider(0.1f, 18f, 0.1f, blackhole.adiskDensityV, r -> {
           blackhole.adiskDensityV = r;
         }).row();
         tab.add("adiskDensityH");
-        tab.slider(1f, 10f, 0.5f, blackhole.adiskDensityH, r -> {
+        tab.slider(0.1f, 18f, 0.1f, blackhole.adiskDensityH, r -> {
           blackhole.adiskDensityH = r;
         }).row();
         tab.add("adiskOuterRadius");

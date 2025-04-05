@@ -1,3 +1,4 @@
+#define HIGHP
 varying vec2 uv;
 
 uniform float gamma;

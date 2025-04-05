@@ -3,7 +3,6 @@ package oxygen.graphics;
 
 import arc.files.*;
 import arc.graphics.*;
-import arc.graphics.g3d.*;
 import arc.graphics.gl.*;
 import arc.math.*;
 import arc.math.geom.*;
@@ -13,17 +12,9 @@ import mindustry.*;
 public class OCShaders {
   public static BlackHoleShader blackhole;
   public static TonemappingShader tonemapping;
-  public static BloomBrightness bloomBrightness;
-  public static BloomComposite bloomComposite;
-  public static BloomUpsample bloomUpsample;
-  public static BloomDownsample bloomDownsample;
 
   public static void init() {
     blackhole = new BlackHoleShader();
-    bloomBrightness = new BloomBrightness();
-    bloomComposite = new BloomComposite();
-    bloomUpsample = new BloomUpsample();
-    bloomDownsample = new BloomDownsample();
     tonemapping = new TonemappingShader();
   }
 
@@ -80,6 +71,10 @@ public class OCShaders {
   public static class BloomBrightness extends OCLoadShader {
     public Texture input;
     public Vec2 resolution;
+    public float threshold = 0.8f, softEdgeRange = 0.2f;
+    // CIE 1931
+    public Vec3 luminanceVector = new Vec3(0.2126, 0.7152, 0.0722);
+    /* new Vec3(0.2125, 0.7154, 0.0721); */
 
     public BloomBrightness() {
       super("bloom/bloom_brightness", "screen");
@@ -87,6 +82,9 @@ public class OCShaders {
 
     @Override
     public void apply() {
+      setUniformf("threshold", threshold);
+      setUniformf("softEdgeRange", softEdgeRange);
+      setUniformf("luminanceVector", luminanceVector);
       setUniformf("resolution", resolution);
       input.bind(0);
       setUniformf("texture0", 0);

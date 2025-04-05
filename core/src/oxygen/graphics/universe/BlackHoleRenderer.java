@@ -11,41 +11,36 @@ import arc.math.*;
 import arc.math.geom.*;
 import arc.util.*;
 import oxygen.core.*;
+import oxygen.graphics.*;
+import oxygen.graphics.bloom.*;
+import oxygen.util.*;
 
 import static oxygen.graphics.OCShaders.*;
 
-public class BlackHoleRenderer implements Disposable {
+public class BlackHoleRenderer implements Disposable, Resizeable {
   public final Cubemap galaxy = new Cubemap("cubemaps/stars/");
   public final Texture colorMap;
   public final Mesh screen;
-  public FrameBuffer fboBlackhole, fboBrightness, fboBloomed;
-  int width = Core.graphics.getWidth()/3;
-  int height = Core.graphics.getHeight()/3 ;
-  public static final int bloomIter = 8;
-  public FrameBuffer[] fboDownsampled;
-  public FrameBuffer[] fboUpsampled;
+  public FrameBuffer fboBlackhole, fboBloomed;
+  public float scl = 3, len = 1.0f;
+
+  int width = (int) (Core.graphics.getWidth() / scl);
+  int height = (int) (Core.graphics.getHeight() / scl);
+
   public Mat view;
   public Vec3 pos = new Vec3(18f, 3f, 4f);
   public float roll = 36f * Mathf.degreesToRadians;
-
-  public static int bloomIterations = 8;
+  public PyramidBloom bloom;
 
   public BlackHoleRenderer() {
-    screen = createScreenQuad();
+    screen = OCMeshBuilder.screenMesh();
     colorMap = new Texture(OCVars.getTexture("color_map.png"), true);
     Log.info("black hole init");
     colorMap.setFilter(TextureFilter.mipMap, TextureFilter.linear);
     colorMap.setWrap(TextureWrap.clampToEdge, TextureWrap.clampToEdge);
-    fboBlackhole = new FrameBuffer(Format.rgba8888, width, height, true);
-    fboBrightness = new FrameBuffer(Format.rgba8888, width, height, true);
-    fboBloomed = new FrameBuffer(Format.rgba8888, width, height, true);
-    fboDownsampled = new FrameBuffer[bloomIter];
-    fboUpsampled = new FrameBuffer[bloomIter];
-    for (int i = 0; i < bloomIter; i++) {
-      fboDownsampled[i] =
-          new FrameBuffer(Format.rgba8888, width >> (i + 1), height >> (i + 1), true);
-      fboUpsampled[i] = new FrameBuffer(Format.rgba8888, width >> i, height >> i, true);
-    }
+    fboBlackhole = new FrameBuffer(Format.rgba8888, width, height, false);
+    fboBloomed = new FrameBuffer(Format.rgba8888, width, height, false);
+    bloom = new PyramidBloom(width, height, false);
     view = new Mat();
     Vec3 rr = new Vec3(Mathf.sin(roll), Mathf.cos(roll), 0.0);
     Vec3 ww = new Vec3(0, 0, 0).sub(pos).nor();
@@ -62,16 +57,23 @@ public class BlackHoleRenderer implements Disposable {
     view.val[Mat.M22] = ww.z;
   }
 
-  public Mesh createScreenQuad() {
-    Mesh tmp = new Mesh(true, 4, 6, VertexAttribute.position);
-    tmp.setVertices(new float[] { //
-        -1f, -1f, //
-        -1f, 1f, //
-        1f, 1f, //
-        1f, -1f,//
-    });
-    tmp.setIndices(new short[] {0, 1, 2, 0, 2, 3});
-    return tmp;
+  public void resize() {
+    resize(
+        (int) (Core.graphics.getWidth() / scl),
+        (int) (Core.graphics.getHeight() / scl));
+  }
+
+  @Override
+  public void resize(int width, int height) {
+    this.width = width;
+    this.height = height;
+    onResize();
+  }
+
+  @Override
+  public void onResize() {
+    fboBlackhole.resize(width, height);
+    bloom.resize(width, height);
   }
 
   void renderBlackHole() {
@@ -81,7 +83,7 @@ public class BlackHoleRenderer implements Disposable {
     Gl.disable(Gl.depthTest);
     Gl.depthMask(false);
     Gl.clear(Gl.depthBufferBit);
-    blackhole.pos = pos;
+    blackhole.pos = Tmp.v31.set(pos).scl(len);
     blackhole.view = view;
     blackhole.galaxy = galaxy;
     blackhole.colorMap = colorMap;
@@ -94,67 +96,8 @@ public class BlackHoleRenderer implements Disposable {
     fboBlackhole.end();
   }
 
-  void brightnessRender() {
-    fboBrightness.begin();
-    Gl.clearColor(0f, 0f, 0f, 1);
-    Gl.disable(Gl.depthTest);
-    Gl.clear(Gl.depthBufferBit);
-    bloomBrightness.resolution = Tmp.v2.set(width, height);
-    bloomBrightness.input = fboBlackhole.getTexture();
-    bloomBrightness.bind();
-    bloomBrightness.apply();
-    screen.render(bloomBrightness, Gl.triangles);
-    fboBrightness.end();
-  }
-
-  void bloom() {
-    for (int level = 0; level < bloomIterations; level++) {
-      if (level == 0)
-        bloomDownsample.input = fboBrightness.getTexture();
-      else
-        bloomDownsample.input = fboDownsampled[level - 1].getTexture();
-      FrameBuffer current = fboDownsampled[level];
-      current.begin();
-      Gl.clearColor(0f, 0f, 0f, 1);
-      Gl.disable(Gl.depthTest);
-      Gl.clear(Gl.depthBufferBit);
-      bloomDownsample.resolution = Tmp.v2.set(width >> (level + 1), height >> (level + 1));
-      bloomDownsample.bind();
-      bloomDownsample.apply();
-      screen.render(bloomDownsample, Gl.triangles);
-      current.end();
-    }
-    for (int level = bloomIterations - 1; level >= 0; level--) {
-      if (level == bloomIterations - 1)
-        bloomUpsample.input = fboDownsampled[level].getTexture();
-      else
-        bloomUpsample.input = fboUpsampled[level + 1].getTexture();
-      if (level == 0)
-        bloomUpsample.addition = fboBrightness.getTexture();
-      else
-        bloomUpsample.addition = fboDownsampled[level - 1].getTexture();
-      FrameBuffer current = fboUpsampled[level];
-      current.begin();
-      Gl.clearColor(0f, 0f, 0f, 1);
-      Gl.disable(Gl.depthTest);
-      Gl.clear(Gl.depthBufferBit);
-      bloomUpsample.resolution = Tmp.v2.set(width >> level, height >> level);
-      bloomUpsample.bind();
-      bloomUpsample.apply();
-      screen.render(bloomUpsample, Gl.triangles);
-      current.end();
-    }
-    // composite
-    fboBloomed.begin();
-    Gl.clearColor(0f, 0f, 0f, 1);
-    Gl.disable(Gl.depthTest);
-    Gl.clear(Gl.depthBufferBit);
-    bloomComposite.input = fboBlackhole.getTexture();
-    bloomComposite.bloom = fboUpsampled[0].getTexture();
-    bloomComposite.bind();
-    bloomComposite.apply();
-    screen.render(bloomComposite, Gl.triangles);
-    fboBloomed.end();
+  void bloomRender() {
+    bloom.renderTo(fboBlackhole, fboBloomed);
   }
 
   void tonemappingRender() {
@@ -166,8 +109,7 @@ public class BlackHoleRenderer implements Disposable {
 
   public void render() {
     renderBlackHole();
-    brightnessRender();
-    bloom();
+    bloomRender();
     tonemappingRender();
   }
 
@@ -176,12 +118,6 @@ public class BlackHoleRenderer implements Disposable {
     galaxy.dispose();
     colorMap.dispose();
     fboBlackhole.dispose();
-    fboBrightness.dispose();
-    fboBloomed.dispose();
-    for (int i = 0; i < bloomIter; i++) {
-      fboDownsampled[i].dispose();
-      fboUpsampled[i].dispose();
-    }
-
+    bloom.dispose();
   }
 }

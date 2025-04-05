@@ -1,5 +1,5 @@
+#define HIGHP
 varying vec2 uv;
-precision highp float;
 
 uniform vec2 resolution;
 uniform vec3 camera_pos;
@@ -126,7 +126,7 @@ float snoise(vec3 v) {
     return 42.0 *
         dot(m * m, vec4(dot(p0, x0), dot(p1, x1), dot(p2, x2), dot(p3, x3)));
 }
-///----
+///---- from https://github.com/rossning92/Blackhole
 void adisk_color(vec3 pos, inout vec3 color, inout float alpha) { //吸积盘
     //密度
 
@@ -164,7 +164,7 @@ void adisk_color(vec3 pos, inout vec3 color, inout float alpha) { //吸积盘
     color += density * adisk_lit * dustColor * alpha * abs(noise);
 }
 
-///----
+///---- from https://github.com/rossning92/Blackhole
 vec4 quadFromAxisAngle(vec3 axis, float angle) {
     vec4 qr;
     float half_angle = (angle * 0.5) * 3.14159 / 180.0;
@@ -226,15 +226,6 @@ vec3 ray_marching(vec3 pos, vec3 dir) {
     dir = rotate_vector(dir, vec3(0.0, 1.0, 0.0), time);
     color += texture(galaxy, dir).rgb * alpha;
     return color;
-}
-
-mat3 lookAt(vec3 origin, vec3 target, float roll) {
-    vec3 rr = vec3(sin(roll), cos(roll), 0.0);
-    vec3 ww = normalize(target - origin);
-    vec3 uu = normalize(cross(ww, rr));
-    vec3 vv = normalize(cross(uu, ww));
-
-    return mat3(uu, vv, ww);
 }
 
 void main() {

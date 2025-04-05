@@ -1,24 +1,20 @@
 /* (C) 2025 */
 package oxygen.graphics;
 
-
 import oxygen.graphics.universe.*;
-
+import static oxygen.core.OCVars.*;
 
 public class OCMenuRenderer implements OCMenuRendererI {
-  public BlackHoleRenderer blackHoleRenderer;
 
   public OCMenuRenderer() {
-    blackHoleRenderer = new BlackHoleRenderer();
+
   }
 
   @Override
   public void render() {
-    blackHoleRenderer.render();
+    renderer.blackHoleRenderer.render();
   }
 
   @Override
-  public void dispose() {
-    blackHoleRenderer.dispose();
-  }
+  public void dispose() {}
 }

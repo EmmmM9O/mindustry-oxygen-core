@@ -1,21 +1,21 @@
 varying vec2 uv;
 
 uniform sampler2D texture0;
-uniform vec2 resolution; 
+uniform vec2 resolution;
 
-const float brightPassThreshold = 1.0;
-const vec3 luminanceVector = vec3(0.2125, 0.7154, 0.0721);
-
+uniform float threshold;
+uniform vec3 luminanceVector;
+uniform float softEdgeRange;
 void main() {
     vec2 texCoord = gl_FragCoord.xy / resolution.xy;
 
     vec4 c = texture2D(texture0, texCoord);
-
-    float luminance = dot(luminanceVector, c.xyz);
-    luminance = max(0.0, luminance - brightPassThreshold);
-    c.xyz *= sign(luminance);
-    c.a = 1.0;
+    vec3 linearColor = pow(c.rgb, vec3(2.2));
+    float luminance = dot(luminanceVector, linearColor);
+    luminance = clamp(luminance - threshold, 0.0, 100.0);
+    float softEdge = smoothstep(0.0, softEdgeRange, luminance);
+    c.rgb = linearColor * softEdge;
+    c.a = softEdge;
 
     gl_FragColor = c;
 }
-

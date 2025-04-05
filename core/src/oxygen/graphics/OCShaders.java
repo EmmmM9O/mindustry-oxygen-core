@@ -3,11 +3,13 @@ package oxygen.graphics;
 
 import arc.files.*;
 import arc.graphics.*;
+import arc.graphics.g3d.*;
 import arc.graphics.gl.*;
 import arc.math.*;
 import arc.math.geom.*;
 import arc.util.*;
 import mindustry.*;
+import oxygen.graphics.menu.*;
 
 public class OCShaders {
   public static BlackHoleShader blackhole;
@@ -19,46 +21,87 @@ public class OCShaders {
   }
 
   // universe
+  public static class BlackHoleParams {
+    public float maxLength = 30f, horizonRadius = 1f, adiskInnerRadius = 2.6f,
+        adiskOuterRadius = 12f, adiskHeight = 0.55f, adiskDensityV = 1.5f, adiskDensityH = 3.0f,
+        adiskNoiseScale = 0.8f, adiskSpeed = 0.1f, adiskLit = 0.15f, adiskParticle = 1.0f,
+        maxScl = 4f, minScl = 0.2f, sclR = 6f, sclT = 0.5f, stepSize = 0.1f;
+    public int adiskNoiseLOD = 4, maxSteps = 200;
+    public Camera3D camera;
+
+    public void apply(Shader shader) {
+      shader.setUniformf("camera_pos", camera.position);
+      shader.setUniformf("camera_up", camera.up);
+      shader.setUniformf("camera_dir", camera.direction);
+      shader.setUniformf("max_length_2", maxLength * maxLength);
+      shader.setUniformf("horizon_radius_2", horizonRadius * horizonRadius);
+      shader.setUniformf("adisk_height", adiskHeight);
+      shader.setUniformf("adisk_inner_radius", adiskInnerRadius);
+      shader.setUniformf("adisk_outer_radius", adiskOuterRadius);
+      shader.setUniformf("adisk_density_v", adiskDensityV);
+      shader.setUniformf("adisk_density_h", adiskDensityH);
+      shader.setUniformf("adisk_lit", adiskLit);
+      shader.setUniformf("adisk_speed", adiskSpeed);
+      shader.setUniformf("adisk_particle", adiskParticle);
+      shader.setUniformf("adisk_noise_scale", adiskNoiseScale);
+      shader.setUniformf("adisk_noise_LOD", adiskNoiseLOD * 1.0f);
+      shader.setUniformf("max_steps", maxSteps);
+      shader.setUniformf("max_scl", maxScl);
+      shader.setUniformf("min_scl", minScl);
+      shader.setUniformf("scl_r", sclR);
+      shader.setUniformf("scl_t", sclT);
+      shader.setUniformf("step_size", stepSize);
+      shader.setUniformf("fovScale", (float) Math.tan((camera.fov * (Math.PI / 180)) / 2.0));
+    }
+  }
+
+  /**
+   * To render Blackhole for {@link oxygen.universe.celestial.BlackholeType}
+   */
   public static class BlackHoleShader extends OCLoadShader {
-    public Vec3 pos;
-    public Mat view;
+    public Texture colorMap, origin;
+    public Vec2 resolution;
+    public Camera3D camera;
+    public BlackHoleParams params = new BlackHoleParams();
+
+    public BlackHoleShader() {
+      super("universe/blackhole_unv", "screen");
+    }
+
+    @Override
+    public void apply() {
+      params.camera = camera;
+      params.apply(this);
+      setUniformf("time", Time.globalTime / 10f);
+      setUniformf("resolution", resolution);
+      origin.bind(0);
+      setUniformi("origin", 0);
+      colorMap.bind(1);
+      setUniformi("color_map", 1);
+      Gl.activeTexture(Gl.texture0);
+    }
+  }
+
+  /**
+   * to render for {@link MenuBlackhole}
+   */
+  public static class MenuBlackHoleShader extends OCLoadShader {
     public Texture colorMap;
     public Cubemap galaxy;
     public Vec2 resolution;
-    public float maxLength = 25f, fovScale = 1f, horizonRadius = 1f, adiskInnerRadius = 2.6f,
-        adiskOuterRadius = 12f, adiskHeight = 0.55f, adiskDensityV = 2.0f, adiskDensityH = 4.0f,
-        adiskNoiseScale = 0.6f, adiskSpeed = 0.5f, adiskLit = 0.6f, adiskParticle = 1.0f,
-        maxScl = 3f, minScl = 0.2f, sclR = 2f, sclT = 4f;
-    public int adiskNoiseLOD = 4, maxSteps = 150;
+    public Camera3D camera;
+    public BlackHoleParams params = new BlackHoleParams();
 
-    public BlackHoleShader() {
+    public MenuBlackHoleShader() {
       super("universe/blackhole", "screen");
     }
 
     @Override
     public void apply() {
+      params.camera = camera;
+      params.apply(this);
       setUniformf("time", Time.globalTime / 10f);
-      setUniformf("camera_pos", pos);
-      setUniformMatrix("view", view);
       setUniformf("resolution", resolution);
-      setUniformf("max_length_2", maxLength * maxLength);
-      setUniformf("fov_scale", fovScale);
-      setUniformf("horizon_radius_2", horizonRadius * horizonRadius);
-      setUniformf("adisk_height", adiskHeight);
-      setUniformf("adisk_inner_radius", adiskInnerRadius);
-      setUniformf("adisk_outer_radius", adiskOuterRadius);
-      setUniformf("adisk_density_v", adiskDensityV);
-      setUniformf("adisk_density_h", adiskDensityH);
-      setUniformf("adisk_lit", adiskLit);
-      setUniformf("adisk_speed", adiskSpeed);
-      setUniformf("adisk_particle", adiskParticle);
-      setUniformf("adisk_noise_scale", adiskNoiseScale);
-      setUniformf("adisk_noise_LOD", adiskNoiseLOD * 1.0f);
-      setUniformf("max_steps", maxSteps);
-      setUniformf("max_scl", maxScl);
-      setUniformf("min_scl", minScl);
-      setUniformf("scl_r", sclR);
-      setUniformf("scl_t", sclT);
       galaxy.bind(0);
       setUniformi("galaxy", 0);
       colorMap.bind(1);

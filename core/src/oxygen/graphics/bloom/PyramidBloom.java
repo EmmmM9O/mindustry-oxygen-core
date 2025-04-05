@@ -76,15 +76,16 @@ public class PyramidBloom extends OCBloom {
     }
   }
 
-  public PyramidBloom() {
-    this(Core.graphics.getWidth() / 4, Core.graphics.getHeight() / 4, true);
+  public PyramidBloom(Mesh screen) {
+    this(screen, Core.graphics.getWidth() / 4, Core.graphics.getHeight() / 4, true);
   }
 
-  public PyramidBloom(int width, int height) {
-    this(width, height, true);
+  public PyramidBloom(Mesh screen, int width, int height) {
+    this(screen, width, height, true);
   }
 
-  public PyramidBloom(int width, int height, boolean hasDepth) {
+  public PyramidBloom(Mesh screen, int width, int height, boolean hasDepth) {
+    this.screen = screen;
     this.width = width;
     this.height = height;
     init(hasDepth);
@@ -102,7 +103,8 @@ public class PyramidBloom extends OCBloom {
     fboDownsampled = new FrameBuffer[bloomIter];
     fboUpsampled = new FrameBuffer[bloomIter];
     for (int i = 0; i < bloomIter; i++) {
-      fboDownsampled[i] = new FrameBuffer(Format.rgba8888, width >> (i + 1), height >> (i + 1), false);
+      fboDownsampled[i] =
+          new FrameBuffer(Format.rgba8888, width >> (i + 1), height >> (i + 1), false);
       fboUpsampled[i] = new FrameBuffer(Format.rgba8888, width >> i, height >> i, false);
     }
   }

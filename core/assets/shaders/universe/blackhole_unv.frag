@@ -5,7 +5,8 @@ uniform vec2 resolution;
 uniform vec3 camera_pos;
 uniform vec3 camera_dir;
 uniform vec3 camera_up;
-uniform samplerCube galaxy;
+uniform mat3 view;
+uniform sampler2D origin;
 uniform sampler2D color_map;
 uniform float time;
 
@@ -129,7 +130,7 @@ float snoise(vec3 v) {
         dot(m * m, vec4(dot(p0, x0), dot(p1, x1), dot(p2, x2), dot(p3, x3)));
 }
 ///---- from https://github.com/rossning92/Blackhole
-void adisk_color(vec3 pos, inout vec3 color, inout float alpha, float scl) { //吸积盘
+void adisk_color(vec3 pos, inout vec3 color, inout float alpha) { //吸积盘
     //密度
 
     float density = max(
@@ -162,7 +163,7 @@ void adisk_color(vec3 pos, inout vec3 color, inout float alpha, float scl) { //�
     vec3 dustColor =
         texture(color_map, vec2(sphericalCoord.x / adisk_outer_radius, 0.5)).rgb;
 
-    color += density * adisk_lit * dustColor * alpha * abs(noise) * scl;
+    color += density * adisk_lit * dustColor * alpha * abs(noise);
 }
 
 vec3 ray_marching(vec3 pos, vec3 dir) {
@@ -183,10 +184,10 @@ vec3 ray_marching(vec3 pos, vec3 dir) {
             //到达事件视界
             return color;
         }
-        adisk_color(pos, color, alpha, scl); //吸积盘
+        adisk_color(pos, color, alpha); //吸积盘
         pos += dir * scl;
     }
-    color += texture(galaxy, dir).rgb * alpha;
+    color += texture(origin, uv).rgb * alpha;
     return color;
 }
 
@@ -202,5 +203,6 @@ void main() {
     vec3 finalUp = cross(camera_dir, right);
     vec3 rayDir = normalize(vec3(-uv.x * fovScale, uv.y * fovScale, 1.0));
     vec3 dir = normalize(rayDir.x * right + rayDir.y * finalUp + rayDir.z * camera_dir);
-    gl_FragColor = vec4(ray_marching(pos, normalize(dir)), 1.0f);
+
+    gl_FragColor = vec4(ray_marching(pos, dir), 1.0f);
 }

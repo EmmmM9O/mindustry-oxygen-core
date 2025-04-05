@@ -14,10 +14,8 @@ import mindustry.ui.*;
 import mindustry.ui.fragments.*;
 import oxygen.core.*;
 import oxygen.graphics.*;
-import oxygen.graphics.universe.*;
 
 import static oxygen.ui.OCStyles.*;
-import static oxygen.graphics.OCShaders.*;
 import static oxygen.ui.OCUI.*;
 
 public class OCMenuFragment extends MenuFragmentI {
@@ -28,16 +26,14 @@ public class OCMenuFragment extends MenuFragmentI {
 
   @Override
   public void build(Group parent) {
-    if (renderer == null)
-      renderer = new OCMenuRenderer();
+    if (renderer == null) {
+      renderer = OCVars.renderer.getMenuRenderer();
+    }
     Group group = new WidgetGroup();
     group.setFillParent(true);
     group.visible(() -> true);
     parent.addChild(group);
     parent = group;
-    parent.fill((x, y, w, h) -> {
-
-    });
     parent.addChild(new Element() {
       @Override
       public void draw() {
@@ -45,7 +41,6 @@ public class OCMenuFragment extends MenuFragmentI {
           renderer.render();
       };
     });
-
     parent.fill(c -> {
       c.left();
       c.pane(Styles.noBarPane, cont -> {
@@ -78,99 +73,7 @@ public class OCMenuFragment extends MenuFragmentI {
       Fonts.outline.setColor(Color.orange);
       Fonts.outline.draw(versionText, fx, fy - logoh / 2f - Scl.scl(2f), Align.center);
     }).touchable = Touchable.disabled;
-    parent.fill(t -> {
-      t.right().bottom();
-      t.table(tab -> {
-        tab.add("bloomIterations");
-        tab.slider(1.0f, 8.0f, 1.0f, OCVars.renderer.blackHoleRenderer.bloom.bloomIterations * 1.0f,
-            r -> {
-              OCVars.renderer.blackHoleRenderer.bloom.bloomIterations = (int) r;
-            }).row();
-        tab.add("gamma");
-        tab.slider(1.0f, 4.0f, 0.1f, tonemapping.gamma, r -> {
-          tonemapping.gamma = r;
-        }).row();
-        tab.add("bloom_strength");
-        tab.slider(0.0f, 4.0f, 0.01f,
-            OCVars.renderer.blackHoleRenderer.bloom.bloomComposite.bloom_strength, r -> {
-              OCVars.renderer.blackHoleRenderer.bloom.bloomComposite.bloom_strength = r;
-            }).row();
-        tab.add("softEdgeRange");
-        tab.slider(0.0f, 2.0f, 0.05f,
-            OCVars.renderer.blackHoleRenderer.bloom.bloomBrightness.softEdgeRange, r -> {
-              OCVars.renderer.blackHoleRenderer.bloom.bloomBrightness.softEdgeRange = r;
-            }).row();
-        tab.add("threshold");
-        tab.slider(0.1f, 1.0f, 0.01f,
-            OCVars.renderer.blackHoleRenderer.bloom.bloomBrightness.threshold, r -> {
-              OCVars.renderer.blackHoleRenderer.bloom.bloomBrightness.threshold = r;
-            }).row();
-        tab.add("tone");
-        tab.slider(0.0f, 4.0f, 0.1f, OCVars.renderer.blackHoleRenderer.bloom.bloomComposite.tone,
-            r -> {
-              OCVars.renderer.blackHoleRenderer.bloom.bloomComposite.tone = r;
-            }).row();
-        tab.add("noise_LOD");
-        tab.slider(1.0f, 8.0f, 1.0f, blackhole.adiskNoiseLOD * 1.0f, r -> {
-          blackhole.adiskNoiseLOD = (int) r;
-        }).row();
-        tab.add("horizon_radius");
-        tab.slider(0.2f, 4.0f, 0.1f, blackhole.horizonRadius, r -> {
-          blackhole.horizonRadius = r;
-        }).row();
-        tab.add("max_steps");
-        tab.slider(150f, 300f, 10f, blackhole.maxSteps, r -> {
-          blackhole.maxSteps = (int) r;
-        }).row();
-        tab.add("max_length");
-        tab.slider(15f, 40f, 2.5f, blackhole.maxLength, r -> {
-          blackhole.maxLength = r;
-        }).row();
-        tab.add("fov_scl");
-        tab.slider(0.2f, 4.0f, 0.1f, blackhole.fovScale, r -> {
-          blackhole.fovScale = r;
-        }).row();
-      });
-      t.table(tab -> {
-        tab.add("len");
-        tab.slider(0.1f, 5.0f, 0.1f, OCVars.renderer.blackHoleRenderer.len, r -> {
-          OCVars.renderer.blackHoleRenderer.len = r;
-        }).row();
-        tab.add("scl");
-        tab.slider(1.0f, 8.0f, 1.0f, OCVars.renderer.blackHoleRenderer.scl, r -> {
-          OCVars.renderer.blackHoleRenderer.scl = r;
-          OCVars.renderer.blackHoleRenderer.resize();
-        }).row();
-        tab.add("height");
-        tab.slider(0.1f, 2.0f, 0.05f, blackhole.adiskHeight, r -> {
-          blackhole.adiskHeight = r;
-        }).row();
-        tab.add("lit");
-        tab.slider(0.00001f, 1.0f, 0.0001f, blackhole.adiskLit, r -> {
-          blackhole.adiskLit = r;
-        }).row();
-        tab.add("particle");
-        tab.slider(0.2f, 1.5f, 0.1f, blackhole.adiskParticle, r -> {
-          blackhole.adiskParticle = r;
-        }).row();
-        tab.add("noise_scale");
-        tab.slider(0.1f, 5f, 0.01f, blackhole.adiskNoiseScale, r -> {
-          blackhole.adiskNoiseScale = r;
-        }).row();
-        tab.add("adiskDensityV");
-        tab.slider(0.1f, 18f, 0.1f, blackhole.adiskDensityV, r -> {
-          blackhole.adiskDensityV = r;
-        }).row();
-        tab.add("adiskDensityH");
-        tab.slider(0.1f, 18f, 0.1f, blackhole.adiskDensityH, r -> {
-          blackhole.adiskDensityH = r;
-        }).row();
-        tab.add("adiskOuterRadius");
-        tab.slider(3f, 20f, 1f, blackhole.adiskOuterRadius, r -> {
-          blackhole.adiskOuterRadius = r;
-        }).row();
-      });
-    });
+    renderer.add(parent);
   }
 
   public float buttonListHeight() {

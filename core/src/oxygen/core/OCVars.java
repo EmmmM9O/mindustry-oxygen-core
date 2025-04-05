@@ -5,6 +5,7 @@ import arc.*;
 import arc.files.*;
 import mindustry.*;
 import mindustry.mod.Mods.*;
+import oxygen.ctype.*;
 import oxygen.graphics.*;
 import oxygen.loader.*;
 import oxygen.ui.*;
@@ -27,8 +28,10 @@ public class OCVars {
   public static EventBus bus = new EventBus(events);
   public static OCLoadRenderer loader;
   public static OCRenderer renderer;
+  public static OCContentLoader content;
 
   public static void preinit() {
+    content = new OCContentLoader();
     loader = new OCLoadRenderer();
     UIUtil.setLoadRenderer(loader);
     events.putEvents();

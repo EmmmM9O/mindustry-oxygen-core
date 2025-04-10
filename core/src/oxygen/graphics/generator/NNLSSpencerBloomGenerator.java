@@ -1,3 +1,4 @@
+/* (C) 2025 */
 package oxygen.graphics.generator;
 
 import arc.*;
@@ -6,17 +7,17 @@ import arc.graphics.gl.*;
 import arc.struct.*;
 
 public class NNLSSpencerBloomGenerator {
-  public static final float[][] downSample = {
-      { 1.0f / 81.0f, 3.0f / 81.0f, 3.0f / 81.0f, 1.0f / 81.0f },
-      { 3.0f / 81.0f, 9.0f / 81.0f, 9.0f / 81.0f, 3.0f / 81.0f },
-      { 3.0f / 81.0f, 9.0f / 81.0f, 9.0f / 81.0f, 3.0f / 81.0f },
-      { 1.0f / 81.0f, 3.0f / 81.0f, 3.0f / 81.0f, 1.0f / 81.0f } };
+  public static final float[][] downSample =
+      {{1.0f / 81.0f, 3.0f / 81.0f, 3.0f / 81.0f, 1.0f / 81.0f},
+          {3.0f / 81.0f, 9.0f / 81.0f, 9.0f / 81.0f, 3.0f / 81.0f},
+          {3.0f / 81.0f, 9.0f / 81.0f, 9.0f / 81.0f, 3.0f / 81.0f},
+          {1.0f / 81.0f, 3.0f / 81.0f, 3.0f / 81.0f, 1.0f / 81.0f}};
 
   public static final float[][] upSample = { //
-      { 1.0f / 16.0f, 3.0f / 16.0f, 3.0f / 16.0f, 9.0f / 16.0f },
-      { 3.0f / 16.0f, 1.0f / 16.0f, 9.0f / 16.0f, 3.0f / 16.0f },
-      { 3.0f / 16.0f, 9.0f / 16.0f, 1.0f / 16.0f, 3.0f / 16.0f },
-      { 9.0f / 16.0f, 3.0f / 16.0f, 3.0f / 16.0f, 1.0f / 16.0f } };
+      {1.0f / 16.0f, 3.0f / 16.0f, 3.0f / 16.0f, 9.0f / 16.0f},
+      {3.0f / 16.0f, 1.0f / 16.0f, 9.0f / 16.0f, 3.0f / 16.0f},
+      {3.0f / 16.0f, 9.0f / 16.0f, 1.0f / 16.0f, 3.0f / 16.0f},
+      {9.0f / 16.0f, 3.0f / 16.0f, 3.0f / 16.0f, 1.0f / 16.0f}};
   public int maxLevel = 9, height, size;
 
   int getLevel(int h) {

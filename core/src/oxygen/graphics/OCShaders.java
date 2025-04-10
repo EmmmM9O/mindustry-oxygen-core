@@ -218,9 +218,11 @@ public class OCShaders {
       super(getShaderFi(vert + ".vert"), getShaderFi(frag + ".frag"));
     }
 
-    Pattern pattern; 
+    Pattern pattern;
+
     public String processImport(String input) {
-	if(pattern==null) pattern=Pattern.compile("@import\\(([^)]+)\\);");
+      if (pattern == null)
+        pattern = Pattern.compile("@import\\(([^)]+)\\);");
 
       Matcher matcher = pattern.matcher(input);
       StringBuffer sb = new StringBuffer();

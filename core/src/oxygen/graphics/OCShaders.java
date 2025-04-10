@@ -1,6 +1,8 @@
 /* (C) 2025 */
 package oxygen.graphics;
 
+import java.util.regex.*;
+
 import arc.files.*;
 import arc.graphics.*;
 import arc.graphics.g3d.*;
@@ -22,11 +24,11 @@ public class OCShaders {
 
   // universe
   public static class BlackHoleParams {
-    public float maxLength = 30f, horizonRadius = 1f, adiskInnerRadius = 2.6f,
-        adiskOuterRadius = 12f, adiskHeight = 0.55f, adiskDensityV = 1.5f, adiskDensityH = 3.0f,
-        adiskNoiseScale = 0.8f, adiskSpeed = 0.1f, adiskLit = 0.15f, adiskParticle = 1.0f,
-        maxScl = 4f, minScl = 0.2f, sclR = 6f, sclT = 0.5f, stepSize = 0.1f;
-    public int adiskNoiseLOD = 4, maxSteps = 200;
+    public float maxLength = 40f, horizonRadius = 1f, adiskInnerRadius = 2.6f,
+        adiskOuterRadius = 12f, adiskHeight = 0.55f, adiskDensityV = 2, adiskDensityH = 4,
+        adiskNoiseScale = 0.8f, adiskSpeed = 0.2f, adiskLit = 0.25f, adiskParticle = 1.0f,
+        maxScl = 1f, minScl = 1f, sclR = 6f, sclT = 0.5f, stepSize = 0.1f;
+    public int adiskNoiseLOD = 5, maxSteps = 200;
     public Camera3D camera;
 
     public void apply(Shader shader) {
@@ -93,7 +95,7 @@ public class OCShaders {
     public BlackHoleParams params = new BlackHoleParams();
 
     public MenuBlackHoleShader() {
-      super("universe/blackhole", "screen");
+      super("universe/blackhole_menu", "screen");
     }
 
     @Override
@@ -208,11 +210,30 @@ public class OCShaders {
       setUniformf("texture0", 0);
       Gl.activeTexture(Gl.texture0);
     }
+
   }
 
   public static class OCLoadShader extends Shader {
     public OCLoadShader(String frag, String vert) {
       super(getShaderFi(vert + ".vert"), getShaderFi(frag + ".frag"));
+    }
+
+    Pattern pattern; 
+    public String processImport(String input) {
+	if(pattern==null) pattern=Pattern.compile("@import\\(([^)]+)\\);");
+
+      Matcher matcher = pattern.matcher(input);
+      StringBuffer sb = new StringBuffer();
+      while (matcher.find()) {
+        matcher.appendReplacement(sb, getShaderFi(matcher.group(1)).readString());
+      }
+      matcher.appendTail(sb);
+      return sb.toString();
+    }
+
+    @Override
+    protected String preprocess(String source, boolean fragment) {
+      return super.preprocess(processImport(source), fragment);
     }
   }
 

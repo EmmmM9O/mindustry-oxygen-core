@@ -164,7 +164,7 @@ void adisk_color(vec3 pos, inout vec3 color, inout float alpha, float scl) { //�
 
     color += density * adisk_lit * dustColor * alpha * abs(noise) * scl;
 }
-
+vec3 add_color(vec3 pos, vec3 dir, vec3 color, float alpha);
 vec3 ray_marching(vec3 pos, vec3 dir) {
     vec3 color = vec3(0.0);
     float alpha = 1.0;
@@ -186,7 +186,7 @@ vec3 ray_marching(vec3 pos, vec3 dir) {
         adisk_color(pos, color, alpha, scl); //吸积盘
         pos += dir * scl;
     }
-    color += texture(galaxy, dir).rgb * alpha;
+    color += add_color(pos, dir, color, alpha);
     return color;
 }
 

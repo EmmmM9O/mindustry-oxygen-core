@@ -28,6 +28,7 @@ uniform float scl_t;
 uniform float max_steps;
 uniform float step_size;
 uniform float fovScale;
+uniform float aDistance;
 
 const float PI = 3.14159265359;
 const float EPSILON = 0.0001;
@@ -133,7 +134,7 @@ void adisk_color(vec3 pos, inout vec3 color, inout float alpha, float scl) { //å
     //å¯†åº¦
 
     float density = max(
-            0.0, 1.0 - length(pos.xyz / vec3(adisk_outer_radius, adisk_height, adisk_outer_radius)));
+            0.0, 1.0 - length(pos.xyz / vec3(adisk_outer_radius, adisk_height, adisk_outer_radius))) * scl;
     if (density < 0.001) {
         return;
     }
@@ -162,7 +163,7 @@ void adisk_color(vec3 pos, inout vec3 color, inout float alpha, float scl) { //å
     vec3 dustColor =
         texture(color_map, vec2(sphericalCoord.x / adisk_outer_radius, 0.5)).rgb;
 
-    color += density * adisk_lit * dustColor * alpha * abs(noise) * scl;
+    color += density * adisk_lit * dustColor * alpha * abs(noise);
 }
 vec3 add_color(vec3 pos, vec3 dir, vec3 color, float alpha);
 vec3 ray_marching(vec3 pos, vec3 dir) {
@@ -171,8 +172,15 @@ vec3 ray_marching(vec3 pos, vec3 dir) {
 
     dir *= step_size;
     vec3 h = cross(pos, dir);
+    float p = length(h) / length(dir);
+    if (p >= aDistance) {
+        color += add_color(pos, dir, color, alpha);
+        return color;
+    }
     float h2 = dot(h, h);
-
+    float to = (length(pos) - aDistance);
+    if (to >= 0.0)
+        pos += dir * to;
     for (int i = 0; i < int(max_steps); i++) {
         float len = length_black_hole(pos);
         float scl = mix(min_scl, max_scl, 1.0 - smoothstep(0.0f, scl_t, inversesqrt(len) / scl_r));

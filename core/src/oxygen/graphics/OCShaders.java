@@ -15,24 +15,19 @@ import oxygen.graphics.menu.*;
 public class OCShaders {
   public static BlackHoleShader blackhole;
   public static TonemappingShader tonemapping;
-  public static BloomFilterGenerateShader bloomFilter;
-  public static CenterPixelGenerateShader centerPixel;
-  public static BloomDownsampleGenerateShader bloomDownsampleGen;
 
   public static void init() {
     blackhole = new BlackHoleShader();
     tonemapping = new TonemappingShader();
-//    bloomFilter = new BloomFilterGenerateShader();
-//    centerPixel = new CenterPixelGenerateShader();
-//    bloomDownsampleGen = new BloomDownsampleGenerateShader();
+
   }
 
   // universe
   public static class BlackHoleParams {
-    public float maxLength = 40f, horizonRadius = 1f, adiskInnerRadius = 2.6f,
-        adiskOuterRadius = 12f, adiskHeight = 0.55f, adiskDensityV = 2, adiskDensityH = 4,
+    public float maxLength = 35f, horizonRadius = 1f, adiskInnerRadius = 2.6f,
+        adiskOuterRadius = 12f, adiskHeight = 0.55f, adiskDensityV = 1, adiskDensityH = 3,
         adiskNoiseScale = 0.8f, adiskSpeed = 0.2f, adiskLit = 0.25f, adiskParticle = 1.0f,
-        maxScl = 1f, minScl = 1f, sclR = 6f, sclT = 0.5f, stepSize = 0.1f;
+        maxScl = 3f, minScl = 1f, sclR = 6f, sclT = 0.5f, stepSize = 0.15f, aDistance = 25f;
     public int adiskNoiseLOD = 5, maxSteps = 200;
     public Camera3D camera;
 
@@ -58,6 +53,7 @@ public class OCShaders {
       shader.setUniformf("scl_r", sclR);
       shader.setUniformf("scl_t", sclT);
       shader.setUniformf("step_size", stepSize);
+      shader.setUniformf("aDistance", aDistance);
       shader.setUniformf("fovScale", (float) Math.tan((camera.fov * (Math.PI / 180)) / 2.0));
     }
   }
@@ -219,53 +215,7 @@ public class OCShaders {
   }
 
   // Generators
-  
-  public static class BloomFilterGenerateShader extends OCLoadShader {
-    public float r0, border, size, integral;
 
-    public BloomFilterGenerateShader() {
-      super("generator/bloom/filter", "screen");
-    }
-
-    @Override
-    public void apply() {
-      setUniformf("r0", r0);
-      setUniformf("border", border);
-      setUniformf("size", size);
-      setUniformf("integral", integral);
-    }
-  }
-
-  public static class CenterPixelGenerateShader extends OCLoadShader {
-    public float border, size;
-
-    public CenterPixelGenerateShader() {
-      super("generator/bloom/center_pixel", "screen");
-    }
-
-    @Override
-    public void apply() {
-      setUniformf("border", border);
-      setUniformf("size", size);
-    }
-  }
-
-  public static class BloomDownsampleGenerateShader extends OCLoadShader {
-    public float border, size;
-    public Texture input;
-
-    public BloomDownsampleGenerateShader() {
-      super("generator/bloom/downsample", "screen");
-    }
-
-    @Override
-    public void apply() {
-      setUniformf("border", border);
-      setUniformf("size", size);
-      input.bind(0);
-      setUniformi("texture0", 0);
-    }
-  }
   ///
   public static class OCLoadShader extends Shader {
     public OCLoadShader(String frag, String vert) {

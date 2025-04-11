@@ -20,7 +20,7 @@ public class UniverseRenderer implements Disposable, Resizeable {
   public OCBloom bloom;
   public final Camera3D cam = new Camera3D();
   public int width, height, rayW, rayH;
-  public float blackholeScl = 2;
+  public float blackholeScl = 4;
   public FrameBuffer buffer, ray, buffer2;
   public Mesh screen;
   public UniverseParams params;

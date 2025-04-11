@@ -4,6 +4,8 @@ package oxygen.graphics.universe;
 import static oxygen.graphics.OCShaders.*;
 
 import arc.*;
+import arc.fx.*;
+import arc.fx.filters.*;
 import arc.graphics.*;
 import arc.graphics.Pixmap.*;
 import arc.graphics.g3d.*;
@@ -18,10 +20,11 @@ public class UniverseRenderer implements Disposable, Resizeable {
   public OCBloom bloom;
   public final Camera3D cam = new Camera3D();
   public int width, height, rayW, rayH;
-  public float blackholeScl = 4;
-  public FrameBuffer buffer, ray;
+  public float blackholeScl = 2;
+  public FrameBuffer buffer, ray, buffer2;
   public Mesh screen;
   public UniverseParams params;
+  public FxFilter antialiasingFilter;
 
   public UniverseRenderer() {
     screen = OCMeshBuilder.screenMesh();
@@ -33,8 +36,10 @@ public class UniverseRenderer implements Disposable, Resizeable {
     galaxy = new Cubemap("cubemaps/stars/");
     bloom = new PyramidBloom(screen, width, height, false);
     buffer = new FrameBuffer(Format.rgba8888, width, height, true);
+    buffer2 = new FrameBuffer(Format.rgba8888, width, height, true);
     ray = new FrameBuffer(Format.rgba8888, rayW, rayH, false);
     params = new UniverseParams();
+    antialiasingFilter = new FxaaFilter();
     params.ray = ray;
     params.buffer = buffer;
     params.screen = screen;
@@ -66,6 +71,8 @@ public class UniverseRenderer implements Disposable, Resizeable {
   public void onResize() {
     bloom.resize(width, height);
     buffer.resize(width, height);
+    buffer2.resize(width, height);
+    antialiasingFilter.resize(width, height);
     resizeRay();
   }
 
@@ -73,6 +80,9 @@ public class UniverseRenderer implements Disposable, Resizeable {
   public void dispose() {
     blackhole.dispose();
     bloom.dispose();
+    buffer.dispose();
+    buffer2.dispose();
+    ray.dispose();
   }
 
   public void render() {

@@ -7,7 +7,6 @@ import arc.files.*;
 import arc.graphics.*;
 import arc.graphics.g3d.*;
 import arc.graphics.gl.*;
-import arc.math.*;
 import arc.math.geom.*;
 import arc.util.*;
 import mindustry.*;
@@ -16,10 +15,16 @@ import oxygen.graphics.menu.*;
 public class OCShaders {
   public static BlackHoleShader blackhole;
   public static TonemappingShader tonemapping;
+  public static BloomFilterGenerateShader bloomFilter;
+  public static CenterPixelGenerateShader centerPixel;
+  public static BloomDownsampleGenerateShader bloomDownsampleGen;
 
   public static void init() {
     blackhole = new BlackHoleShader();
     tonemapping = new TonemappingShader();
+//    bloomFilter = new BloomFilterGenerateShader();
+//    centerPixel = new CenterPixelGenerateShader();
+//    bloomDownsampleGen = new BloomDownsampleGenerateShader();
   }
 
   // universe
@@ -213,6 +218,55 @@ public class OCShaders {
 
   }
 
+  // Generators
+  
+  public static class BloomFilterGenerateShader extends OCLoadShader {
+    public float r0, border, size, integral;
+
+    public BloomFilterGenerateShader() {
+      super("generator/bloom/filter", "screen");
+    }
+
+    @Override
+    public void apply() {
+      setUniformf("r0", r0);
+      setUniformf("border", border);
+      setUniformf("size", size);
+      setUniformf("integral", integral);
+    }
+  }
+
+  public static class CenterPixelGenerateShader extends OCLoadShader {
+    public float border, size;
+
+    public CenterPixelGenerateShader() {
+      super("generator/bloom/center_pixel", "screen");
+    }
+
+    @Override
+    public void apply() {
+      setUniformf("border", border);
+      setUniformf("size", size);
+    }
+  }
+
+  public static class BloomDownsampleGenerateShader extends OCLoadShader {
+    public float border, size;
+    public Texture input;
+
+    public BloomDownsampleGenerateShader() {
+      super("generator/bloom/downsample", "screen");
+    }
+
+    @Override
+    public void apply() {
+      setUniformf("border", border);
+      setUniformf("size", size);
+      input.bind(0);
+      setUniformi("texture0", 0);
+    }
+  }
+  ///
   public static class OCLoadShader extends Shader {
     public OCLoadShader(String frag, String vert) {
       super(getShaderFi(vert + ".vert"), getShaderFi(frag + ".frag"));

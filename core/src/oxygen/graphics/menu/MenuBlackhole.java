@@ -1,4 +1,3 @@
-/* (C) 2025 */
 package oxygen.graphics.menu;
 
 import arc.*;
@@ -27,7 +26,7 @@ public class MenuBlackhole implements OCMenuRendererI {
   public Texture colorMap;
   public OCBloom bloom;
   public Camera3D cam;
-  public FrameBuffer buffer, ray, buffer2;
+  public FrameBuffer buffer, ray;
   public Mesh screen;
   public MenuBlackHoleShader shader;
   public FxFilter antialiasingFilter;
@@ -40,7 +39,7 @@ public class MenuBlackhole implements OCMenuRendererI {
     ray = renderer.universeRenderer.ray;
     buffer = renderer.universeRenderer.buffer;
     screen = renderer.universeRenderer.screen;
-    buffer2 = renderer.universeRenderer.buffer2;
+    // buffer2 = renderer.universeRenderer.buffer2;
     antialiasingFilter = renderer.universeRenderer.antialiasingFilter;
     colorMap = new Texture(Vars.tree.get("textures/color_map.png"), true);
     shader = new MenuBlackHoleShader();
@@ -68,13 +67,7 @@ public class MenuBlackhole implements OCMenuRendererI {
     screen.render(shader, Gl.triangles);
     ray.end();
     bloom.renderTo(ray, buffer);
-    buffer2.bind();
-    tonemapping.input = buffer.getTexture();
-    tonemapping.bind();
-    tonemapping.apply();
-    screen.render(tonemapping, Gl.triangles);
-    buffer2.end();
-    antialiasingFilter.setInput(buffer2).render();
+    antialiasingFilter.setInput(buffer).render();
   }
 
   @Override

@@ -7,6 +7,7 @@ import arc.files.*;
 import arc.graphics.*;
 import arc.graphics.g3d.*;
 import arc.graphics.gl.*;
+import arc.math.*;
 import arc.math.geom.*;
 import arc.util.*;
 import mindustry.*;
@@ -14,17 +15,31 @@ import oxygen.graphics.menu.*;
 
 public class OCShaders {
   public static BlackHoleShader blackhole;
-  public static TonemappingShader tonemapping;
 
   public static void init() {
     blackhole = new BlackHoleShader();
-    tonemapping = new TonemappingShader();
+  }
 
+  public static Mat getCamMat(Camera3D cam) {
+    Mat mat = new Mat();
+    Vec3 dir = cam.direction.cpy().nor();
+    Vec3 right = cam.up.cpy().crs(dir).nor();
+    Vec3 up = dir.cpy().crs(right).nor();
+    mat.val[Mat.M00] = right.x;
+    mat.val[Mat.M01] = right.y;
+    mat.val[Mat.M02] = right.z;
+    mat.val[Mat.M10] = up.x;
+    mat.val[Mat.M11] = up.y;
+    mat.val[Mat.M12] = up.z;
+    mat.val[Mat.M20] = dir.x;
+    mat.val[Mat.M21] = dir.y;
+    mat.val[Mat.M22] = dir.z;
+    return mat;
   }
 
   // universe
   public static class BlackHoleParams {
-    public float maxLength = 35f, horizonRadius = 1f, adiskInnerRadius = 2.6f,
+    public float horizonRadius = 1f, adiskInnerRadius = 2.6f,
         adiskOuterRadius = 12f, adiskHeight = 0.55f, adiskDensityV = 1, adiskDensityH = 3,
         adiskNoiseScale = 0.8f, adiskSpeed = 0.2f, adiskLit = 0.25f, adiskParticle = 1.0f,
         maxScl = 3f, minScl = 1f, sclR = 6f, sclT = 0.5f, stepSize = 0.15f, aDistance = 25f;
@@ -33,9 +48,7 @@ public class OCShaders {
 
     public void apply(Shader shader) {
       shader.setUniformf("camera_pos", camera.position);
-      shader.setUniformf("camera_up", camera.up);
-      shader.setUniformf("camera_dir", camera.direction);
-      shader.setUniformf("max_length_2", maxLength * maxLength);
+      shader.setUniformMatrix("camera_mat", getCamMat(camera));
       shader.setUniformf("horizon_radius_2", horizonRadius * horizonRadius);
       shader.setUniformf("adisk_height", adiskHeight);
       shader.setUniformf("adisk_inner_radius", adiskInnerRadius);
@@ -53,8 +66,8 @@ public class OCShaders {
       shader.setUniformf("scl_r", sclR);
       shader.setUniformf("scl_t", sclT);
       shader.setUniformf("step_size", stepSize);
-      shader.setUniformf("aDistance", aDistance);
-      shader.setUniformf("fovScale", (float) Math.tan((camera.fov * (Math.PI / 180)) / 2.0));
+      shader.setUniformf("a_distance", aDistance);
+      shader.setUniformf("fov_scale", (float) Math.tan((camera.fov * (Math.PI / 180)) / 2.0));
     }
   }
 
@@ -119,18 +132,22 @@ public class OCShaders {
     public Vec2 resolution;
     public float threshold = 0.8f, softEdgeRange = 0.2f;
     // CIE 1931
-    public Vec3 luminanceVector = new Vec3(0.2126, 0.7152, 0.0722);
+    // public Vec3 luminanceVector = new Vec3(0.2126, 0.7152, 0.0722);
     /* new Vec3(0.2125, 0.7154, 0.0721); */
 
     public BloomBrightness() {
       super("bloom/bloom_brightness", "screen");
     }
 
+    public BloomBrightness(String frag, String vert) {
+      super(frag, vert);
+    }
+
     @Override
     public void apply() {
       setUniformf("threshold", threshold);
       setUniformf("softEdgeRange", softEdgeRange);
-      setUniformf("luminanceVector", luminanceVector);
+      // setUniformf("luminanceVector", luminanceVector);
       setUniformf("resolution", resolution);
       input.bind(0);
       setUniformf("texture0", 0);
@@ -144,6 +161,10 @@ public class OCShaders {
 
     public BloomComposite() {
       super("bloom/bloom_composite", "screen");
+    }
+
+    public BloomComposite(String frag, String vert) {
+      super(frag, vert);
     }
 
     @Override
@@ -162,8 +183,8 @@ public class OCShaders {
     public Texture input;
     public Vec2 resolution;
 
-    public BloomDownsample() {
-      super("bloom/bloom_downsample", "screen");
+    public BloomDownsample(String frag, String vert) {
+      super(frag, vert);
     }
 
     @Override
@@ -179,8 +200,8 @@ public class OCShaders {
     public Texture input, addition;
     public Vec2 resolution;
 
-    public BloomUpsample() {
-      super("bloom/bloom_upsample", "screen");
+    public BloomUpsample(String frag, String vert) {
+      super(frag, vert);
     }
 
     @Override
@@ -194,13 +215,17 @@ public class OCShaders {
     }
   }
 
-  public static class TonemappingShader extends OCLoadShader {
+  public static class BloomTonemapping extends OCLoadShader {
     public boolean enabled = true;
     public float gamma = 2.8f;
     public Texture input;
 
-    public TonemappingShader() {
-      super("tonemapping", "screen");
+    public BloomTonemapping() {
+      this("bloom_tonemapping", "screen");
+    }
+
+    public BloomTonemapping(String frag, String vert) {
+      super(frag, vert);
     }
 
     @Override
@@ -211,12 +236,11 @@ public class OCShaders {
       setUniformf("texture0", 0);
       Gl.activeTexture(Gl.texture0);
     }
-
   }
-
   // Generators
 
   ///
+
   public static class OCLoadShader extends Shader {
     public OCLoadShader(String frag, String vert) {
       super(getShaderFi(vert + ".vert"), getShaderFi(frag + ".frag"));
@@ -231,7 +255,7 @@ public class OCShaders {
       Matcher matcher = pattern.matcher(input);
       StringBuffer sb = new StringBuffer();
       while (matcher.find()) {
-        matcher.appendReplacement(sb, getShaderFi(matcher.group(1)).readString());
+        matcher.appendReplacement(sb, processImport(getShaderFi(matcher.group(1)).readString()));
       }
       matcher.appendTail(sb);
       return sb.toString();

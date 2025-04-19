@@ -2,10 +2,9 @@ varying vec2 uv;
 
 uniform sampler2D texture0;
 uniform vec2 resolution;
-
 uniform float threshold;
-uniform vec3 luminanceVector;
 uniform float softEdgeRange;
+const vec3 luminanceVector = vec3(0.2126, 0.7152, 0.0722); ;
 void main() {
     vec2 texCoord = gl_FragCoord.xy / resolution.xy;
 

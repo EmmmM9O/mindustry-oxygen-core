@@ -34,7 +34,7 @@ public class UniverseRenderer implements Disposable, Resizeable {
     height = Core.graphics.getHeight();
     updateSize();
     galaxy = new Cubemap("cubemaps/stars/");
-    bloom = new PyramidBloom(screen, width, height, false);
+    bloom = new PyramidFourNAvgBloom(screen, width, height);
     buffer = new FrameBuffer(Format.rgba8888, width, height, true);
     buffer2 = new FrameBuffer(Format.rgba8888, width, height, true);
     ray = new FrameBuffer(Format.rgba8888, rayW, rayH, false);
@@ -86,10 +86,16 @@ public class UniverseRenderer implements Disposable, Resizeable {
   }
 
   public void render() {
-    tonemapping.input = buffer.getTexture();
-    tonemapping.bind();
-    tonemapping.apply();
-    screen.render(tonemapping, Gl.triangles);
+
   }
 
+  @Override
+  public int getWidth() {
+    return width;
+  }
+
+  @Override
+  public int getHeight() {
+    return height;
+  }
 }

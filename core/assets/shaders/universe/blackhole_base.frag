@@ -97,7 +97,7 @@ void adisk_color(vec3 pos, inout vec3 color, inout float alpha, float scl) { //å
             rc.y -= time * adisk_speed;
         }
     }
-    rc = sphericalCoord + 30.0;
+    rc = sphericalCoord + 10.0;
     float noise_2 = 2.0;
     sta = adisk_noise_scale;
     for (int i = 0; i < int(adisk_noise_LOD_2); i++) {
@@ -112,7 +112,7 @@ void adisk_color(vec3 pos, inout vec3 color, inout float alpha, float scl) { //å
     coverage *= noise_2;
     coverage = saturate(coverage * 6.0);
     coverage *= pcurve(radialGradient, 4.0, 0.9);
-    coverage *= 0.2;
+    coverage *= 8.0;
     sphericalCoord.y += time * adisk_speed * 0.5;
     dustColor *= noise * 0.998 + 0.002;
     dustColor *= pow(texture(color_map, sphericalCoord.yx * vec2(0.15, 0.27)).rgb, vec3(2.0)) * 4.0;

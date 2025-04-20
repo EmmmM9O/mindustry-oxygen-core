@@ -41,6 +41,12 @@ public class OCMenuFragment extends MenuFragmentI {
           renderer.render();
       };
     });
+    parent.fill(info -> {
+      info.right().top();
+      IntFormat fps = new IntFormat("fps");
+      info.label(() -> fps.get(Core.graphics.getFramesPerSecond())).left()
+          .style(Styles.outlineLabel).name("fps");
+    });
     if (false) {
       parent.fill(c -> {
         c.left();
@@ -53,12 +59,7 @@ public class OCMenuFragment extends MenuFragmentI {
           pane.setOverscroll(false, false);
         }).grow();
       });
-      parent.fill(info -> {
-        info.right().top();
-        IntFormat fps = new IntFormat("fps");
-        info.label(() -> fps.get(Core.graphics.getFramesPerSecond())).left()
-            .style(Styles.outlineLabel).name("fps");
-      });
+
       String versionText = "[#fc8140aa]" + Version.combined() + "\n先行测试版本 并不代表最终效果";
 
       parent.fill((x, y, w, h) -> {

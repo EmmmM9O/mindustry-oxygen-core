@@ -20,7 +20,7 @@ public class UniverseRenderer implements Disposable, Resizeable {
   public OCBloom bloom;
   public final Camera3D cam = new Camera3D();
   public int width, height, rayW, rayH;
-  public float blackholeScl = 4;
+  public float blackholeScl = 2;
   public FrameBuffer buffer, ray, buffer2, ray2;
   public Mesh screen;
   public UniverseParams params;
@@ -33,7 +33,7 @@ public class UniverseRenderer implements Disposable, Resizeable {
     width = Core.graphics.getWidth();
     height = Core.graphics.getHeight();
     updateSize();
-    //2b4zl5wt30q
+    // 2b4zl5wt30q
     galaxy = OCGUtil.getCubeMap("ouniverse/");
     bloom = new PyramidFourNAvgBloom(screen, width, height);
     buffer = new HDRFrameBuffer(width, height, true);

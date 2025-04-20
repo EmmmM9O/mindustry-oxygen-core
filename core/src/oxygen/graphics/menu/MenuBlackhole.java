@@ -83,8 +83,11 @@ public class MenuBlackhole implements OCMenuRendererI {
       ray2.end();
     else
       ray.end();
+    if (rflag)
+      bloom.renderTo(ray2, buffer);
+    else
+      bloom.renderTo(ray, buffer);
     rflag = !rflag;
-    bloom.renderTo(ray, buffer);
     antialiasingFilter.setInput(buffer).render();
   }
 

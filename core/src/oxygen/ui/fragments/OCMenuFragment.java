@@ -41,38 +41,40 @@ public class OCMenuFragment extends MenuFragmentI {
           renderer.render();
       };
     });
-    parent.fill(c -> {
-      c.left();
-      c.pane(Styles.noBarPane, cont -> {
-        container = cont;
-        cont.name = "menu container";
-        buildButtons();
-        Events.on(ResizeEvent.class, event -> buildButtons());
-      }).with(pane -> {
-        pane.setOverscroll(false, false);
-      }).grow();
-    });
-    parent.fill(info -> {
-      info.right().top();
-      IntFormat fps = new IntFormat("fps");
-      info.label(() -> fps.get(Core.graphics.getFramesPerSecond())).left()
-          .style(Styles.outlineLabel).name("fps");
-    });
-    String versionText = "[#fc8140aa]" + Version.combined() + "\n先行测试版本 并不代表最终效果";
+    if (false) {
+      parent.fill(c -> {
+        c.left();
+        c.pane(Styles.noBarPane, cont -> {
+          container = cont;
+          cont.name = "menu container";
+          buildButtons();
+          Events.on(ResizeEvent.class, event -> buildButtons());
+        }).with(pane -> {
+          pane.setOverscroll(false, false);
+        }).grow();
+      });
+      parent.fill(info -> {
+        info.right().top();
+        IntFormat fps = new IntFormat("fps");
+        info.label(() -> fps.get(Core.graphics.getFramesPerSecond())).left()
+            .style(Styles.outlineLabel).name("fps");
+      });
+      String versionText = "[#fc8140aa]" + Version.combined() + "\n先行测试版本 并不代表最终效果";
 
-    parent.fill((x, y, w, h) -> {
-      TextureRegion logo = Core.atlas.find("logo");
-      float height = Core.graphics.getHeight() - Core.scene.marginTop;
-      float topX = (height - buttonListHeight()) / 2 + buttonListHeight();
-      float logoh = (height - topX) * logoScl;
-      float logow = logoh / logo.height * logo.width;
-      float fx = logow / 2 + 40f;
-      float fy = height / 2 + topX / 2 + 40f;
-      Draw.color();
-      Draw.rect(logo, fx, fy, logow, logoh);
-      Fonts.outline.setColor(Color.orange);
-      Fonts.outline.draw(versionText, fx, fy - logoh / 2f - Scl.scl(2f), Align.center);
-    }).touchable = Touchable.disabled;
+      parent.fill((x, y, w, h) -> {
+        TextureRegion logo = Core.atlas.find("logo");
+        float height = Core.graphics.getHeight() - Core.scene.marginTop;
+        float topX = (height - buttonListHeight()) / 2 + buttonListHeight();
+        float logoh = (height - topX) * logoScl;
+        float logow = logoh / logo.height * logo.width;
+        float fx = logow / 2 + 40f;
+        float fy = height / 2 + topX / 2 + 40f;
+        Draw.color();
+        Draw.rect(logo, fx, fy, logow, logoh);
+        Fonts.outline.setColor(Color.orange);
+        Fonts.outline.draw(versionText, fx, fy - logoh / 2f - Scl.scl(2f), Align.center);
+      }).touchable = Touchable.disabled;
+    }
     renderer.add(parent);
   }
 

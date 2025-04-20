@@ -1,4 +1,4 @@
-@import(util/math.glsl);
+#import(util/math.glsl);
 ///----
 /// Simplex 3D Noise
 /// by Ian McEwan, Ashima Arts

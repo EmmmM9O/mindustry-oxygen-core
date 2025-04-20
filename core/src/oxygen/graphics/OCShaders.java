@@ -39,28 +39,27 @@ public class OCShaders {
 
   // universe
   public static class BlackHoleParams {
-    public float horizonRadius = 1f, adiskInnerRadius = 2.6f,
-        adiskOuterRadius = 12f, adiskHeight = 0.55f, adiskDensityV = 1, adiskDensityH = 3,
-        adiskNoiseScale = 0.8f, adiskSpeed = 0.2f, adiskLit = 0.25f, adiskParticle = 1.0f,
-        maxScl = 3f, minScl = 1f, sclR = 6f, sclT = 0.5f, stepSize = 0.15f, aDistance = 25f;
-    public int adiskNoiseLOD = 5, maxSteps = 200;
+    public float horizonRadius = 1f, adiskInnerRadius = 2.6f, adiskOuterRadius = 12f,
+        adiskNoiseScale = 0.8f, adiskSpeed = 0.1f, adiskLit = 0.13f, adiskParticle = 1.0f,
+        maxScl = 3f, minScl = 1f, sclR = 6f, sclT = 0.5f, stepSize = 0.15f, aDistance = 25f,
+        maxLength = 30f;
+    public int adiskNoiseLOD1 = 4, adiskNoiseLOD2 = 6, maxSteps = 200;
     public Camera3D camera;
+    public boolean previous = false;
 
     public void apply(Shader shader) {
       shader.setUniformf("camera_pos", camera.position);
       shader.setUniformMatrix("camera_mat", getCamMat(camera));
       shader.setUniformf("horizon_radius_2", horizonRadius * horizonRadius);
-      shader.setUniformf("adisk_height", adiskHeight);
       shader.setUniformf("adisk_inner_radius", adiskInnerRadius);
       shader.setUniformf("adisk_outer_radius", adiskOuterRadius);
-      shader.setUniformf("adisk_density_v", adiskDensityV);
-      shader.setUniformf("adisk_density_h", adiskDensityH);
       shader.setUniformf("adisk_lit", adiskLit);
       shader.setUniformf("adisk_speed", adiskSpeed);
-      shader.setUniformf("adisk_particle", adiskParticle);
       shader.setUniformf("adisk_noise_scale", adiskNoiseScale);
-      shader.setUniformf("adisk_noise_LOD", adiskNoiseLOD * 1.0f);
+      shader.setUniformf("adisk_noise_LOD_1", adiskNoiseLOD1 * 1.0f);
+      shader.setUniformf("adisk_noise_LOD_2", adiskNoiseLOD2 * 1.0f);
       shader.setUniformf("max_steps", maxSteps);
+      shader.setUniformf("max_length_2", maxLength * maxLength);
       shader.setUniformf("max_scl", maxScl);
       shader.setUniformf("min_scl", minScl);
       shader.setUniformf("scl_r", sclR);
@@ -68,6 +67,7 @@ public class OCShaders {
       shader.setUniformf("step_size", stepSize);
       shader.setUniformf("a_distance", aDistance);
       shader.setUniformf("fov_scale", (float) Math.tan((camera.fov * (Math.PI / 180)) / 2.0));
+      shader.setUniformf("has_previous", previous ? 1.0f : 0.0f);
     }
   }
 
@@ -103,6 +103,8 @@ public class OCShaders {
    */
   public static class MenuBlackHoleShader extends OCLoadShader {
     public Texture colorMap;
+    public Texture noise;
+    public Texture previous;
     public Cubemap galaxy;
     public Vec2 resolution;
     public Camera3D camera;
@@ -115,6 +117,13 @@ public class OCShaders {
     @Override
     public void apply() {
       params.camera = camera;
+      if (previous != null) {
+        params.previous = true;
+        previous.bind(2);
+        setUniformi("previous_tex", 2);
+      } else {
+        params.previous = false;
+      }
       params.apply(this);
       setUniformf("time", Time.globalTime / 10f);
       setUniformf("resolution", resolution);
@@ -122,6 +131,8 @@ public class OCShaders {
       setUniformi("galaxy", 0);
       colorMap.bind(1);
       setUniformi("color_map", 1);
+      noise.bind(3);
+      setUniformi("noise_tex", 3);
       Gl.activeTexture(Gl.texture0);
     }
   }
@@ -130,10 +141,7 @@ public class OCShaders {
   public static class BloomBrightness extends OCLoadShader {
     public Texture input;
     public Vec2 resolution;
-    public float threshold = 0.8f, softEdgeRange = 0.2f;
-    // CIE 1931
-    // public Vec3 luminanceVector = new Vec3(0.2126, 0.7152, 0.0722);
-    /* new Vec3(0.2125, 0.7154, 0.0721); */
+    public float threshold = 1.0f;
 
     public BloomBrightness() {
       super("bloom/bloom_brightness", "screen");
@@ -145,19 +153,17 @@ public class OCShaders {
 
     @Override
     public void apply() {
-      setUniformf("threshold", threshold);
-      setUniformf("softEdgeRange", softEdgeRange);
-      // setUniformf("luminanceVector", luminanceVector);
       setUniformf("resolution", resolution);
       input.bind(0);
       setUniformf("texture0", 0);
+      setUniformf("threshold", threshold);
       Gl.activeTexture(Gl.texture0);
     }
   }
 
   public static class BloomComposite extends OCLoadShader {
     public Texture input, bloom;
-    public float tone = 1f, bloom_strength = 0.2f;
+    public float intensity = 0.25f, exposure = 0.8f;
 
     public BloomComposite() {
       super("bloom/bloom_composite", "screen");
@@ -169,8 +175,8 @@ public class OCShaders {
 
     @Override
     public void apply() {
-      setUniformf("tone", tone);
-      setUniformf("bloom_strength", bloom_strength);
+      setUniformf("intensity", intensity);
+      setUniformf("exposure", exposure);
       input.bind(0);
       setUniformi("texture0", 0);
       bloom.bind(1);
@@ -221,7 +227,7 @@ public class OCShaders {
     public Texture input;
 
     public BloomTonemapping() {
-      this("bloom_tonemapping", "screen");
+      this("bloom/bloom_tonemapping", "screen");
     }
 
     public BloomTonemapping(String frag, String vert) {
@@ -250,7 +256,7 @@ public class OCShaders {
 
     public String processImport(String input) {
       if (pattern == null)
-        pattern = Pattern.compile("@import\\(([^)]+)\\);");
+        pattern = Pattern.compile("#import\\(([^)]+)\\);");
 
       Matcher matcher = pattern.matcher(input);
       StringBuffer sb = new StringBuffer();

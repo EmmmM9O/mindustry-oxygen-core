@@ -1,9 +1,9 @@
+/* (C) 2025 */
 package oxygen.graphics.menu;
 
 import arc.*;
 import arc.fx.*;
 import arc.graphics.*;
-import arc.graphics.Pixmap.*;
 import arc.graphics.g3d.*;
 import arc.graphics.gl.*;
 import arc.input.*;
@@ -17,19 +17,18 @@ import oxygen.graphics.*;
 import oxygen.graphics.OCShaders.*;
 import oxygen.graphics.bloom.*;
 
-import static oxygen.graphics.OCShaders.*;
-import static oxygen.ui.OCStyles.*;
 import static oxygen.core.OCVars.*;
 
 public class MenuBlackhole implements OCMenuRendererI {
   public Cubemap galaxy;
-  public Texture colorMap;
+  public Texture colorMap, noise;
   public OCBloom bloom;
   public Camera3D cam;
-  public FrameBuffer buffer, ray;
+  public FrameBuffer buffer, ray, ray2;
   public Mesh screen;
   public MenuBlackHoleShader shader;
   public FxFilter antialiasingFilter;
+  public boolean rflag, init;
   float zoom = 1f, camLength = 2f, radius = 1.5f, camRadius = 6f, minZoom = 0.1f;
 
   public MenuBlackhole() {
@@ -37,16 +36,19 @@ public class MenuBlackhole implements OCMenuRendererI {
     bloom = renderer.universeRenderer.bloom;
     cam = renderer.universeRenderer.cam;
     ray = renderer.universeRenderer.ray;
+    ray2 = renderer.universeRenderer.ray2;
     buffer = renderer.universeRenderer.buffer;
     screen = renderer.universeRenderer.screen;
-    // buffer2 = renderer.universeRenderer.buffer2;
     antialiasingFilter = renderer.universeRenderer.antialiasingFilter;
     colorMap = new Texture(Vars.tree.get("textures/color_map.png"), true);
+    noise = new Texture(Vars.tree.get("textures/noise.png"), true);
     shader = new MenuBlackHoleShader();
     shader.galaxy = galaxy;
     shader.colorMap = colorMap;
+    shader.noise = noise;
     shader.camera = cam;
     cam.position.set(10, 6, 10);
+    cam.up.set(Vec3.Y.rotate(Vec3.X, 42f));
   }
 
   @Override
@@ -54,18 +56,34 @@ public class MenuBlackhole implements OCMenuRendererI {
     int w = Core.graphics.getWidth();
     int h = Core.graphics.getHeight();
 
-    cam.up.set(Vec3.Y);
     cam.resize(w, h);
     cam.position
         .setLength((radius + camRadius) * camLength + (zoom - 1f) * (radius + camRadius) * 2);
     cam.lookAt(Vec3.Zero);
     cam.update();
-    ray.begin();
+    if (rflag)
+      ray2.begin();
+    else
+      ray.begin();
     shader.resolution = Tmp.v1.set(renderer.universeRenderer.rayW, renderer.universeRenderer.rayH);
+    if (init) {
+      if (rflag) {
+        shader.previous = ray.getTexture();
+      } else {
+        shader.previous = ray2.getTexture();
+      }
+    } else {
+      init = true;
+      shader.previous = null;
+    }
     shader.bind();
     shader.apply();
     screen.render(shader, Gl.triangles);
-    ray.end();
+    if (rflag)
+      ray2.end();
+    else
+      ray.end();
+    rflag = !rflag;
     bloom.renderTo(ray, buffer);
     antialiasingFilter.setInput(buffer).render();
   }

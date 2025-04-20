@@ -7,12 +7,12 @@ import arc.*;
 import arc.fx.*;
 import arc.fx.filters.*;
 import arc.graphics.*;
-import arc.graphics.Pixmap.*;
 import arc.graphics.g3d.*;
 import arc.graphics.gl.*;
 import arc.util.*;
 import oxygen.graphics.*;
 import oxygen.graphics.bloom.*;
+import oxygen.graphics.gl.*;
 import oxygen.util.*;
 
 public class UniverseRenderer implements Disposable, Resizeable {
@@ -21,7 +21,7 @@ public class UniverseRenderer implements Disposable, Resizeable {
   public final Camera3D cam = new Camera3D();
   public int width, height, rayW, rayH;
   public float blackholeScl = 4;
-  public FrameBuffer buffer, ray, buffer2;
+  public FrameBuffer buffer, ray, buffer2, ray2;
   public Mesh screen;
   public UniverseParams params;
   public FxFilter antialiasingFilter;
@@ -33,11 +33,13 @@ public class UniverseRenderer implements Disposable, Resizeable {
     width = Core.graphics.getWidth();
     height = Core.graphics.getHeight();
     updateSize();
-    galaxy = new Cubemap("cubemaps/stars/");
+    //2b4zl5wt30q
+    galaxy = OCGUtil.getCubeMap("ouniverse/");
     bloom = new PyramidFourNAvgBloom(screen, width, height);
-    buffer = new FrameBuffer(Format.rgba8888, width, height, true);
-    buffer2 = new FrameBuffer(Format.rgba8888, width, height, true);
-    ray = new FrameBuffer(Format.rgba8888, rayW, rayH, false);
+    buffer = new HDRFrameBuffer(width, height, true);
+    buffer2 = new HDRFrameBuffer(width, height, true);
+    ray = new HDRFrameBuffer(rayW, rayH, false);
+    ray2 = new HDRFrameBuffer(rayW, rayH, false);
     params = new UniverseParams();
     antialiasingFilter = new FxaaFilter();
     params.ray = ray;
@@ -54,6 +56,7 @@ public class UniverseRenderer implements Disposable, Resizeable {
   public void resizeRay() {
     updateSize();
     ray.resize(rayW, rayH);
+    ray2.resize(rayW, rayH);
   }
 
   public void resize() {
@@ -83,6 +86,7 @@ public class UniverseRenderer implements Disposable, Resizeable {
     buffer.dispose();
     buffer2.dispose();
     ray.dispose();
+    ray2.dispose();
   }
 
   public void render() {

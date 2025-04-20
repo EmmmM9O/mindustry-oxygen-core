@@ -30,9 +30,9 @@ void main() {
 
     if (enabled > 0.5) {
         // ACES filmic tone mapping
-        gl_FragColor.rgb = aces(fragColor.rgb);
+        gl_FragColor.rgb = aces(gl_FragColor.rgb);
 
         // Gamma correction
-        gl_FragColor.rgb = pow(fragColor.rgb, vec3(1.0 / gamma));
+        gl_FragColor.rgb = pow(gl_FragColor.rgb, vec3(1.0 / gamma));
     }
 }

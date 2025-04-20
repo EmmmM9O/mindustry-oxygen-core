@@ -5,9 +5,9 @@ import arc.*;
 import arc.graphics.*;
 import arc.graphics.Pixmap.*;
 import arc.graphics.gl.*;
-import arc.math.geom.*;
 import arc.util.*;
 import oxygen.graphics.*;
+import oxygen.graphics.gl.*;
 import oxygen.graphics.OCShaders.*;
 
 public abstract class PyramidBloom<Brightness extends BloomBrightness, Composite extends BloomComposite, Upsample extends BloomUpsample, Downsample extends BloomDownsample, Tonemapping extends BloomTonemapping>
@@ -51,19 +51,18 @@ public abstract class PyramidBloom<Brightness extends BloomBrightness, Composite
     this(screen, null, null, null, null, null);
   }
 
-  public PyramidBloom(Mesh screen, Brightness brightness, Composite composite,
-      Upsample upsample, Downsample downsample, Tonemapping tonemapping) {
-    this(screen, Core.graphics.getWidth(), Core.graphics.getHeight(), false, brightness, composite, upsample,
-        downsample,
-        tonemapping);
+  public PyramidBloom(Mesh screen, Brightness brightness, Composite composite, Upsample upsample,
+      Downsample downsample, Tonemapping tonemapping) {
+    this(screen, Core.graphics.getWidth(), Core.graphics.getHeight(), false, brightness, composite,
+        upsample, downsample, tonemapping);
   }
 
   public PyramidBloom(Mesh screen, int width, int height) {
     this(screen, width, height, null, null, null, null, null);
   }
 
-  public PyramidBloom(Mesh screen, int width, int height, Brightness brightness, Composite composite,
-      Upsample upsample, Downsample downsample, Tonemapping tonemapping) {
+  public PyramidBloom(Mesh screen, int width, int height, Brightness brightness,
+      Composite composite, Upsample upsample, Downsample downsample, Tonemapping tonemapping) {
     this(screen, width, height, false, brightness, composite, upsample, downsample, tonemapping);
   }
 
@@ -71,8 +70,8 @@ public abstract class PyramidBloom<Brightness extends BloomBrightness, Composite
     this(screen, width, height, hasDepth, null, null, null, null, null);
   }
 
-  public PyramidBloom(Mesh screen, int width, int height, boolean hasDepth, Brightness brightness, Composite composite,
-      Upsample upsample, Downsample downsample, Tonemapping tonemapping) {
+  public PyramidBloom(Mesh screen, int width, int height, boolean hasDepth, Brightness brightness,
+      Composite composite, Upsample upsample, Downsample downsample, Tonemapping tonemapping) {
     super(screen);
     this.screen = screen;
     this.width = width;
@@ -99,12 +98,12 @@ public abstract class PyramidBloom<Brightness extends BloomBrightness, Composite
     if (tonemapping == null)
       tonemapping = createTonemapping();
     screen = OCMeshBuilder.screenMesh();
-    fboBrightness = new FrameBuffer(Format.rgba8888, width, height, false);
+    fboBrightness = new HDRFrameBuffer(width, height, false);
     fboDownsampled = new FrameBuffer[bloomIter];
     fboUpsampled = new FrameBuffer[bloomIter];
     for (int i = 0; i < bloomIter; i++) {
-      fboDownsampled[i] = new FrameBuffer(Format.rgba8888, width >> (i + 1), height >> (i + 1), false);
-      fboUpsampled[i] = new FrameBuffer(Format.rgba8888, width >> i, height >> i, false);
+      fboDownsampled[i] = new HDRFrameBuffer(width >> (i + 1), height >> (i + 1), false);
+      fboUpsampled[i] = new HDRFrameBuffer(width >> i, height >> i, false);
     }
   }
 

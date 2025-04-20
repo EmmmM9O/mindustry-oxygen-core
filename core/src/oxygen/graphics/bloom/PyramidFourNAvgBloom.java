@@ -1,10 +1,11 @@
+/* (C) 2025 */
 package oxygen.graphics.bloom;
 
 import arc.graphics.*;
 import oxygen.graphics.OCShaders.*;
 
-public class PyramidFourNAvgBloom
-    extends PyramidBloom<BloomBrightness, BloomComposite, BloomUpsample, BloomDownsample, BloomTonemapping> {
+public class PyramidFourNAvgBloom extends
+    PyramidBloom<BloomBrightness, BloomComposite, BloomUpsample, BloomDownsample, BloomTonemapping> {
   public PyramidFourNAvgBloom(Mesh screen, int width, int height) {
     super(screen, width, height);
   }
@@ -21,12 +22,12 @@ public class PyramidFourNAvgBloom
 
   @Override
   BloomUpsample createUpsample() {
-    return new BloomUpsample("fnavg_upsample", "screen");
+    return new BloomUpsample("bloom/fnavg_upsample", "screen");
   }
 
   @Override
   BloomDownsample createDownsample() {
-    return new BloomDownsample("fnavg_downsample", "screen");
+    return new BloomDownsample("bloom/fnavg_downsample", "screen");
   }
 
   @Override

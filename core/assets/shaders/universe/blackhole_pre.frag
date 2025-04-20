@@ -1,4 +1,4 @@
-@ import(util/noise.glsl);
+#import(util/noise.glsl);
 #define HIGHP
 varying vec2 uv;
 

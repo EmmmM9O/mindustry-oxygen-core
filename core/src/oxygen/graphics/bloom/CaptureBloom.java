@@ -1,3 +1,4 @@
+/* (C) 2025 */
 package oxygen.graphics.bloom;
 
 import arc.graphics.*;

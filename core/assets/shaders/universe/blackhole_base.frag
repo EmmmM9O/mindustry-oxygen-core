@@ -52,6 +52,9 @@ float sdTorus(vec3 p, vec2 t)
     vec2 q = vec2(length(p.xz) - t.x, p.y);
     return length(q) - t.y;
 }
+float blnoise(in vec3 v) {
+    return iqnoise(v);
+}
 ///---- from https://github.com/rossning92/Blackhole
 /// and https://www.shadertoy.com/view/lstSRS
 void adisk_color(vec3 pos, inout vec3 color, inout float alpha, float scl) { //Âê∏ÁßØÁõò
@@ -83,13 +86,15 @@ void adisk_color(vec3 pos, inout vec3 color, inout float alpha, float scl) { //Â
     b *= mix(vec3(1.7, 0.5, 0.1), vec3(1.0), vec3(pow(radialGradient, 0.5)));
 
     dustColor = mix(dustColor, b * 150.0, saturate(1.0 - coverage * 1.0));
-    sphericalCoord.y *= 2.0;
-    sphericalCoord.z *= 4.0;
+    sphericalCoord.x = 1.5 * sphericalCoord.x + 0.55;
+    sphericalCoord.y *= 1.5;
+    sphericalCoord.z *= 1.5;
+    sphericalCoord *= 0.95;
     float noise = 1.0;
     vec3 rc = sphericalCoord;
     float sta = adisk_noise_scale;
     for (int i = 0; i < int(adisk_noise_LOD_1); i++) {
-        noise *= 0.5 * snoise((rc * sta) * float(i * i)) + 0.5;
+        noise *= 0.5 * blnoise((rc * sta) * float(i * i)) + 0.5;
         sta *= 2.0;
         if (i % 2 == 0) {
             rc.y += time * adisk_speed;
@@ -97,11 +102,11 @@ void adisk_color(vec3 pos, inout vec3 color, inout float alpha, float scl) { //Â
             rc.y -= time * adisk_speed;
         }
     }
-    rc = sphericalCoord + 10.0;
+    rc = sphericalCoord + 30.0;
     float noise_2 = 2.0;
     sta = adisk_noise_scale;
     for (int i = 0; i < int(adisk_noise_LOD_2); i++) {
-        noise_2 *= 0.5 * snoise((rc * sta) * float(i * i)) + 0.5;
+        noise_2 *= 0.5 * blnoise((rc * sta) * float(i * i)) + 0.5;
         sta *= 2.0;
         if (i % 2 == 0) {
             rc.y += time * adisk_speed;
@@ -112,13 +117,13 @@ void adisk_color(vec3 pos, inout vec3 color, inout float alpha, float scl) { //Â
     coverage *= noise_2;
     coverage = saturate(coverage * 6.0);
     coverage *= pcurve(radialGradient, 4.0, 0.9);
-    coverage *= 8.0;
+    coverage *= 0.8;
     sphericalCoord.y += time * adisk_speed * 0.5;
     dustColor *= noise * 0.998 + 0.002;
     dustColor *= pow(texture(color_map, sphericalCoord.yx * vec2(0.15, 0.27)).rgb, vec3(2.0)) * 4.0;
 
     color += adisk_lit * dustColor * (1.0 - alpha) * coverage;
-    alpha = (1.0 - alpha) * coverage + alpha;
+    alpha = (1.0 - alpha) * coverage*0.6 + alpha;
     alpha = min(alpha, 1.0);
     vec2 t = vec2(1.0, 0.01);
 
@@ -167,8 +172,8 @@ vec3 ray_marching(vec3 pos, vec3 dir) {
 void main() {
     vec3 pos = camera_pos;
     vec2 jitter = vec2(
-            snoise(vec3(gl_FragCoord.xy, time)),
-            snoise(vec3(gl_FragCoord.yx, time + 100.0))
+            blnoise(vec3(gl_FragCoord.xy, time)),
+            blnoise(vec3(gl_FragCoord.yx, time + 100.0))
         ) * 0.005 / resolution;
     vec2 uvp = (gl_FragCoord.xy + jitter) / resolution - vec2(0.5);
     uvp.x *= resolution.x / resolution.y;
@@ -181,7 +186,7 @@ void main() {
 
         color = pow(color, vec3(1.0 / p));
 
-        float blendWeight = 0.1;
+        float blendWeight = 0.15;
 
         color = mix(color, previous, blendWeight);
 

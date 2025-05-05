@@ -1,6 +1,6 @@
 uniform sampler2D noise_tex;
 //reference:https://www.shadertoy.com/view/lstSRS
-float snoise(in vec3 x)
+float iqnoise(in vec3 x)
 {
     vec3 p = floor(x);
     vec3 f = fract(x);

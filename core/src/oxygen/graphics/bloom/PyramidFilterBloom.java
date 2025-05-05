@@ -172,4 +172,5 @@ public class PyramidFilterBloom extends CaptureBloom {
     super.init(hasDepth);
     resizePyramid();
   }
+
 }

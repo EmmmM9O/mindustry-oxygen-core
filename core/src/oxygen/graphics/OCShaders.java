@@ -40,7 +40,7 @@ public class OCShaders {
   // universe
   public static class BlackHoleParams {
     public float horizonRadius = 1f, adiskInnerRadius = 2.6f, adiskOuterRadius = 12f,
-        adiskNoiseScale = 0.8f, adiskSpeed = 0.1f, adiskLit = 0.13f, adiskParticle = 1.0f,
+        adiskNoiseScale = 0.8f, adiskSpeed = 0.1f, adiskLit = 0.075f, adiskParticle = 1.0f,
         maxScl = 3f, minScl = 0.5f, sclR = 6f, sclT = 0.5f, stepSize = 0.2f, aDistance = 25f,
         maxLength = 30f;
     public int adiskNoiseLOD1 = 4, adiskNoiseLOD2 = 6, maxSteps = 100;

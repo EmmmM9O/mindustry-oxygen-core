@@ -3,7 +3,6 @@ package oxygen.graphics.bloom;
 
 import arc.*;
 import arc.graphics.*;
-import arc.graphics.Pixmap.*;
 import arc.graphics.gl.*;
 import arc.util.*;
 import oxygen.graphics.*;

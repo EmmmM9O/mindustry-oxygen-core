@@ -4,6 +4,7 @@ package oxygen.core;
 import arc.*;
 import arc.files.*;
 import mindustry.*;
+import mindustry.game.EventType.*;
 import mindustry.mod.Mods.*;
 import oxygen.ctype.*;
 import oxygen.graphics.*;
@@ -36,6 +37,9 @@ public class OCVars {
     UIUtil.setLoadRenderer(loader);
     events.putEvents();
     Core.app.addListener(renderer = new OCRenderer());
+    Events.on(FileTreeInitEvent.class, event -> {
+      content.loadMods();
+    });
   }
 
   public static void init() {

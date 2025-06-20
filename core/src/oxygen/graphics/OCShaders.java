@@ -243,6 +243,86 @@ public class OCShaders {
       Gl.activeTexture(Gl.texture0);
     }
   }
+
+  // Flter Bloom
+  public static class FilterBloomDownsample extends OCLoadShader {
+    public Texture input;
+    public Vec2 resolution;
+
+    public FilterBloomDownsample() {
+      super("bloom/filter_downsample", "screen");
+    }
+
+    @Override
+    public void apply() {
+      setUniformf("resolution", resolution);
+      input.bind(0);
+      setUniformf("texture0", 0);
+    }
+  }
+
+  public static class FilterBloomUpsample extends OCLoadShader {
+    public Texture input;
+    public Vec2 resolution;
+
+    public FilterBloomUpsample() {
+      super("bloom/filter_upsample", "screen");
+    }
+
+    @Override
+    public void apply() {
+      setUniformf("resolution", resolution);
+      input.bind(0);
+      setUniformf("texture0", 0);
+    }
+  }
+
+  public static class FilterBloomComposite extends OCLoadShader {
+    public Texture input0, input1;
+    public float intensity, exposure;
+
+    public Vec3 sourceSamplesUvw[];
+
+    public FilterBloomComposite() {
+      super("bloom/filter_composite", "screen");
+    }
+
+    @Override
+    public void apply() {
+      setUniformf("intensity", intensity);
+      setUniformf("exposure", exposure);
+      for (int i = 0; i < 25; ++i) {
+        setUniformf("source_samples_uvw[" + i + "]", sourceSamplesUvw[i]);
+      }
+      input0.bind(0);
+      setUniformf("texture0", 0);
+      input1.bind(1);
+      setUniformf("texture1", 1);
+
+      Gl.activeTexture(0);
+    }
+  }
+
+  public static class FilterBloom extends OCLoadShader {
+    public Texture input;
+    public Vec2 resolution;
+
+    public Vec3 sourceSamplesUvw[];
+
+    public FilterBloom() {
+      super("bloom/filter_bloom", "screen");
+    }
+
+    @Override
+    public void apply() {
+      setUniformf("resolution", resolution);
+      for (int i = 0; i < 25; ++i) {
+        setUniformf("source_samples_uvw[" + i + "]", sourceSamplesUvw[i]);
+      }
+      input.bind(0);
+      setUniformf("texture0", 0);
+    }
+  }
   // Generators
 
   ///

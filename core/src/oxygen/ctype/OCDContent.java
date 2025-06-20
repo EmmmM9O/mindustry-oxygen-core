@@ -5,12 +5,17 @@ import arc.*;
 import arc.graphics.g2d.*;
 import arc.util.*;
 import mindustry.mod.Mods.*;
+import oxygen.core.*;
 
 public abstract class OCDContent extends OCContent {
   public String localizedName;
   public @Nullable String description, details;
   public TextureRegion uiIcon;
   public TextureRegion fullIcon;
+
+  public OCDContent(String name) {
+    this(OCVars.content.currentMod, name);
+  }
 
   public OCDContent(LoadedMod mod, String name) {
     super(mod, name);

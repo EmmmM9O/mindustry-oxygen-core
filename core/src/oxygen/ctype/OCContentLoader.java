@@ -17,6 +17,18 @@ public class OCContentLoader {
   @Nullable
   OCContent lastAdded;
   ObjectSet<Cons<OCContent>> initialization = new ObjectSet<>();
+  ObjectMap<LoadedMod, Runnable> loaders;
+
+  public void setLoader(LoadedMod mod, Runnable loader) {
+    loaders.put(mod, loader);
+  }
+
+  public void loadMods() {
+    for (var e : loaders.entries()) {
+      currentMod = e.key;
+      e.value.run();
+    }
+  }
 
   public OCContentLoader() {
     Core.assets.loadRun("occontentinit", OCContentLoader.class, () -> this.init(),

@@ -7,7 +7,7 @@ const vec4 WEIGHTS = vec4(1.0, 3.0, 3.0, 1.0) / 8.0;
 uniform sampler2D texture0;
 uniform vec2 resolution;
 void main() {
-    vec2 source_delta_uv = 1.0 / resolution * 0.5;
+    vec2 source_delta_uv = 1.0 / resolution;
     vec2 ij = floor(gl_FragCoord.xy);
     vec2 source_ij = ij * 2.0 - vec2(1.5);
     vec2 source_uv = source_ij * source_delta_uv;

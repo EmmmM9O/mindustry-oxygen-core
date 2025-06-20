@@ -8,7 +8,7 @@ uniform vec2 resolution;
 const int SIZE = 25;
 uniform vec3 source_samples_uvw[SIZE];
 void main() {
-    vec2 source_delta_uv = 1.0 / resolution * 0.5;
+    vec2 source_delta_uv = 1.0 / resolution;
     vec2 source_uv = (gl_FragCoord.xy + vec2(1.0)) * source_delta_uv;
     vec3 color = vec3(0.0);
     for (int i = 0; i < SIZE; ++i) {

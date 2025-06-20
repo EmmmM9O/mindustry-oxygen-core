@@ -60,7 +60,7 @@ public class SpaceEntityType extends OCDContent {
     } catch (Throwable ignored) {
     }
     if (entityType == null) {
-      throw new ArcRuntimeException("SpaceEntity " + "no entityType");
+      throw new ArcRuntimeException("SpaceEntity " + getClass() + "no entityType");
     }
   }
 }

@@ -12,7 +12,7 @@ const vec4 WEIGHTS[4] = vec4[4](
 uniform sampler2D texture0;
 uniform vec2 resolution;
 void main() {
-    vec2 source_delta_uv = 1.0 / resolution * 0.5;
+    vec2 source_delta_uv = 1.0 / resolution;
     vec2 ij = floor(gl_FragCoord.xy);
     vec2 source_ij = floor((ij - vec2(1.0)) * 0.5) + vec2(0.5);
     vec2 source_uv = source_ij * source_delta_uv;
@@ -22,5 +22,5 @@ void main() {
     vec3 c3 = texture(texture0, source_uv + source_delta_uv).rgb;
     vec4 weight = WEIGHTS[int(mod(ij.x, 2.0) + 2.0 * mod(ij.y, 2.0))];
     vec3 color = weight.x * c0 + weight.y * c1 + weight.z * c2 + weight.w * c3;
-    gl_FragColor = vec4(min(color, MAX_FLOAT16), 1.0 ) ;
+    gl_FragColor = vec4(min(color, MAX_FLOAT16), 1.0);
 }

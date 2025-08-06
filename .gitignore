@@ -1,0 +1,9 @@
+## Gradle
+/local.properties
+.gradle/
+gradle-app.setting
+.idea/
+*/build/
+build/
+dist/
+.kotlin

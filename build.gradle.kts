@@ -56,11 +56,11 @@ allprojects {
         testImplementation("org.junit.jupiter:junit-jupiter:5.13.4")
     }
     tasks {
-        test{
+        test {
             useJUnitPlatform()
             testLogging {
                 events("passed", "skipped", "failed")
-                showStandardStreams=true
+                showStandardStreams = true
             }
             minHeapSize = "128m"
             maxHeapSize = "512m"
@@ -135,6 +135,19 @@ allprojects {
                     from("${layout.buildDirectory.get()}/libs/${project.packageName()}.jar")
                 }
             }
+        }
+        register("testPlay", JavaExec::class) {
+            dependsOn("jar")
+            doFirst {
+                println("Run ${project.packageName()}.jar")
+                copy {
+                    from("${layout.buildDirectory.get()}/libs/")
+                    include("${project.packageName()}-desktop.jar")
+                    into("${getProperty("MDT")}/mods")
+                }
+            }
+            classpath("${getProperty("MDT")}/Mindustry.jar")
+            args = listOf("-debug")
         }
     }
 }

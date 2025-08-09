@@ -2,6 +2,7 @@ package oxygen.ksp
 
 import arc.util.serialization.*
 import com.google.auto.service.*
+import com.google.devtools.ksp.*
 import com.google.devtools.ksp.processing.*
 import com.google.devtools.ksp.symbol.*
 import oxygen.annotations.*
@@ -84,7 +85,7 @@ fun resolveConfigDump(anno: KSAnnotation): ConfigDump = ConfigDump("", "")
 fun resolveModConfig(anno: KSAnnotation): ModConfig = resolveModConfigGen(anno)
 
 @AutoService(SymbolProcessorProvider::class)
-class ProcessorProvider : SymbolProcessorProvider {
+class ConfigProcessorProvider : SymbolProcessorProvider {
     fun process(
         processor: BasicSymbolProcessor,
         resolver: Resolver,
@@ -111,7 +112,8 @@ class ProcessorProvider : SymbolProcessorProvider {
             try {
                 processor.debug("$name With Dumper ${dumpData.dumper.qualifiedName} Generate To $path with\n$data")
                 processor.environment.codeGenerator.createNewFileByPath(
-                    dependencies = Dependencies(false),
+                    dependencies = Dependencies(aggregating = false,
+                        element.containingFile!!,pair.first.containingFile!!),
                     path = path,
                     extensionName = ""
                 ).use {

@@ -9,6 +9,7 @@ enum class Modules(
 ) {
     CORE("core", "", ":core"),
     COMMON("common", "", ":libraries:common"),
+    MDT_COMMON("mdt-common", "", ":libraries:mdt-common"),
     GRAPHICS("graphics", "", ":libraries:graphics"),
     AUTO_UTIL("auto-anno", "", ":libraries:auto-util-annotations"),
     AUTO_UTIL_KSP("auto-anno", "", ":libraries:auto-util-ksp"),

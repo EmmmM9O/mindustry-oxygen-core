@@ -14,6 +14,7 @@ listOf(
     "core",
     ":libraries",
     ":libraries:common",
+    ":libraries:mdt-common",
     ":libraries:graphics",
     ":libraries:auto-util-annotations",
     ":libraries:auto-util-ksp",

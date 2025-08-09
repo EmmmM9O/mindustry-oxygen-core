@@ -2,6 +2,7 @@ package oxygen.annotations
 
 import arc.util.serialization.*
 
+const val LOCATION_FILE_PATH = "location.json"
 
 @Target(AnnotationTarget.ANNOTATION_CLASS)
 @Retention(AnnotationRetention.RUNTIME)
@@ -24,17 +25,15 @@ open class DeclarationLocationInfo() : BaseLocationInfo() {
 }
 
 class ClassLocationInfo() : DeclarationLocationInfo() {
-    @JvmField
-    var isNested: Boolean = false
     override fun type(): String = "class"
 }
 
 class PropertyLocationInfo() : DeclarationLocationInfo() {
     @JvmField
-    var isCompanionObject: Boolean = false
+    var isCompanion: Boolean = false
 
     @JvmField
-    var parent: ClassLocationInfo? = null
+    var parent: String = ""
     override fun type(): String = "property"
 }
 

@@ -26,4 +26,5 @@ object Library {
     var autoServiceKsp = "dev.zacsweers.autoservice:auto-service-ksp:${Versions.autoServiceKsp}"
     const val kotlinpoet = "com.squareup:kotlinpoet:${Versions.kotlinpoet}"
     const val kotlinpoetKsp = "com.squareup:kotlinpoet-ksp:${Versions.kotlinpoet}"
+    var kotlinReflect = "org.jetbrains.kotlin:kotlin-reflect:${Versions.kotlin}"
 }

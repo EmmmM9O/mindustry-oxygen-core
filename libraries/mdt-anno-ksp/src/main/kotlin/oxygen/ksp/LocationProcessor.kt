@@ -11,14 +11,15 @@ fun getLocation(element: KSAnnotated): BaseLocationInfo = when (element) {
     is KSClassDeclaration -> ClassLocationInfo().apply {
         name = element.simpleName.asString()
         path = element.qualifiedName!!.asString()
-        isNested = element.parentDeclaration?.let { it is KSClassDeclaration } ?: false
     }
 
     is KSPropertyDeclaration -> PropertyLocationInfo().apply {
         name = element.simpleName.asString()
         path = element.qualifiedName!!.asString()
-        parent = element.parentDeclaration?.let { getLocation(it) as? ClassLocationInfo }
-        isCompanionObject = (element.parentDeclaration as? KSClassDeclaration)?.isCompanionObject ?: false
+        isCompanion = (element.parentDeclaration as? KSClassDeclaration)?.isCompanionObject ?: false
+        parent = if (isCompanion)
+            element.parentDeclaration?.parentDeclaration?.qualifiedName?.asString()!!
+        else element.parentDeclaration?.qualifiedName?.asString()!!
     }
 
     is KSDeclaration -> DeclarationLocationInfo().apply {
@@ -69,7 +70,7 @@ class LocationProvider : SymbolProcessorProvider {
             override fun finish(processor: BasicSymbolProcessor) {
                 processor.environment.codeGenerator.createNewFileByPath(
                     dependencies = Dependencies(false),
-                    path = "location.json",
+                    path = LOCATION_FILE_PATH,
                     extensionName = ""
                 ).use {
                     it.write(Jval.read(KspUtil.json.prettyPrint(map, JsonValue.PrettyPrintSettings().apply {

@@ -39,7 +39,7 @@ abstract class BasicSymbolProcessor(val environment: SymbolProcessorEnvironment)
             val annotations = step.annotations()
             val stepElements = annotations.associateWith { resolver.getSymbolsWithAnnotation(it) }
                 .toMutableMap()
-            stepElements.apply {
+            .apply {
                 deferredElements[step]?.forEach { (name, elements) ->
                     merge(
                         name,

@@ -6,4 +6,5 @@ dependencies {
     import(AUTO_UTIL)
     ksp(AUTO_UTIL_KSP)
     compileOnly(Library.arcCore)
+    compileOnly(Library.mdtCore)
 }

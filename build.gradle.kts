@@ -15,7 +15,7 @@ fun getProperty(key: String): String? {
     return project.findProperty(key) as? String
 }
 
-val sdkRoot: String? = getProperty("ANDROID_HOME")
+var sdkRoot: String? = getProperty("ANDROID_HOME")
 val d8: String? = getProperty("D8")
 
 plugins {
@@ -79,6 +79,7 @@ allprojects {
             dependsOn("jar")
             doLast {
                 try {
+		    sdkRoot = sdkRoot?:providers.environmentVariable("ANDROID_HOME").getOrNull()
                     if (sdkRoot == null) throw GradleException("No valid Android SDK found. Ensure that ANDROID_HOME is set to your Android SDK directory.")
                     val platformRoot = File("$sdkRoot/platforms/").listFiles()?.sorted()?.reversed()?.find { f ->
                         File(

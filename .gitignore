@@ -8,3 +8,5 @@ build/
 dist/
 .kotlin
 test
+
+kls_database.db

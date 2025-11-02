@@ -53,10 +53,10 @@ abstract class JsonDumper<T : Annotation>(val target: Class<T>) : ConfigDumper {
     override fun process(config: ConfigDumpAnno, data: Object, info: AnnotatedInfo, processor: Processor): String =
         (data as Jval).apply {
             check(this, processor)
-            laterProcess(this, data, info, processor)
+            laterProcess(this, info, processor)
         }.toString(Jval.Jformat.formatted)
 
-    abstract fun laterProcess(value: Jval, data: Object, info: AnnotatedInfo, processor: Processor)
+    abstract fun laterProcess(value: Jval, info: AnnotatedInfo, processor: Processor)
 
     fun check(value: Jval, processor: Processor) {
         val methodMap = target.declaredMethods.associateBy { it.name }
@@ -97,16 +97,4 @@ abstract class JsonDumper<T : Annotation>(val target: Class<T>) : ConfigDumper {
             value.isNull -> false
             else -> true
         }
-    /*
-    when {
-        field.isAnnotationPresent(Default.B::class.java) -> value.asBool() == field.getAnnotation(Default.B::class.java).value
-        field.isAnnotationPresent(Default.F::class.java) -> value.asNumber() == field.getAnnotation(Default.F::class.java).value
-        value.isString -> value.asString().isEmpty()
-        value.isArray -> value.asArray().isEmpty
-        value.isNumber -> value.asNumber() == 0
-        value.isObject -> value.asObject().isEmpty
-        value.isBoolean -> !value.asBool()
-        value.isNull -> false
-        else -> true
-    }*/
 }

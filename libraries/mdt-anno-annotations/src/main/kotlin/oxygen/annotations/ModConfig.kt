@@ -1,9 +1,10 @@
 package oxygen.annotations
 
+import mindustry.mod.*
 import arc.util.serialization.*
 
 class ModDumper : JsonDumper<ModConfig>(ModConfig::class.java) {
-    override fun laterProcess(value: Jval, data: Object, info: AnnotatedInfo, processor: Processor) {
+    override fun laterProcess(value: Jval, info: AnnotatedInfo, processor: Processor) {
         value.put("main", (info.parent as DeclarationInfo).parentDeclaration!!.qualifiedName)
     }
 }
@@ -27,7 +28,8 @@ class ModDumper : JsonDumper<ModConfig>(ModConfig::class.java) {
 @Default(
     """
         {
-            "texturescale":1.0
+            "texturescale" : 1.0,
+	    "java" : false
         }
     """
 )
@@ -48,5 +50,6 @@ annotation class ModConfig(
     val java: Boolean = true,
     val texturescale: Float = 1.0f,
     val contentOrder: String = "",
-    val main: String = emptyStr
+    val main: String = emptyStr,
+    val preloader: String = ""
 )

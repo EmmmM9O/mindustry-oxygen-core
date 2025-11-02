@@ -148,9 +148,5 @@ class ConfigProcessorProvider : SymbolProcessorProvider {
                 process<ConfigDump>(processor, resolver)
                 emptyList()
             }
-            /*
-            configDump(ConfigDump::class, ::resolveConfigDumpGenObj)
-            configDump(ModConfig::class, ::resolveModConfigGenObj)
-             */
         }
 }

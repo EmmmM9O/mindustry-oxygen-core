@@ -1,12 +1,14 @@
 package oxygen.core
 
-import arc.*
-import arc.util.*
-import mindustry.game.*
-import mindustry.mod.*
-import oxygen.*
-import oxygen.annotations.*
-import oxygen.util.*
+import arc.Events
+import arc.util.Log
+import mindustry.game.EventType
+import mindustry.mod.Mod
+import oxygen.Oxygen
+import oxygen.Oxygen.log
+import oxygen.Oxygen.omark
+import oxygen.annotations.ModConfig
+import oxygen.core.OCPreloader
 
 class OCMain : Mod() {
     companion object {
@@ -19,36 +21,19 @@ class OCMain : Mod() {
             displayName = DISPLAY_NAME,
             author = "EmmmM9O",
             description = "Oxygen Core library",
-            repo = "github.com/EmmmM9O/mindustry-oxygen-core"
+            repo = "github.com/EmmmM9O/mindustry-oxygen-core",
+            preloader = "oxygen.core.OCPreloader",
         )
         @JvmField
         var modConfig: ModConfig = ModConfig(NAME, "")
-        val log: OLogger = logConfig { }.logger {
-            logLevel(if (Log.level == Log.LogLevel.debug) Level.DEBUG else Level.INFO)
-            name(null)
-            arcHandlerAppender()
-            simpleFormat {
-                fun <T : Any> T?.defFormat() = formatOrEmpty { "[$it]" }
-                template {
-                    "$timeStr${
-                        mark?.name().defFormat()
-                    }${logger.name.defFormat()}:$message\n${cause.workOrEmpty { ":${throwableMsg(it)}" }}"
-                }
-                oxyTime { "<$mm-$ss>" }
-            }
-        }
-        val omark = StrMark("Oxygen")
+        var preloadFailed = false
     }
 
     init {
-        Log.logger = Log.LogHandler { level, text ->
-            log.at {
-                level(level.toLevel())
-                mark(Marks.log)
-                message(text)
-            }
-        }
-        Events.on(EventType.FileTreeInitEvent::class.java) {
+        if (!OCPreloader.preloaded) {
+            Log.err("Oxygen preload fail!Please make sure you are using Mindustry Oxygen client!")
+            preloadFailed = true
+        } else {
             Oxygen.init()
             if (modConfig.minGameVersion.isEmpty()) {
                 log.atError {
@@ -65,6 +50,8 @@ class OCMain : Mod() {
     }
 
     override fun init() {
+        if (preloadFailed) {
+            return
+        }
     }
-
 }

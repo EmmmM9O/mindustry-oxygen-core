@@ -1,41 +1,29 @@
 package oxygen.graphics
 
-import arc.Core
-import arc.Events
-import arc.func.Cons
-import arc.func.Intc
-import arc.graphics.Color
+import arc.*
+import arc.func.*
+import arc.graphics.*
 import arc.graphics.Texture.TextureFilter
-import arc.graphics.g2d.Draw
-import arc.graphics.g2d.Fill
-import arc.graphics.g2d.Lines
-import arc.graphics.g2d.TextureRegion
-import arc.graphics.gl.FrameBuffer
-import arc.math.Mathf
-import arc.math.geom.QuadTree
-import arc.math.geom.Rect
-import arc.struct.IntSet
-import arc.struct.Seq
-import arc.util.Time
-import arc.util.Tmp
-import mindustry.Vars
-import mindustry.content.Blocks
+import arc.graphics.g2d.*
+import arc.graphics.gl.*
+import arc.math.*
+import arc.math.geom.*
+import arc.struct.*
+import arc.util.*
+import mindustry.*
+import mindustry.content.*
 import mindustry.game.EventType.*
-import mindustry.gen.Building
-import mindustry.graphics.BlockRendererI
-import mindustry.graphics.CacheLayer
-import mindustry.graphics.Layer
-import mindustry.graphics.Shaders
-import mindustry.world.Tile
+import mindustry.gen.*
+import mindustry.graphics.*
+import mindustry.world.*
 import mindustry.world.blocks.environment.Floor.UpdateRenderState
-import mindustry.world.blocks.power.PowerNode
-import kotlin.math.abs
-import kotlin.math.min
+import mindustry.world.blocks.power.*
+import kotlin.math.*
 
-class BlockRenderer: BlockRendererI() {
-        //TODO cracks take up far to much space, so I had to limit it to 7. this means larger blocks won't have cracks - draw tiling mirrored stuff instead?
+class OriBlockRenderer : BlockRendererI() {
+    //TODO cracks take up far to much space, so I had to limit it to 7. this means larger blocks won't have cracks - draw tiling mirrored stuff instead?
     val crackRegions: Int =
-            8  //TODO cracks take up far to much space, so I had to limit it to 7. this means larger blocks won't have cracks - draw tiling mirrored stuff instead?
+        8  //TODO cracks take up far to much space, so I had to limit it to 7. this means larger blocks won't have cracks - draw tiling mirrored stuff instead?
     val maxCrackSize: Int = 7
     var drawQuadtreeDebug: Boolean = false
     val shadowColor: Color = Color(0f, 0f, 0f, 0.71f)
@@ -72,9 +60,9 @@ class BlockRenderer: BlockRendererI() {
     init {
         Events.on(ClientLoadEvent::class.java) { _: ClientLoadEvent ->
             cracks = Array(maxCrackSize) { size ->
-			    Array(crackRegions) { region ->
+                Array(crackRegions) { region ->
                     Core.atlas.find("cracks-${size + 1}-$region")!!
-				}
+                }
             }
         }
 
@@ -90,14 +78,14 @@ class BlockRenderer: BlockRendererI() {
             }
         }
 
-        Events.on(TilePreChangeEvent::class.java, Cons { event: TilePreChangeEvent ->
-            if (blockTree == null || floorTree == null) return@Cons
+        Events.on(TilePreChangeEvent::class.java) { event: TilePreChangeEvent ->
+            //if (blockTree == null || floorTree == null) return@Cons
             if (indexBlock(event!!.tile)) {
                 blockTree!!.remove(event.tile)
                 blockLightTree.remove(event.tile)
             }
             if (indexFloor(event.tile)) floorTree!!.remove(event.tile)
-        })
+        }
 
         Events.on(TileChangeEvent::class.java) { event: TileChangeEvent ->
             val visible = event!!.tile.build == null || !event.tile.build.inFogTo(Vars.player.team())
@@ -171,8 +159,8 @@ class BlockRenderer: BlockRendererI() {
         updateDarkness()
     }
 
-    override public fun updateShadows(ignoreBuildings: Boolean, ignoreTerrain: Boolean) {
-        shadows.getTexture().setFilter(TextureFilter.linear, TextureFilter.linear)
+    override fun updateShadows(ignoreBuildings: Boolean, ignoreTerrain: Boolean) {
+        shadows.texture.setFilter(TextureFilter.linear, TextureFilter.linear)
         shadows.resize(Vars.world.width(), Vars.world.height())
         shadows.begin()
         Core.graphics.clear(Color.white)
@@ -180,8 +168,10 @@ class BlockRenderer: BlockRendererI() {
 
         Draw.color(blendShadowColor)
 
-        for(tile in Vars.world.tiles){
-            if(tile.block().displayShadow(tile) && (tile.build == null || tile.build.wasVisible) && !(ignoreBuildings && !tile.block().isStatic()) && !(ignoreTerrain && tile.block().isStatic())){
+        for (tile in Vars.world.tiles) {
+            if (tile.block()
+                    .displayShadow(tile) && (tile.build == null || tile.build.wasVisible) && !(ignoreBuildings && !tile.block().isStatic) && !(ignoreTerrain && tile.block().isStatic)
+            ) {
                 Fill.rect(tile.x + 0.5f, tile.y + 0.5f, 1f, 1f)
             }
         }
@@ -336,11 +326,12 @@ class BlockRenderer: BlockRendererI() {
     fun drawDestroyed() {
         if (!Core.settings.getBool("destroyedblocks")) return
 
-        brokenFade = if (Vars.control.input.isPlacing || Vars.control.input.isBreaking || (Vars.control.input.isRebuildSelecting && !Core.scene.hasKeyboard())) {
-            Mathf.lerpDelta(brokenFade, 1f, 0.1f)
-        } else {
-            Mathf.lerpDelta(brokenFade, 0f, 0.1f)
-        }
+        brokenFade =
+            if (Vars.control.input.isPlacing || Vars.control.input.isBreaking || (Vars.control.input.isRebuildSelecting && !Core.scene.hasKeyboard())) {
+                Mathf.lerpDelta(brokenFade, 1f, 0.1f)
+            } else {
+                Mathf.lerpDelta(brokenFade, 0f, 0.1f)
+            }
 
         if (brokenFade > 0.001f) {
             for (block in Vars.player.team().data().plans) {

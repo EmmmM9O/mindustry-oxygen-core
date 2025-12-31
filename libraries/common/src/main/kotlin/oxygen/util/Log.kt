@@ -146,7 +146,9 @@ val DefaultFormatter: LogFormatter = {
     }
     "${
         time.format(timeFormat).defFormat()
-    }${mark?.name().defFormat()}${logger.name.defFormat()}[$level]:$message \n${cause.workOrEmpty { ":${throwableMsg(it)}" }}"
+    }${
+        mark?.name().defFormat()
+    }${logger.name.defFormat()}[$level]:$message \n${cause.workOrEmpty { ":${throwableMsg(it)}" }}"
 }
 typealias Appender = LoggingEvent.(text: String) -> Unit
 

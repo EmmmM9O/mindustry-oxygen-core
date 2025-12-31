@@ -1,5 +1,5 @@
-import org.gradle.api.Project
-import java.io.File
+import org.gradle.api.*
+import java.io.*
 
 fun Project.packageName(): String {
     return "${rootProject.name}${path.replace(":", "-")}"
@@ -16,6 +16,6 @@ object Config {
     }
 
     fun get(property: String): String {
-        return properties.getProperty(property) ?: error("${property} not found in gradle.properties")
+        return properties.getProperty(property) ?: error("$property not found in gradle.properties")
     }
 }

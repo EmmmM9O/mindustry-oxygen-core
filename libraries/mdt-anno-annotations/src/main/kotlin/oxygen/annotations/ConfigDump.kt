@@ -67,7 +67,8 @@ abstract class JsonDumper<T : Annotation>(val target: Class<T>) : ConfigDumper {
             val map = Jval.read(target.getAnnotation(Default::class.java).value).asObject()
             map.forEach {
                 val name = it.key
-                defaultMap.put(name, value.get(name).toString(Jval.Jformat.formatted) == it.value.toString(Jval.Jformat.formatted))
+                defaultMap[name] =
+                    value.get(name).toString(Jval.Jformat.formatted) == it.value.toString(Jval.Jformat.formatted)
             }
         }
         if (target.isAnnotationPresent(Recommended::class.java)) {

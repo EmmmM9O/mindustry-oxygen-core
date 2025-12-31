@@ -1,14 +1,11 @@
 package oxygen.core
 
-import arc.Events
-import arc.util.Log
-import mindustry.game.EventType
-import mindustry.mod.Mod
-import oxygen.Oxygen
+import arc.util.*
+import mindustry.mod.*
+import oxygen.*
 import oxygen.Oxygen.log
 import oxygen.Oxygen.omark
-import oxygen.annotations.ModConfig
-import oxygen.core.OCPreloader
+import oxygen.annotations.*
 
 class OCMain : Mod() {
     companion object {

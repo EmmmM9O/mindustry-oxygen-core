@@ -17,6 +17,7 @@ fun jvalFrom(value: Any?): Jval =
         is List<*> -> Jval.newArray().apply {
             value.forEach { add(jvalFrom(it)) }
         }
+
         else -> Jval.NULL
     }
 

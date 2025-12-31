@@ -31,6 +31,12 @@ fun DependencyHandler.imp(vararg modules: Modules) {
     }
 }
 
+fun DependencyHandler.comp(vararg modules: Modules) {
+    modules.forEach { module ->
+        add("compileOnly", project(module.path))
+    }
+}
+
 fun DependencyHandler.ksp(vararg modules: Modules) {
     modules.forEach { module ->
         add("ksp", project(module.path))

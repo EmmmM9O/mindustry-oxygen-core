@@ -1,11 +1,11 @@
 package oxygen.core
 
 import arc.util.*
-import mindustry.mod.*;
-import mindustry.Vars
-import mindustry.ClientLauncher
+import mindustry.*
+import mindustry.mod.*
+import oxygen.*
 import oxygen.util.*
-import oxygen.Oxygen
+import oxygen.util.Marks
 
 class OCPreloader : Preloader() {
     companion object {
@@ -41,7 +41,7 @@ class OCPreloader : Preloader() {
             mark(omark)
         }
     }
-    
+
     override fun preload() {
 
     }

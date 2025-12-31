@@ -11,13 +11,13 @@ class NodeInfoImpl(val self: KSNode?) : NodeInfo {
         null
 }
 
-class AnnotatedInfoImpl(val self: KSAnnotated) : AnnotatedInfo {
+class AnnotatedInfoImpl(self: KSAnnotated) : AnnotatedInfo {
     override val parent: NodeInfo? = //getInfoNode(self.parent)
         null
     override val annotations: Sequence<AnnotationInfo> = self.annotations.map { AnnotationInfoImpl(it) }
 }
 
-class AnnotationInfoImpl(val self: KSAnnotation) : AnnotationInfo {
+class AnnotationInfoImpl(self: KSAnnotation) : AnnotationInfo {
     override val parent: NodeInfo? = getInfoNode(self.parent)
     override val annotationType: TypeRefInfo = TypeRefInfoImpl(self.annotationType)
 }
@@ -30,7 +30,7 @@ class TypeRefInfoImpl(val self: KSTypeReference) : TypeRefInfo {
 
 }
 
-class DeclarationInfoImpl(val self: KSDeclaration) : DeclarationInfo {
+class DeclarationInfoImpl(self: KSDeclaration) : DeclarationInfo {
     override val annotations: Sequence<AnnotationInfo> = self.annotations.map { AnnotationInfoImpl(it) }
     override val parent: NodeInfo? = getInfoNode(self.parent)
     override val qualifiedName: String? = self.qualifiedName?.asString()
@@ -39,7 +39,7 @@ class DeclarationInfoImpl(val self: KSDeclaration) : DeclarationInfo {
     override val parentDeclaration = getInfoAs<DeclarationInfo>(self.parentDeclaration)
 }
 
-class ClassInfoImpl(val self: KSClassDeclaration) : ClassInfo {
+class ClassInfoImpl(self: KSClassDeclaration) : ClassInfo {
     override val annotations: Sequence<AnnotationInfo> = self.annotations.map { AnnotationInfoImpl(it) }
     override val parent: NodeInfo? = getInfoNode(self.parent)
     override val qualifiedName: String? = self.qualifiedName?.asString()
@@ -49,7 +49,7 @@ class ClassInfoImpl(val self: KSClassDeclaration) : ClassInfo {
     override val isCompanionObject: Boolean = self.isCompanionObject
 }
 
-class PropertyInfoImpl(val self: KSPropertyDeclaration) : PropertyInfo {
+class PropertyInfoImpl(self: KSPropertyDeclaration) : PropertyInfo {
     override val annotations: Sequence<AnnotationInfo> = self.annotations.map { AnnotationInfoImpl(it) }
     override val parent: NodeInfo? = getInfoNode(self.parent)
     override val qualifiedName: String? = self.qualifiedName?.asString()

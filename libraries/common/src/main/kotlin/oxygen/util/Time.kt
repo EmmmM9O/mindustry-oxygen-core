@@ -4,9 +4,11 @@ package oxygen.util
 
 import kotlinx.datetime.*
 import kotlinx.datetime.format.*
-import kotlin.time.Clock
 import kotlin.time.*
-typealias XTimeFormatter=DateTimeFormatBuilder.WithDateTime.() -> Unit
+import kotlin.time.Clock
+
+typealias XTimeFormatter = DateTimeFormatBuilder.WithDateTime.() -> Unit
+
 fun timeNow(): LocalDateTime =
     Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
 

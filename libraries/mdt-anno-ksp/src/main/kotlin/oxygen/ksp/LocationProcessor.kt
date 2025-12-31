@@ -6,6 +6,7 @@ import com.google.auto.service.*
 import com.google.devtools.ksp.processing.*
 import com.google.devtools.ksp.symbol.*
 import oxygen.annotations.*
+import kotlin.reflect.*
 
 fun getLocation(element: KSAnnotated): BaseLocationInfo = when (element) {
     is KSClassDeclaration -> ClassLocationInfo().apply {
@@ -34,50 +35,34 @@ fun getLocation(element: KSAnnotated): BaseLocationInfo = when (element) {
 
 @AutoService(SymbolProcessorProvider::class)
 class LocationProvider : SymbolProcessorProvider {
-    override fun create(environment: SymbolProcessorEnvironment): SymbolProcessor = stepProcess(environment) {
-        add(object : AnnotatedAnnotationStep(LocationMark::class.qualifiedName!!) {
-            val map = ObjectMap<String, Seq<BaseLocationInfo>>()
-            fun process(
-                processor: BasicSymbolProcessor,
-                resolver: Resolver,
-                d: AnnotatedAnnoData
-            ) {
+    override fun create(environment: SymbolProcessorEnvironment): SymbolProcessor = stepEProcess(environment) {
+        val map = ObjectMap<String, Seq<BaseLocationInfo>>()
+        annotatedAnno<LocationMark> { elements ->
+            fun process(d: AnnotatedAnnoData) {
                 d.annotated.forEach { pair ->
                     map.get(pair.first.annotationType.resolve().declaration.qualifiedName!!.asString(), ::Seq)
                         .add(getLocation(pair.second))
                 }
             }
 
-            inline fun <reified T : Annotation> process(processor: BasicSymbolProcessor, resolver: Resolver) {
-                annotatedAnnoDataFrom<T>(LocationMark::class.qualifiedName!!, resolver)
+            fun <T : Annotation> process(target: KClass<T>) {
+                annotatedAnnoDataFrom(target.qualifiedName!!, LocationMark::class.qualifiedName!!, resolver)
                     ?.let {
-                        process(processor, resolver, it)
+                        process(it)
                     }
             }
-
-            override fun actualProcess(
-                processor: BasicSymbolProcessor,
-                resolver: Resolver,
-                elements: Sequence<AnnotatedAnnoData>
-            ): List<KSAnnotated> {
-                elements.forEach { d ->
-                    process(processor, resolver, d)
-                }
-                process<ModConfig>(processor, resolver)
-                return emptyList()
+            elements.forEach(::process)
+            process(ModConfig::class)
+        }.finish {
+            processor.environment.codeGenerator.createNewFileByPath(
+                dependencies = Dependencies(false),
+                path = LOCATION_FILE_PATH,
+                extensionName = ""
+            ).use {
+                it.write(Jval.read(KspUtil.json.prettyPrint(map, JsonValue.PrettyPrintSettings().apply {
+                    outputType = JsonWriter.OutputType.json
+                })).toString(Jval.Jformat.formatted).toByteArray())
             }
-
-            override fun finish(processor: BasicSymbolProcessor) {
-                processor.environment.codeGenerator.createNewFileByPath(
-                    dependencies = Dependencies(false),
-                    path = LOCATION_FILE_PATH,
-                    extensionName = ""
-                ).use {
-                    it.write(Jval.read(KspUtil.json.prettyPrint(map, JsonValue.PrettyPrintSettings().apply {
-                        outputType = JsonWriter.OutputType.json
-                    })).toString(Jval.Jformat.formatted).toByteArray())
-                }
-            }
-        })
+        }
     }
 }

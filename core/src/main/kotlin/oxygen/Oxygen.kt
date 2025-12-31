@@ -2,12 +2,11 @@ package oxygen
 
 import arc.*
 import arc.files.*
-import arc.util.*
 import mindustry.*
-import oxygen.annotations.LOCATION_FILE_PATH
+import oxygen.annotations.*
 import oxygen.core.*
+import oxygen.graphics.*
 import oxygen.util.*
-import oxygen.graphics.Renderer
 
 object Oxygen {
     const val NAME = OCMain.NAME
@@ -22,9 +21,11 @@ object Oxygen {
         process(root.childPath(LOCATION_FILE_PATH).readString())
     }
 
-    val renderer = Renderer()
+    val renderer = ORenderer()
 
     fun init() {
 
     }
+
+    fun getInternalFile(path: String): Fi = root.child(path)
 }

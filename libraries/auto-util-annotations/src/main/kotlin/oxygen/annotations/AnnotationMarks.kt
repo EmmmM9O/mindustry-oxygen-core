@@ -16,7 +16,7 @@ annotation class Source(val source: String)
 annotation class AnnoObject(
     val name: String = "@Obj",
     val funcName: String = "toObj",
-    val gloFuncName:String="@ToObj",
+    val gloFuncName: String = "@ToObj",
     val path: String = "@",
     val file: String = "@Object"
 )

@@ -1,6 +1,5 @@
 package oxygen.annotations
 
-import mindustry.mod.*
 import arc.util.serialization.*
 
 class ModDumper : JsonDumper<ModConfig>(ModConfig::class.java) {

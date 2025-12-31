@@ -75,7 +75,10 @@ class MdtAnnoResolver(val log: OLogger) {
                     val obj = clazz.companionObject!!
                     val instance = clazz.companionObjectInstance!!
                     val property = obj.memberProperties.first { p -> p.name == it.name } as KMutableProperty<*>
-                    property.setter.call(instance, clazz.java.getField(it.name).getAnnotationsByType(ModConfig::class.java).first())
+                    property.setter.call(
+                        instance,
+                        clazz.java.getField(it.name).getAnnotationsByType(ModConfig::class.java).first()
+                    )
                 }
             }
         }

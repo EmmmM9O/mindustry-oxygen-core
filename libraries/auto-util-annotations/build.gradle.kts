@@ -1,4 +1,4 @@
-import Modules.*
+import Modules.COMMON
 
 dependencies {
     compileOnly(project(COMMON.path))

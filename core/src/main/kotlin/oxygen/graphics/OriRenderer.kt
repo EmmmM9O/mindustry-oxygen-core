@@ -1,36 +1,31 @@
 package oxygen.graphics
 
-import arc.Core
-import arc.Events
+import arc.*
 import arc.assets.loaders.TextureLoader.TextureParameter
-import arc.func.Cons
+import arc.func.*
 import arc.graphics.*
 import arc.graphics.Texture.TextureFilter
 import arc.graphics.Texture.TextureWrap
-import arc.graphics.g2d.Bloom
-import arc.graphics.g2d.Draw
-import arc.graphics.g2d.TextureRegion
-import arc.graphics.gl.FrameBuffer
-import arc.math.Mathf
-import arc.math.geom.Vec2
-import arc.struct.Seq
+import arc.graphics.g2d.*
+import arc.graphics.gl.*
+import arc.math.*
+import arc.math.geom.*
+import arc.struct.*
 import arc.util.*
-import mindustry.Vars
-import mindustry.core.PerfCounter
-import mindustry.core.Renderer
-import mindustry.core.RendererI
+import mindustry.*
+import mindustry.core.*
 import mindustry.game.EventType.*
 import mindustry.game.MapObjectives.MapObjective
-import mindustry.gen.Drawc
-import mindustry.gen.Groups
+import mindustry.gen.*
 import mindustry.graphics.*
-import mindustry.graphics.g3d.PlanetRenderer
-import mindustry.maps.MapPreviewLoader
-import mindustry.type.Liquid
-import mindustry.world.blocks.LaunchAnimator
-import kotlin.math.max
+import mindustry.graphics.g3d.*
+import mindustry.maps.*
+import mindustry.type.*
+import mindustry.world.blocks.*
+import kotlin.math.*
 
-class Renderer : RendererI() {
+class OriRenderer : RendererI() {
+    val customBackgrounds: ObjectMap<String, Runnable> = ObjectMap()
 
     var envRenderers: Seq<EnvRenderer> = Seq<EnvRenderer>()
 
@@ -39,7 +34,7 @@ class Renderer : RendererI() {
     //for landTime > 0: if true, core is currently *launching*, otherwise landing.
     private val camShakeOffset = Vec2()
     private var glErrors = 0
-    var blocksL = BlockRenderer()
+    var blocksL = OriBlockRenderer()
 
     init {
         blocks = blocksL
@@ -94,7 +89,7 @@ class Renderer : RendererI() {
     }
 
     override fun loadFluidFrames() {
-        fluidFrames = Array<Array<TextureRegion?>?>(2) { arrayOfNulls<TextureRegion>(Liquid.animationFrames) }
+        fluidFrames = Array<Array<TextureRegion?>?>(2) { arrayOfNulls(Liquid.animationFrames) }
 
         val fluidTypes = arrayOf<String?>("liquid", "gas")
 

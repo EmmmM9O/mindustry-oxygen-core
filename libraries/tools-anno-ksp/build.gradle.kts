@@ -1,4 +1,5 @@
-import Modules.*
+import Modules.AUTO_UTIL_KSP
+import Modules.TOOLS_ANNO
 
 plugins {
     id("com.google.devtools.ksp")

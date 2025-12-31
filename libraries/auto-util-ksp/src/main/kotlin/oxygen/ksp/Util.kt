@@ -1,6 +1,6 @@
 package oxygen.ksp
 
-import com.google.devtools.ksp.processing.Resolver
+import com.google.devtools.ksp.processing.*
 import com.google.devtools.ksp.symbol.*
 import oxygen.util.*
 import kotlin.reflect.*
@@ -76,20 +76,20 @@ fun KSClassDeclaration.isSubclassOf(target: String): Boolean =
         superTypes.forEach { type ->
             val superClass = type.resolve().declaration
             if (superClass is KSClassDeclaration && superClass.isSubclassOf(target)) {
-                true
             }
         }
         true
     }
 
-inline fun <reified T : Annotation> annotatedAnnoDataFrom(ori:String,resolver: Resolver) = run {
-    val target = T::class.qualifiedName!!
+fun annotatedAnnoDataFrom(target: String, ori: String, resolver: Resolver) =
     resolver.getSymbolsWithAnnotation(target).takeIf { it.any() }
         ?.let {
-            AnnotatedAnnotationStep.AnnotatedAnnoData(
+            AnnotatedAnnoData(
                 it.first().getAnnotationByName(target)!!.annotationType.resolve().declaration
-                    .annotations.first { a -> a.annotationType.resolve().declaration.qualifiedName!!.asString() == ori},
+                    .annotations.first { a -> a.annotationType.resolve().declaration.qualifiedName!!.asString() == ori },
                 it.map { t -> t.getAnnotationByName(target)!! to t }
             )
         }
-}
+
+inline fun <reified T : Annotation> annotatedAnnoDataFrom(ori: String, resolver: Resolver) =
+    annotatedAnnoDataFrom(T::class.qualifiedName!!, ori, resolver)

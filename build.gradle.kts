@@ -1,7 +1,6 @@
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import java.util.Properties
-import javax.management.RuntimeErrorException
-import kotlin.apply
+import org.jetbrains.kotlin.gradle.dsl.*
+import java.util.*
+import javax.management.*
 
 Config.rootDir = project.rootDir
 fun getProperty(key: String): String? {
@@ -79,7 +78,7 @@ allprojects {
             dependsOn("jar")
             doLast {
                 try {
-		    sdkRoot = sdkRoot?:providers.environmentVariable("ANDROID_HOME").getOrNull()
+                    sdkRoot = sdkRoot ?: providers.environmentVariable("ANDROID_HOME").getOrNull()
                     if (sdkRoot == null) throw GradleException("No valid Android SDK found. Ensure that ANDROID_HOME is set to your Android SDK directory.")
                     val platformRoot = File("$sdkRoot/platforms/").listFiles()?.sorted()?.reversed()?.find { f ->
                         File(

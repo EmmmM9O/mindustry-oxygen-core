@@ -18,9 +18,8 @@ import mindustry.graphics.*
 import mindustry.world.*
 import mindustry.world.blocks.environment.Floor.UpdateRenderState
 import mindustry.world.blocks.power.*
-import kotlin.math.*
-
 import oxygen.world.blocks.*
+import kotlin.math.*
 
 class OBlockRenderer : BlockRendererI() {
     //TODO cracks take up far to much space, so I had to limit it to 7. this means larger blocks won't have cracks - draw tiling mirrored stuff instead?
@@ -90,8 +89,8 @@ class OBlockRenderer : BlockRendererI() {
             //if (blockTree == null || floorTree == null) return@Cons
             if (indexBlock(event.tile)) {
                 blockTree.remove(event.tile)
-                blockLightTree.remove(event.tile) 
-                if(event.tile.build != null && event.tile.build is G3DrawBuilding) block3DTree.remove(event.tile)
+                blockLightTree.remove(event.tile)
+                if (event.tile.build != null && event.tile.build is G3DrawBuilding) block3DTree.remove(event.tile)
             }
             if (indexFloor(event.tile)) floorTree.remove(event.tile)
         }
@@ -126,7 +125,7 @@ class OBlockRenderer : BlockRendererI() {
         blockLightTree =
             BlockLightQuadtree(Rect(0f, 0f, Vars.world.unitWidth().toFloat(), Vars.world.unitHeight().toFloat()))
         block3DTree =
-        Block3DQuadtree(Rect(0f, 0f, Vars.world.unitWidth().toFloat(), Vars.world.unitHeight().toFloat()))
+            Block3DQuadtree(Rect(0f, 0f, Vars.world.unitWidth().toFloat(), Vars.world.unitHeight().toFloat()))
 
         floorTree = FloorQuadtree(Rect(0f, 0f, Vars.world.unitWidth().toFloat(), Vars.world.unitHeight().toFloat()))
 
@@ -282,7 +281,7 @@ class OBlockRenderer : BlockRendererI() {
         if (indexBlock(tile)) {
             blockTree.insert(tile)
             blockLightTree.insert(tile)
-            if(tile.build is G3DrawBuilding) block3DTree.insert(tile)
+            if (tile.build is G3DrawBuilding) block3DTree.insert(tile)
         }
         if (indexFloor(tile)) floorTree.insert(tile)
     }
@@ -456,7 +455,7 @@ class OBlockRenderer : BlockRendererI() {
         }
 
         block3DTree.intersect(bounds) { tile: Tile ->
-            if(tile.build != null && tile.build is G3DrawBuilding && proc3D.add(tile.build.id)){
+            if (tile.build != null && tile.build is G3DrawBuilding && proc3D.add(tile.build.id)) {
                 g3dview.add(tile)
             }
         }
@@ -506,20 +505,20 @@ class OBlockRenderer : BlockRendererI() {
         Draw.reset()
     }
 
-    fun g3dEach(cons:(G3DrawBuilding)->Unit){
+    fun g3dEach(cons: (G3DrawBuilding) -> Unit) {
         g3dview.each { tile: Tile ->
-		val build = tile.build
-            if(build != null && build is G3DrawBuilding){
-            cons(build)
+            val build = tile.build
+            if (build != null && build is G3DrawBuilding) {
+                cons(build)
             }
         }
     }
 
-    fun draw3DDepth(){
+    fun draw3DDepth() {
         g3dEach(G3DrawBuilding::drawDepth)
     }
 
-    fun draw3D(){
+    fun draw3D() {
         g3dEach(G3DrawBuilding::draw3D)
     }
 
@@ -613,7 +612,7 @@ class OBlockRenderer : BlockRendererI() {
         }
     }
 
-    fun eachDrawBlocks(func:Cons<Block>) {
+    fun eachDrawBlocks(func: Cons<Block>) {
         val pteam = Vars.player.team()
 
         drawDestroyed()
@@ -688,10 +687,10 @@ class OBlockRenderer : BlockRendererI() {
 
     class Block3DQuadtree(bounds: Rect) : QuadTree<Tile>(bounds) {
         public override fun hitbox(tile: Tile) {
-		val build = tile.build
-            if(build is G3DrawBuilding){
-                build.draw3DHitbox(tmp,tile)
-            }else{
+            val build = tile.build
+            if (build is G3DrawBuilding) {
+                build.draw3DHitbox(tmp, tile)
+            } else {
                 val block = tile.block()
                 tmp.setCentered(
                     tile.worldx() + block.offset,

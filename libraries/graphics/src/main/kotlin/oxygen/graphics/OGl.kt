@@ -1,6 +1,5 @@
 package oxygen.graphics
 
-import arc.*
 import arc.graphics.*
 
 
@@ -15,6 +14,7 @@ class DepthFunc(val func: Int) {
         val gequal = DepthFunc(Gl.gequal)
         val always = DepthFunc(Gl.always)
     }
+
     fun apply() {
         Gl.depthFunc(func)
     }

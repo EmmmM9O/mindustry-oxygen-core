@@ -2,9 +2,9 @@ package oxygen.files
 
 import arc.files.*
 
-fun Fi.sub(path:String):Fi?{
+fun Fi.sub(path: String): Fi? {
     var res = this
-    path.split("/").forEach{
+    path.split("/").forEach {
         res = res.child(it)
     }
     return res

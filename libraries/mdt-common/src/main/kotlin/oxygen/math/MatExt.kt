@@ -6,7 +6,7 @@ import arc.math.geom.*
 /**
  * Creates a 3D matrix from a 2D matrix. do not effect Z-axis.
  */
-fun Mat.to3D(mat4:Mat3D):Mat3D{
+fun Mat.to3D(mat4: Mat3D): Mat3D {
     val m = mat4.`val`
     val m3 = this.`val`
 
@@ -22,4 +22,5 @@ fun Mat.to3D(mat4:Mat3D):Mat3D{
     m[Mat3D.M33] = 1f
     return mat4
 }
+
 fun Mat.to3D(): Mat3D = to3D(Mat3D())

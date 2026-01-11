@@ -9,13 +9,12 @@ import arc.math.*
 import arc.math.geom.*
 import arc.struct.*
 import arc.util.*
+import oxygen.graphics.*
 import oxygen.math.*
 import java.nio.*
 import java.util.*
 import java.util.concurrent.*
 import kotlin.math.*
-
-import oxygen.graphics.*
 
 abstract class ZBatch : Batch() {
     val transform3DMatrix = Mat3D()
@@ -43,15 +42,15 @@ abstract class ZBatch : Batch() {
 
     }
 
-    fun setDrawDepth(draw: Boolean){
-        if(depth == draw) return
+    fun setDrawDepth(draw: Boolean) {
+        if (depth == draw) return
         flush()
         depth = draw
     }
 
     fun getDrawZ(): Float = this.realZ + this.z / 300f
 
-    fun getSortZ(): Float = if(sortRealZ) getDrawZ() else this.z
+    fun getSortZ(): Float = if (sortRealZ) getDrawZ() else this.z
 
     override fun setupMatrices() {
         combinedTrans.set(transform3DMatrix)
@@ -61,12 +60,12 @@ abstract class ZBatch : Batch() {
         sha.setUniformMatrix4("u_proj", projection3DMatrix.`val`)
     }
 
-    open fun setDepth(shader: Shader?){
+    open fun setDepth(shader: Shader?) {
         flush()
         this.customDepthShader = shader
     }
 
-    override fun getShader(): Shader = if(depth) customDepthShader?:depthShader!! else super.getShader()
+    override fun getShader(): Shader = if (depth) customDepthShader ?: depthShader!! else super.getShader()
 
     abstract fun drawImpl(texture: Texture, spriteVertices: FloatArray, offset: Int, count: Int)
 }
@@ -82,7 +81,7 @@ abstract class ZBatch : Batch() {
  * Y Support
  */
 class ZSpriteBatch(size: Int = 4096, defaultShader: Shader? = null, defaultDepth: Shader? = null) : ZBatch() {
-    var multithreaded: Boolean = 
+    var multithreaded: Boolean =
         Core.app != null && ((Core.app.version >= 21 && !Core.app.isIOS) || Core.app.isDesktop)
 
     private val mesh: Mesh
@@ -174,7 +173,7 @@ class ZSpriteBatch(size: Int = 4096, defaultShader: Shader? = null, defaultDepth
 
         if (defaultDepth == null) {
             depthShader = createDepthShader()
-        }else {
+        } else {
             depthShader = defaultDepth
         }
 
@@ -223,7 +222,7 @@ class ZSpriteBatch(size: Int = 4096, defaultShader: Shader? = null, defaultDepth
     }
 
     override fun realZ(z: Float) {
-        if(z == this.realZ) return
+        if (z == this.realZ) return
         this.realZ = z
         intZ = java.lang.Float.floatToRawIntBits(getSortZ() + 16f)
     }
@@ -323,7 +322,7 @@ class ZSpriteBatch(size: Int = 4096, defaultShader: Shader? = null, defaultDepth
             if (numRequests >= requests.size) expandRequests()
             val req = requests[numRequests]!!
             req.realZ = realZ
-            req.run = request 
+            req.run = request
             req.blending = blending
             requestZ[numRequests] = intZ
             req.texture = null
@@ -368,7 +367,7 @@ class ZSpriteBatch(size: Int = 4096, defaultShader: Shader? = null, defaultDepth
         val count = idx / SPRITE_SIZE * 6
 
         blending.apply()
-        
+
         lastTexture.bind()
         val mesh = this.mesh
         //calling buffer() marks it as dirty, so it gets reuploaded upon render

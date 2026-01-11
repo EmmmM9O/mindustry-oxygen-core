@@ -14,13 +14,12 @@ import mindustry.game.EventType.WorldLoadEvent
 import mindustry.graphics.*
 import mindustry.world.*
 import mindustry.world.blocks.environment.*
-import kotlin.math.*
-
 import oxygen.*
-import oxygen.math.*
-import oxygen.graphics.g2d.*
 import oxygen.Oxygen.lightCam
 import oxygen.Oxygen.lightDir
+import oxygen.graphics.g2d.*
+import oxygen.math.*
+import kotlin.math.*
 
 /**
  * general implementation:
@@ -66,7 +65,7 @@ class OFloorRenderer : FloorRendererI() {
 
     var drawDepth = false
 
-    override fun getIndexData():IndexData = _indexData
+    override fun getIndexData(): IndexData = _indexData
 
     override fun getVertexBuffer(): FloatArray = _vertexBuffer
 
@@ -99,7 +98,7 @@ class OFloorRenderer : FloorRendererI() {
         Events.on<WorldLoadEvent>(WorldLoadEvent::class.java) { event: WorldLoadEvent -> reload() }
     }
 
-    public fun getShader() = if(drawDepth) depthShader else shader
+    public fun getShader() = if (drawDepth) depthShader else shader
 
     /** Queues up a cache change for a tile. Only runs in render loop.  */
     public override fun recacheTile(tile: Tile) {
@@ -203,8 +202,8 @@ class OFloorRenderer : FloorRendererI() {
         sh.setUniformMatrix4("u_trans", combinedMat.`val`)
         sh.setUniformMatrix4("u_proj", OGraphics.proj3D().`val`)
 
-        if(!drawDepth){
-            sh.setUniformMatrix4("u_lightProj",lightCam.combined.`val`)
+        if (!drawDepth) {
+            sh.setUniformMatrix4("u_lightProj", lightCam.combined.`val`)
             sh.setUniformf("u_lightDir", lightDir)
             renderer.shadowBuffer.texture.bind(1)
             sh.setUniformi("u_shadowMap", 1)
@@ -310,7 +309,7 @@ class OFloorRenderer : FloorRendererI() {
 
         var flag = false
         val current = Core.batch
-        if(current == OGraphics.zbatch){
+        if (current == OGraphics.zbatch) {
             OGraphics.zbatch = batch
             flag = true
         }
@@ -342,7 +341,7 @@ class OFloorRenderer : FloorRendererI() {
         }
 
         Core.batch = current
-        if(flag) OGraphics.zbatch = current as ZBatch 
+        if (flag) OGraphics.zbatch = current as ZBatch
 
         val floats = vidx
         val mesh = ChunkMesh(
@@ -560,6 +559,7 @@ class OFloorRenderer : FloorRendererI() {
 
             vidx += spriteSize
         }
+
         override fun drawImpl(texture: Texture, spriteVertices: FloatArray, offset: Int, count: Int) {
             require(spriteVertices.size == 24) { "cached vertices must be in non-mixcolor format (24 per sprite, 6 per vertex)" }
 

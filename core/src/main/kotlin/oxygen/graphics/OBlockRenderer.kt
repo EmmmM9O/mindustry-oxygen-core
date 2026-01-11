@@ -20,7 +20,9 @@ import mindustry.world.blocks.environment.Floor.UpdateRenderState
 import mindustry.world.blocks.power.*
 import kotlin.math.*
 
-class OriBlockRenderer : BlockRendererI() {
+import oxygen.world.blocks.*
+
+class OBlockRenderer : BlockRendererI() {
     //TODO cracks take up far to much space, so I had to limit it to 7. this means larger blocks won't have cracks - draw tiling mirrored stuff instead?
     val crackRegions: Int =
         8  //TODO cracks take up far to much space, so I had to limit it to 7. this means larger blocks won't have cracks - draw tiling mirrored stuff instead?
@@ -34,6 +36,7 @@ class OriBlockRenderer : BlockRendererI() {
     lateinit var cracks: Array<Array<TextureRegion>>
 
     private val tileview = Seq<Tile>(false, initialRequests, Tile::class.java)
+    private val g3dview = Seq<Tile>(false, initialRequests, Tile::class.java)
     private val lightview = Seq<Tile>(false, initialRequests, Tile::class.java)
 
     //TODO I don't like this system
@@ -52,12 +55,17 @@ class OriBlockRenderer : BlockRendererI() {
     private val darkEvents = IntSet()
     private val procLinks = IntSet()
     private val procLights = IntSet()
+    private val proc3D = IntSet()
 
     private var blockTree = BlockQuadtree(Rect(0f, 0f, 1f, 1f))
     private var blockLightTree = BlockLightQuadtree(Rect(0f, 0f, 1f, 1f))
+    private var block3DTree = Block3DQuadtree(Rect(0f, 0f, 1f, 1f))
     private var floorTree = FloorQuadtree(Rect(0f, 0f, 1f, 1f))
 
+    val floorL = OFloorRenderer()
+
     init {
+        floor = floorL
         Events.on(ClientLoadEvent::class.java) { _: ClientLoadEvent ->
             cracks = Array(maxCrackSize) { size ->
                 Array(crackRegions) { region ->
@@ -80,11 +88,12 @@ class OriBlockRenderer : BlockRendererI() {
 
         Events.on(TilePreChangeEvent::class.java) { event: TilePreChangeEvent ->
             //if (blockTree == null || floorTree == null) return@Cons
-            if (indexBlock(event!!.tile)) {
-                blockTree!!.remove(event.tile)
-                blockLightTree.remove(event.tile)
+            if (indexBlock(event.tile)) {
+                blockTree.remove(event.tile)
+                blockLightTree.remove(event.tile) 
+                if(event.tile.build != null && event.tile.build is G3DrawBuilding) block3DTree.remove(event.tile)
             }
-            if (indexFloor(event.tile)) floorTree!!.remove(event.tile)
+            if (indexFloor(event.tile)) floorTree.remove(event.tile)
         }
 
         Events.on(TileChangeEvent::class.java) { event: TileChangeEvent ->
@@ -116,6 +125,9 @@ class OriBlockRenderer : BlockRendererI() {
         blockTree = BlockQuadtree(Rect(0f, 0f, Vars.world.unitWidth().toFloat(), Vars.world.unitHeight().toFloat()))
         blockLightTree =
             BlockLightQuadtree(Rect(0f, 0f, Vars.world.unitWidth().toFloat(), Vars.world.unitHeight().toFloat()))
+        block3DTree =
+        Block3DQuadtree(Rect(0f, 0f, Vars.world.unitWidth().toFloat(), Vars.world.unitHeight().toFloat()))
+
         floorTree = FloorQuadtree(Rect(0f, 0f, Vars.world.unitWidth().toFloat(), Vars.world.unitHeight().toFloat()))
 
         shadowEvents.clear()
@@ -247,11 +259,11 @@ class OriBlockRenderer : BlockRendererI() {
     }
 
     override fun removeFloorIndex(tile: Tile) {
-        if (indexFloor(tile)) floorTree!!.remove(tile)
+        if (indexFloor(tile)) floorTree.remove(tile)
     }
 
     override fun addFloorIndex(tile: Tile) {
-        if (indexFloor(tile)) floorTree!!.insert(tile)
+        if (indexFloor(tile)) floorTree.insert(tile)
     }
 
     fun indexBlock(tile: Tile): Boolean {
@@ -268,10 +280,11 @@ class OriBlockRenderer : BlockRendererI() {
 
     fun recordIndex(tile: Tile) {
         if (indexBlock(tile)) {
-            blockTree!!.insert(tile)
+            blockTree.insert(tile)
             blockLightTree.insert(tile)
+            if(tile.build is G3DrawBuilding) block3DTree.insert(tile)
         }
-        if (indexFloor(tile)) floorTree!!.insert(tile)
+        if (indexFloor(tile)) floorTree.insert(tile)
     }
 
     override fun recacheWall(tile: Tile) {
@@ -426,22 +439,30 @@ class OriBlockRenderer : BlockRendererI() {
 
         tileview.clear()
         lightview.clear()
+        g3dview.clear()
         procLinks.clear()
         procLights.clear()
+        proc3D.clear()
 
         val bounds = Core.camera.bounds(Tmp.r3).grow(Vars.tilesize * 2f)
 
         //draw floor lights
-        floorTree!!.intersect(bounds) { value: Tile? -> lightview.add(value) }
+        floorTree.intersect(bounds) { value: Tile -> lightview.add(value) }
 
-        blockLightTree.intersect(bounds) { tile: Tile? ->
-            if (tile!!.block().emitLight && (tile.build == null || procLights.add(tile.build.pos()))) {
+        blockLightTree.intersect(bounds) { tile: Tile ->
+            if (tile.block().emitLight && (tile.build == null || procLights.add(tile.build.pos()))) {
                 lightview.add(tile)
             }
         }
 
-        blockTree!!.intersect(bounds) { tile: Tile? ->
-            if (tile!!.build == null || procLinks.add(tile.build.id)) {
+        block3DTree.intersect(bounds) { tile: Tile ->
+            if(tile.build != null && tile.build is G3DrawBuilding && proc3D.add(tile.build.id)){
+                g3dview.add(tile)
+            }
+        }
+
+        blockTree.intersect(bounds) { tile: Tile ->
+            if (tile.build == null || procLinks.add(tile.build.id)) {
                 tileview.add(tile)
             }
             if (tile.build != null && tile.build.power != null && tile.build.power.links.size > 0) {
@@ -483,6 +504,23 @@ class OriBlockRenderer : BlockRendererI() {
             drawTree(tree.topRight)
         }
         Draw.reset()
+    }
+
+    fun g3dEach(cons:(G3DrawBuilding)->Unit){
+        g3dview.each { tile: Tile ->
+		val build = tile.build
+            if(build != null && build is G3DrawBuilding){
+            cons(build)
+            }
+        }
+    }
+
+    fun draw3DDepth(){
+        g3dEach(G3DrawBuilding::drawDepth)
+    }
+
+    fun draw3D(){
+        g3dEach(G3DrawBuilding::draw3D)
     }
 
     fun drawBlocks() {
@@ -567,13 +605,36 @@ class OriBlockRenderer : BlockRendererI() {
             Draw.z(Layer.overlayUI)
             Lines.stroke(1f, Color.green)
 
-            blockTree!!.intersect(Core.camera.bounds(Tmp.r1)) { tile: Tile? ->
+            blockTree.intersect(Core.camera.bounds(Tmp.r1)) { tile: Tile? ->
                 Lines.rect(tile!!.getHitbox(Tmp.r2))
             }
 
             Draw.reset()
         }
     }
+
+    fun eachDrawBlocks(func:Cons<Block>) {
+        val pteam = Vars.player.team()
+
+        drawDestroyed()
+
+        //draw most tile stuff
+        for (i in 0..<tileview.size) {
+            val tile = tileview.items[i]
+            val block = tile.block()
+            val build = tile.build
+
+            Draw.z(Layer.block)
+
+            val visible = (build == null || !build.inFogTo(pteam))
+
+            //comment wasVisible part for hiding?
+            if (block !== Blocks.air && (visible || build.wasVisible)) {
+                func.get(block)
+            }
+        }
+    }
+
 
     override fun updateShadow(build: Building) {
         if (build.tile == null) return
@@ -598,20 +659,20 @@ class OriBlockRenderer : BlockRendererI() {
         return cracks as Array<Array<TextureRegion?>?>
     }
 
-    class BlockQuadtree(bounds: Rect?) : QuadTree<Tile?>(bounds) {
-        public override fun hitbox(tile: Tile?) {
-            val block = tile!!.block()
+    class BlockQuadtree(bounds: Rect) : QuadTree<Tile>(bounds) {
+        public override fun hitbox(tile: Tile) {
+            val block = tile.block()
             tmp.setCentered(tile.worldx() + block.offset, tile.worldy() + block.offset, block.clipSize, block.clipSize)
         }
 
-        override fun newChild(rect: Rect?): QuadTree<Tile?> {
+        override fun newChild(rect: Rect): QuadTree<Tile> {
             return BlockQuadtree(rect)
         }
     }
 
-    class BlockLightQuadtree(bounds: Rect?) : QuadTree<Tile?>(bounds) {
-        public override fun hitbox(tile: Tile?) {
-            val block = tile!!.block()
+    class BlockLightQuadtree(bounds: Rect) : QuadTree<Tile>(bounds) {
+        public override fun hitbox(tile: Tile) {
+            val block = tile.block()
             tmp.setCentered(
                 tile.worldx() + block.offset,
                 tile.worldy() + block.offset,
@@ -620,18 +681,39 @@ class OriBlockRenderer : BlockRendererI() {
             )
         }
 
-        override fun newChild(rect: Rect?): QuadTree<Tile?> {
+        override fun newChild(rect: Rect): QuadTree<Tile> {
             return BlockLightQuadtree(rect)
         }
     }
 
-    class FloorQuadtree(bounds: Rect?) : QuadTree<Tile?>(bounds) {
-        public override fun hitbox(tile: Tile?) {
-            val floor = tile!!.floor()
+    class Block3DQuadtree(bounds: Rect) : QuadTree<Tile>(bounds) {
+        public override fun hitbox(tile: Tile) {
+		val build = tile.build
+            if(build is G3DrawBuilding){
+                build.draw3DHitbox(tmp,tile)
+            }else{
+                val block = tile.block()
+                tmp.setCentered(
+                    tile.worldx() + block.offset,
+                    tile.worldy() + block.offset,
+                    block.lightClipSize,
+                    block.lightClipSize
+                )
+            }
+        }
+
+        override fun newChild(rect: Rect): QuadTree<Tile> {
+            return Block3DQuadtree(rect)
+        }
+    }
+
+    class FloorQuadtree(bounds: Rect) : QuadTree<Tile>(bounds) {
+        public override fun hitbox(tile: Tile) {
+            val floor = tile.floor()
             tmp.setCentered(tile.worldx(), tile.worldy(), floor.lightClipSize, floor.lightClipSize)
         }
 
-        override fun newChild(rect: Rect?): QuadTree<Tile?> {
+        override fun newChild(rect: Rect): QuadTree<Tile> {
             return FloorQuadtree(rect)
         }
     }

@@ -6,6 +6,7 @@ import oxygen.*
 import oxygen.Oxygen.log
 import oxygen.Oxygen.omark
 import oxygen.annotations.*
+import oxygen.content.*
 
 class OCMain : Mod() {
     companion object {
@@ -50,5 +51,9 @@ class OCMain : Mod() {
         if (preloadFailed) {
             return
         }
+    }
+
+    override fun loadContent() {
+        OBlocks.init()
     }
 }

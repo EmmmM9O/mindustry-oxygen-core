@@ -2,6 +2,8 @@ package oxygen
 
 import arc.*
 import arc.files.*
+import arc.graphics.g3d.*
+import arc.math.geom.*
 import mindustry.*
 import oxygen.annotations.*
 import oxygen.core.*
@@ -20,6 +22,11 @@ object Oxygen {
     val resolver = MdtAnnoResolver(log).apply {
         process(root.childPath(LOCATION_FILE_PATH).readString())
     }
+
+    val trans3D = Mat3D()
+
+    val lightCam = Camera3D()
+    val lightDir = Vec3(-1f, -1f, -4f).nor()
 
     val renderer = ORenderer()
 

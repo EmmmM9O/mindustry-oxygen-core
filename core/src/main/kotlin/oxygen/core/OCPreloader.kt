@@ -1,9 +1,12 @@
 package oxygen.core
 
+import arc.*
 import arc.util.*
 import mindustry.*
 import mindustry.mod.*
 import oxygen.*
+import oxygen.graphics.*
+import oxygen.graphics.g2d.*
 import oxygen.util.*
 import oxygen.util.Marks
 
@@ -18,7 +21,7 @@ class OCPreloader : Preloader() {
                 template {
                     "$timeStr${
                         mark?.name().defFormat()
-                    }${logger.name.defFormat()}:$message\n${cause.workOrEmpty { ":${throwableMsg(it)}" }}"
+                    }${logger.name.defFormat()}:$message${cause.workOrEmpty { "\n:${throwableMsg(it)}" }}"
                 }
                 oxyTime { "<$mm-$ss>" }
             }
@@ -44,6 +47,15 @@ class OCPreloader : Preloader() {
 
     override fun preload() {
 
+    }
+
+    override fun beforeAll(app: ClientLauncher) {
+        OGraphics.zbatch = ZSpriteBatch()
+        Core.batch = OGraphics.zbatch
+        log.atInfo {
+            message("Replace batch")
+            mark(omark)
+        }
     }
 
     override fun modifyApplication(app: ClientLauncher) {

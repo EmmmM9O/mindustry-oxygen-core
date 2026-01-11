@@ -23,7 +23,11 @@ import mindustry.maps.*
 import mindustry.type.*
 import mindustry.world.blocks.*
 import oxygen.*
+import oxygen.Oxygen.lightCam
+import oxygen.Oxygen.lightDir
 import oxygen.Oxygen.log
+import oxygen.math.*
+import kotlin.math.*
 
 class ORenderer : RendererI() {
     val customBackgrounds: ObjectMap<String, Runnable> = ObjectMap()
@@ -33,17 +37,28 @@ class ORenderer : RendererI() {
     //for landTime > 0: if true, core is currently *launching*, otherwise landing.
     private val camShakeOffset = Vec2()
     private var glErrors = 0
-    var blocksL = OriBlockRenderer()
+    var blocksL = OBlockRenderer()
 
     //g3d
-    var dis = 80f
-    var offset = -1f
+    var dis = 100f
     val cam = Camera3D()
-    val tmpTilesBuffer = FrameBuffer()
-    val camPos = Vec3(0f, 20f, 0f)
 
-    val tilesMesh = Meshes.texturePlane(1f, 1f)
+    val camPos = Vec3(0f, 0f, 20f)
+
     val tmpMat = Mat3D()
+    val tmpMat1 = Mat3D()
+    val tmpMat2 = Mat3D()
+
+    // Shaderi
+    val shadowMapSize = 1024
+    val shadowBuffer = FrameBuffer(shadowMapSize, shadowMapSize, true)
+
+    //Test
+    var showShadowMap = false
+
+    var lightFar = 100f
+
+    var lightDir_ = lightDir
 
     init {
         blocks = blocksL
@@ -57,9 +72,16 @@ class ORenderer : RendererI() {
             camShakeOffset.setZero()
         }
 
+        drawUnitShaodw = false
+
         cam.fov = 90f
-        cam.far = 400f
-        cam.up.set(Vec3.Z)
+        cam.far = 120f
+        cam.up.set(Vec3.Y)
+
+        lightCam.perspective = false
+        lightCam.fov = 90f
+        lightCam.far = 200f
+        lightCam.up.set(Vec3.Y)
     }
 
     override fun addEnvRenderer(mask: Int, render: Runnable) {}
@@ -133,8 +155,9 @@ class ORenderer : RendererI() {
         Renderer.unitLaserOpacity = Core.settings.getInt("unitlaseropacity") / 100f
         Renderer.laserOpacity = Core.settings.getInt("lasersopacity") / 100f
         Renderer.bridgeOpacity = Core.settings.getInt("bridgeopacity") / 100f
-        animateShields = Core.settings.getBool("animatedshields")
-        animateWater = Core.settings.getBool("animatedwater")
+        //TODO
+        //animateShields = Core.settings.getBool("animatedshields")
+        //animateWater = Core.settings.getBool("animatedwater")
         drawStatus = Core.settings.getBool("blockstatus")
         enableEffects = Core.settings.getBool("effects")
         drawDisplays = !Core.settings.getBool("hidedisplays")
@@ -252,83 +275,20 @@ class ORenderer : RendererI() {
         }
     }
 
-    override fun draw() {
-        val w = Core.graphics.width.toFloat()
-        val h = Core.graphics.height.toFloat()
-        camPos.set(0f, dis / camerascale, 0f)
-        tmpTilesBuffer.resize(Core.graphics.width, Core.graphics.height)
-        tmpTilesBuffer.begin(Color.white)
-        Core.graphics.clear(Color.white)
-        //Draw.flush()
-        Events.fire(Trigger.preDraw)
-
-        if (java.lang.Float.isNaN(Core.camera.position.x) || java.lang.Float.isNaN(Core.camera.position.y)) {
-            Core.camera.position.set(Vars.player)
-        }
-        //
-        val tw = dis / camerascale * 2f
-        val aspect = w / h
-        Core.camera.width = tw * 8f * aspect
-        Core.camera.height = tw * 8f
-        Core.camera.update()
-
-        if (animateWater || animateShields) {
-            effectBuffer.resize(Core.graphics.width, Core.graphics.height)
-        }
-
-        Draw.proj(Core.camera)
-
-        blocksL.checkChanges()
-        blocksL.floor.checkChanges()
-        blocksL.processBlocks()
-
-        Draw.sort(true)
-        Events.fire(Trigger.draw)
-        MapPreviewLoader.checkPreviews()
-
-        if (Vars.renderer.pixelate) {
-            pixelator.register()
-        }
-        Draw.draw(Layer.end) {
-            tmpTilesBuffer.end()
-            Blending.disabled.apply()
-            Core.graphics.clear(clearColor)
-
-            //3D
-            Gl.clear(Gl.depthBufferBit)
-
-            Gl.disable(Gl.cullFace)
-            cam.position.set(camPos)
-            cam.lookAt(Vec3.Zero)
-            cam.resize(Core.graphics.width.toFloat(), Core.graphics.height.toFloat())
-            cam.update()
-            val shader = OGShaders.texturePlane
-
-            shader.bind()
-            tmpTilesBuffer.texture.bind()
-            shader.setUniformMatrix4("u_proj", cam.combined.`val`)
-            tmpMat.setToScaling(tw * aspect, 1f, tw).translate(0f, offset, 0f)
-            shader.setUniformMatrix4("u_trans", tmpMat.`val`)
-            shader.setUniformi("u_texture0", 0)
-            tilesMesh.render(shader, Gl.triangles)
-
-            tilesMesh.render(shader, Gl.triangles)
-
-        }
-
+    fun drawObjs(depth: Boolean) {
+        OGraphics.realZ(0f)
         //Draw.draw(Layer.background) { this.drawBackground() }
-        Draw.draw(Layer.floor) { blocksL.floor.drawFloor() }
-        Draw.draw(Layer.block - 1) { blocksL.drawShadows() }
-        Draw.draw(Layer.block - 0.09f) {
-            blocksL.floor.beginDraw()
-            blocksL.floor.drawLayer(CacheLayer.walls)
+        Draw.draw(Layer.floor) {
+            blocksL.floorL.drawDepth = depth
+            blocksL.floor.drawFloor()
         }
-
+        //Draw.draw(Layer.block - 1) { blocksL.drawShadows() }
+        /*
         Draw.drawRange(
             Layer.blockBuilding,
             { Draw.shader(Shaders.blockbuild, true) },
             { Draw.shader() })
-
+            */
         //render all matching environments
         /*
         for (renderer in envRenderers) {
@@ -338,81 +298,224 @@ class ORenderer : RendererI() {
         }
         */
 
-        if (Vars.state.rules.lighting && drawLight) {
-            Draw.draw(Layer.light) { lights.draw() }
+        OGraphics.realZ(0f)
+        Groups.draw.draw { obj: Drawc? ->
+            if (obj is Heightc) {
+                OGraphics.realZ(obj.height)
+            } else OGraphics.realZ(3f)
+            obj!!.draw()
         }
 
-        if (Vars.enableDarkness) {
-            Draw.draw(Layer.darkness) { blocksL.drawDarkness() }
+    }
+
+    fun updateLight(width: Float, height: Float) {
+        val dir = lightDir
+        lightCam.position.set(dir).scl(-lightFar)
+        if (abs(dir.z) > 0.95f) {
+            lightCam.resize(width, height)
+        } else {
+            val normal = Vec3.Z
+            val cosAngle = abs(dir.dot(normal))
+            if (cosAngle > 0.001f) {
+                val scaleFactor = 1.0f / cosAngle;
+                lightCam.resize(width * scaleFactor, height * scaleFactor)
+            } else {
+
+            }
         }
+        lightCam.lookAt(Vec3.Zero)
+        lightCam.update()
+    }
 
-        if (bloom != null) {
-            bloom.resize(Core.graphics.width, Core.graphics.height)
-            bloom.setBloomIntensity(Core.settings.getInt("bloomintensity", 6) / 4f + 1f)
-            bloom.blurPasses = Core.settings.getInt("bloomblur", 1)
-            Draw.draw(Layer.bullet - 0.02f) { bloom.capture() }
-            Draw.draw(Layer.effect + 0.02f) { bloom.render() }
+    override fun draw() {
+        val w = Core.graphics.width.toFloat()
+        val h = Core.graphics.height.toFloat()
+        camPos.set(0f, 0f, dis / camerascale)
+
+        Events.fire(Trigger.preDraw)
+
+        if (java.lang.Float.isNaN(Core.camera.position.x) || java.lang.Float.isNaN(Core.camera.position.y)) {
+            Core.camera.position.set(Vars.player)
         }
+        //
+        val tw = dis / camerascale //* 2f
+        val aspect = w / h
+        val cw = tw * aspect
+        val ch = tw
+        Core.camera.width = cw * 8f
+        Core.camera.height = ch * 8f
+        Core.camera.update()
 
-        Vars.control.input.drawCommanded()
-
-        Draw.draw(Layer.plans) { overlays.drawBottom() }
-
-        if (animateShields && Shaders.shield != null) {
-            //TODO would be nice if there were a way to detect if any shields or build beams actually *exist* before beginning/ending buffers, otherwise you're just blitting and swapping shaders for nothing
-            Draw.drawRange(Layer.shields, 1f, { effectBuffer.begin(Color.clear) }, {
-                effectBuffer.end()
-                effectBuffer.blit(Shaders.shield)
-            })
-
-            Draw.drawRange(Layer.buildBeam, 1f, { effectBuffer.begin(Color.clear) }, {
-                effectBuffer.end()
-                effectBuffer.blit(Shaders.buildBeam)
-            })
+        if (animateWater || animateShields) {
+            effectBuffer.resize(Core.graphics.width, Core.graphics.height)
         }
+        MapPreviewLoader.checkPreviews()
 
-        val scaleFactor = 4f / Vars.renderer.displayScale
+        blocksL.checkChanges()
+        blocksL.floor.checkChanges()
+        blocksL.processBlocks()
 
-        //draw objective markers
-        Vars.state.rules.objectives.eachRunning { obj: MapObjective? ->
-            for (marker in obj!!.markers) {
+        tmpMat1.set(OGraphics.proj3D())
+        tmpMat2.set(OGraphics.trans3D())
+        tmpMat.setToScaling(cw, tw, 1f)
+        OGraphics.trans3D(tmpMat)
+        Draw.proj(Core.camera)
+
+        updateLight(cw * 2f, ch * 2f)
+
+        OGraphics.proj3D(lightCam.combined)
+        Oxygen.trans3D.set(OGraphics.trans3D()).mul(Core.camera.mat.to3D(tmpMat))
+        OGraphics.drawDepth(true)
+
+        OGraphics.zbatch.alphaTest = 0.9f
+
+        Draw.sort(true)
+        Gl.depthMask(true)
+
+        if (!showShadowMap) shadowBuffer.begin()
+        DepthFunc.lequal.apply()
+        Core.graphics.clear(Color.white)
+        Gl.clear(Gl.depthBufferBit or Gl.colorBufferBit)
+
+        Gl.enable(Gl.depthTest)
+        Gl.enable(Gl.cullFace)
+        Gl.cullFace(Gl.front)
+        blocksL.draw3DDepth()
+        Gl.disable(Gl.cullFace)
+
+
+        drawObjs(true)
+        Draw.flush()
+        Draw.reset()
+        OGraphics.zbatch.alphaTest = 0f
+        if (!showShadowMap) {
+            shadowBuffer.end()
+            OGraphics.drawDepth(false)
+
+            val shader = OGShaders.zbatchShadow
+            shader.lightMat = lightCam.combined
+            shader.shadowMap = shadowBuffer.texture
+            shader.lightDir = lightDir
+
+            cam.position.set(camPos)
+            cam.lookAt(Vec3.Zero)
+            cam.resize(Core.graphics.width.toFloat(), Core.graphics.height.toFloat())
+            cam.update()
+
+            OGraphics.proj3D(cam.combined)
+
+
+
+            Draw.sort(false)
+            Draw.shader(shader)
+            Draw.sort(true)
+            Events.fire(Trigger.draw)
+            /*
+            if (Vars.renderer.pixelate) {
+                pixelator.register()
+            }*/
+            Core.graphics.clear(clearColor)
+            Gl.clear(Gl.depthBufferBit)
+
+            Gl.enable(Gl.cullFace)
+            Gl.cullFace(Gl.back)
+            blocksL.draw3D()
+            Gl.disable(Gl.cullFace)
+
+            OGraphics.realZ(0f)
+            drawObjs(false)
+            if (Vars.state.rules.lighting && drawLight) {
+                Draw.draw(Layer.light) { lights.draw() }
+            }
+
+            if (Vars.enableDarkness) {
+                Draw.draw(Layer.darkness) { blocksL.drawDarkness() }
+            }
+
+            if (bloom != null) {
+                bloom.resize(Core.graphics.width, Core.graphics.height)
+                bloom.setBloomIntensity(Core.settings.getInt("bloomintensity", 6) / 4f + 1f)
+                bloom.blurPasses = Core.settings.getInt("bloomblur", 1)
+                Draw.draw(Layer.bullet - 0.02f) { bloom.capture() }
+                Draw.draw(Layer.effect + 0.02f) { bloom.render() }
+            }
+
+            OGraphics.realZ(0.2f)
+            Vars.control.input.drawCommanded()
+
+            Draw.draw(Layer.plans) { overlays.drawBottom() }
+
+            /* TODO animateShields support
+            if (animateShields && Shaders.shield != null) {
+                //TODO would be nice if there were a way to detect if any shields or build beams actually *exist* before beginning/ending buffers, otherwise you're just blitting and swapping shaders for nothing
+                Draw.drawRange(Layer.shields, 1f, { effectBuffer.begin(Color.clear) }, {
+                    effectBuffer.end()
+                    effectBuffer.blit(Shaders.shield)
+                })
+
+                Draw.drawRange(Layer.buildBeam, 1f, { effectBuffer.begin(Color.clear) }, {
+                    effectBuffer.end()
+                    effectBuffer.blit(Shaders.buildBeam)
+                })
+            }*/
+
+            val scaleFactor = 4f / Vars.renderer.displayScale
+
+            //draw objective markers
+            Vars.state.rules.objectives.eachRunning { obj: MapObjective? ->
+                for (marker in obj!!.markers) {
+                    if (marker.world) {
+                        marker.draw(if (marker.autoscale) scaleFactor else 1f)
+                    }
+                }
+            }
+
+            for (marker in Vars.state.markers) {
                 if (marker.world) {
                     marker.draw(if (marker.autoscale) scaleFactor else 1f)
                 }
             }
-        }
 
-        for (marker in Vars.state.markers) {
-            if (marker.world) {
-                marker.draw(if (marker.autoscale) scaleFactor else 1f)
-            }
-        }
-
-        Draw.reset()
-
-        Draw.draw(Layer.overlayUI) { overlays.drawTop() }
-        if (Vars.state.rules.fog) Draw.draw(Layer.fogOfWar) { fog.drawFog() }
-        Draw.draw(Layer.space) {
-            if (launchAnimator != null && landTime > 0f) launchAnimator.drawLaunch()
-        }
-        if (launchAnimator != null) {
-            Draw.z(Layer.space)
-            launchAnimator.drawLaunchGlobalZ()
             Draw.reset()
+
+            OGraphics.realZ(0.2f)
+            Draw.draw(Layer.overlayUI) {
+                overlays.drawTop()
+            }
+            if (Vars.state.rules.fog) Draw.draw(Layer.fogOfWar) { fog.drawFog() }
+            /*
+                Draw.draw(Layer.space) {
+                    if (launchAnimator != null && landTime > 0f) launchAnimator.drawLaunch()
+                }
+                if (launchAnimator != null) {
+                    Draw.z(Layer.space)
+                    launchAnimator.drawLaunchGlobalZ()
+                    Draw.reset()
+                }*/
+
+            Events.fire(Trigger.drawOver)
+            OGraphics.realZ(0.1f)
+            blocksL.drawBlocks()
+            Draw.draw(Layer.block - 0.09f) {
+                OGraphics.realZ(0.1f)
+                blocksL.floor.beginDraw()
+                blocksL.floor.drawLayer(CacheLayer.walls)
+            }
+
+            if (Vars.drawDebugHitboxes) {
+                DebugCollisionRenderer.draw()
+            }
+            OGraphics.realZ(0f)
+            Draw.flush()
         }
+        OGraphics.drawDepth(false)
 
-        Events.fire(Trigger.drawOver)
-        blocksL.drawBlocks()
-
-        Groups.draw.draw { obj: Drawc? -> obj!!.draw() }
-
-        if (Vars.drawDebugHitboxes) {
-            DebugCollisionRenderer.draw()
-        }
-
-        Draw.reset()
-        Draw.flush()
         Draw.sort(false)
+        Draw.shader()
+        Gl.depthMask(false)
+        Gl.disable(Gl.depthTest)
+        OGraphics.proj3D(tmpMat1)
+        OGraphics.trans3D(tmpMat2)
 
         Events.fire(Trigger.postDraw)
     }

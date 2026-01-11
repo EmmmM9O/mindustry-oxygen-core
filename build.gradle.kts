@@ -22,10 +22,12 @@ plugins {
     idea
     kotlin("jvm")
     id("com.google.devtools.ksp") apply false
+    id("oxygen.glsl")
 }
 allprojects {
     apply(plugin = "org.jetbrains.kotlin.jvm")
     apply(plugin = "idea")
+    apply(plugin = "oxygen.glsl")
     java {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8

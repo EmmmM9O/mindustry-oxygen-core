@@ -8,6 +8,7 @@ tasks.register<Copy>("copyKotlin") {
     from("${rootDir}/buildSrc/src/main/kotlin")
     into(to)
     include("oxygen/**/*.kt")
+    exclude("oxygen/gradle/*.kt")
     doFirst {
         delete(to)
     }

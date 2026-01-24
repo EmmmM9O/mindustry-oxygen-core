@@ -27,6 +27,9 @@ class OCPreloader : Preloader() {
         }
         val omark = StrMark("Oxygen")
         var preloaded = false
+        var error = false
+
+        var failReason = ""
     }
 
     init {
@@ -38,17 +41,30 @@ class OCPreloader : Preloader() {
                 message(text)
             }
         }
-        log.atInfo {
-            message("Oxygen preload")
-            mark(omark)
+        if (Core.gl30 == null) {
+            error = true
+            log.atError {
+                message("OpenGL 3.0 not supported.Oxygen do not load")
+                mark(omark)
+            }
+
+            failReason = "@dialog.oxygen.error.gl3"
+        }
+        if (!error) {
+            log.atInfo {
+                message("Oxygen preload")
+                mark(omark)
+            }
         }
     }
 
     override fun preload() {
+        if (error) return
 
     }
 
     override fun beforeAll(app: ClientLauncher) {
+        if (error) return
         OGraphics.zbatch = ZSpriteBatch()
         Core.batch = OGraphics.zbatch
         log.atInfo {
@@ -58,6 +74,7 @@ class OCPreloader : Preloader() {
     }
 
     override fun modifyApplication(app: ClientLauncher) {
+        if (error) return
         Vars.renderer = Oxygen.renderer
         app.add(Oxygen.renderer)
         log.atInfo {

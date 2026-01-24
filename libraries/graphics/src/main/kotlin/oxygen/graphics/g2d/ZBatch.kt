@@ -16,6 +16,8 @@ import java.util.*
 import java.util.concurrent.*
 import kotlin.math.*
 
+const val COLOR_SCL = 10f
+
 abstract class ZBatch : Batch() {
     val transform3DMatrix = Mat3D()
     val combinedTrans = Mat3D()
@@ -26,6 +28,10 @@ abstract class ZBatch : Batch() {
     var depth = false
     var depthShader: Shader? = null
     var customDepthShader: Shader? = null
+
+    var sclColorPacked = Color(1f / COLOR_SCL, 1f / COLOR_SCL, 1f / COLOR_SCL, 1f / COLOR_SCL).toFloatBits()
+    var beforeVert: (ZBatch.() -> Unit)? = null
+    var afterVert: (ZBatch.() -> Unit)? = null
 
     fun setProjection3DMatrix(matrix: Mat3D) {
         flush()
@@ -143,7 +149,8 @@ class ZSpriteBatch(size: Int = 4096, defaultShader: Shader? = null, defaultDepth
             VertexAttribute.position3,
             VertexAttribute.color,
             VertexAttribute.texCoords,
-            VertexAttribute.mixColor
+            VertexAttribute.mixColor,
+            VertexAttribute(4, GL20.GL_UNSIGNED_BYTE, true, "a_scl_color")
         )
 
         val len = size * 6
@@ -237,11 +244,14 @@ class ZSpriteBatch(size: Int = 4096, defaultShader: Shader? = null, defaultDepth
         val original = arrO.copyOfRange(offset, offset + count)
         val chunkSize = 6
         val chunks = original.size / chunkSize
-        val newSize = original.size + chunks
+        val newSize = original.size + chunks * 2
         val newArray = FloatArray(newSize)
+
+        beforeVert?.invoke(this)
 
         var srcIndex = 0
         var dstIndex = 0
+        val sclColor = sclColorPacked
 
         for (chunk in 0 until chunks) {
             for (i in 0 until 2) {
@@ -251,12 +261,14 @@ class ZSpriteBatch(size: Int = 4096, defaultShader: Shader? = null, defaultDepth
             for (i in 0 until 4) {
                 newArray[dstIndex++] = original[srcIndex++]
             }
+            newArray[dstIndex++] = sclColor
         }
+        afterVert?.invoke(this)
         return newArray
     }
 
     override fun draw(texture: Texture, spriteVertices: FloatArray, offset: Int, count: Int) {
-        drawImpl(texture, addRealZ(spriteVertices, offset, count, getDrawZ()), 0, count * 7 / 6)
+        drawImpl(texture, addRealZ(spriteVertices, offset, count, getDrawZ()), 0, count * 8 / 6)
     }
 
     override fun drawImpl(texture: Texture, spriteVertices: FloatArray, offset: Int, count: Int) {
@@ -311,8 +323,8 @@ class ZSpriteBatch(size: Int = 4096, defaultShader: Shader? = null, defaultDepth
             return
         }
         val pos = this.requestVertOffset
-        this.requestVertOffset += 28
-        prepare(28)
+        this.requestVertOffset += SPRITE_SIZE
+        prepare(SPRITE_SIZE)
         constructVertices(this.requestVerts, pos, region, x, y, getDrawZ(), originX, originY, width, height, rotation)
         drawImpl(region.texture, emptyVertices, pos, SPRITE_SIZE)
     }
@@ -389,6 +401,7 @@ class ZSpriteBatch(size: Int = 4096, defaultShader: Shader? = null, defaultDepth
         sortRequests()
         val preColor = colorPacked
         val preMixColor = mixColorPacked
+        val preSclColor = sclColorPacked
         val preBlending = blending
         val prez = realZ
 
@@ -412,6 +425,7 @@ class ZSpriteBatch(size: Int = 4096, defaultShader: Shader? = null, defaultDepth
         realZ(prez)
         colorPacked = preColor
         mixColorPacked = preMixColor
+        sclColorPacked = preSclColor
         blending = preBlending
 
         numRequests = 0
@@ -487,9 +501,11 @@ class ZSpriteBatch(size: Int = 4096, defaultShader: Shader? = null, defaultDepth
         val v = region.v2
         val u2 = region.u2
         val v2 = region.v
+        beforeVert?.invoke(this)
 
         val color = this.colorPacked
         val mixColor = this.mixColorPacked
+        val sclColor = this.sclColorPacked
 
         if (!Mathf.zero(rotation)) {
             //bottom left and top right corner points relative to origin
@@ -520,30 +536,34 @@ class ZSpriteBatch(size: Int = 4096, defaultShader: Shader? = null, defaultDepth
             vertices[idx + 4] = u
             vertices[idx + 5] = v
             vertices[idx + 6] = mixColor
+            vertices[idx + 7] = sclColor
 
-            vertices[idx + 7] = x2
-            vertices[idx + 8] = y2
-            vertices[idx + 9] = z
-            vertices[idx + 10] = color
-            vertices[idx + 11] = u
-            vertices[idx + 12] = v2
-            vertices[idx + 13] = mixColor
+            vertices[idx + 8] = x2
+            vertices[idx + 9] = y2
+            vertices[idx + 10] = z
+            vertices[idx + 11] = color
+            vertices[idx + 12] = u
+            vertices[idx + 13] = v2
+            vertices[idx + 14] = mixColor
+            vertices[idx + 15] = sclColor
 
-            vertices[idx + 14] = x3
-            vertices[idx + 15] = y3
-            vertices[idx + 16] = z
-            vertices[idx + 17] = color
-            vertices[idx + 18] = u2
-            vertices[idx + 19] = v2
-            vertices[idx + 20] = mixColor
+            vertices[idx + 16] = x3
+            vertices[idx + 17] = y3
+            vertices[idx + 18] = z
+            vertices[idx + 19] = color
+            vertices[idx + 20] = u2
+            vertices[idx + 21] = v2
+            vertices[idx + 22] = mixColor
+            vertices[idx + 23] = sclColor
 
-            vertices[idx + 21] = x4
-            vertices[idx + 22] = y4
-            vertices[idx + 23] = z
-            vertices[idx + 24] = color
-            vertices[idx + 25] = u2
-            vertices[idx + 26] = v
-            vertices[idx + 27] = mixColor
+            vertices[idx + 24] = x4
+            vertices[idx + 25] = y4
+            vertices[idx + 26] = z
+            vertices[idx + 27] = color
+            vertices[idx + 28] = u2
+            vertices[idx + 29] = v
+            vertices[idx + 30] = mixColor
+            vertices[idx + 31] = sclColor
         } else {
             val fx2 = x + width
             val fy2 = y + height
@@ -555,31 +575,36 @@ class ZSpriteBatch(size: Int = 4096, defaultShader: Shader? = null, defaultDepth
             vertices[idx + 4] = u
             vertices[idx + 5] = v
             vertices[idx + 6] = mixColor
+            vertices[idx + 7] = sclColor
 
-            vertices[idx + 7] = x
-            vertices[idx + 8] = fy2
-            vertices[idx + 9] = z
-            vertices[idx + 10] = color
-            vertices[idx + 11] = u
-            vertices[idx + 12] = v2
-            vertices[idx + 13] = mixColor
+            vertices[idx + 8] = x
+            vertices[idx + 9] = fy2
+            vertices[idx + 10] = z
+            vertices[idx + 11] = color
+            vertices[idx + 12] = u
+            vertices[idx + 13] = v2
+            vertices[idx + 14] = mixColor
+            vertices[idx + 15] = sclColor
 
-            vertices[idx + 14] = fx2
-            vertices[idx + 15] = fy2
-            vertices[idx + 16] = z
-            vertices[idx + 17] = color
-            vertices[idx + 18] = u2
-            vertices[idx + 19] = v2
-            vertices[idx + 20] = mixColor
+            vertices[idx + 16] = fx2
+            vertices[idx + 17] = fy2
+            vertices[idx + 18] = z
+            vertices[idx + 19] = color
+            vertices[idx + 20] = u2
+            vertices[idx + 21] = v2
+            vertices[idx + 22] = mixColor
+            vertices[idx + 23] = sclColor
 
-            vertices[idx + 21] = fx2
-            vertices[idx + 22] = y
-            vertices[idx + 23] = z
-            vertices[idx + 24] = color
-            vertices[idx + 25] = u2
-            vertices[idx + 26] = v
-            vertices[idx + 27] = mixColor
+            vertices[idx + 24] = fx2
+            vertices[idx + 25] = y
+            vertices[idx + 26] = z
+            vertices[idx + 27] = color
+            vertices[idx + 28] = u2
+            vertices[idx + 29] = v
+            vertices[idx + 30] = mixColor
+            vertices[idx + 31] = sclColor
         }
+        afterVert?.invoke(this)
     }
 
     //region request sorting
@@ -1023,8 +1048,8 @@ class ZSpriteBatch(size: Int = 4096, defaultShader: Shader? = null, defaultDepth
     } //endregion
 
     companion object {
-        //xyz + color + uv + mix_color
-        const val VERTEX_SIZE: Int = 3 + 1 + 2 + 1
+        //xyz + color + uv + mix_color + scl_color
+        const val VERTEX_SIZE: Int = 3 + 1 + 2 + 1 + 1
         const val SPRITE_SIZE: Int = 4 * VERTEX_SIZE
 
         private const val INITIAL_SIZE = 10000

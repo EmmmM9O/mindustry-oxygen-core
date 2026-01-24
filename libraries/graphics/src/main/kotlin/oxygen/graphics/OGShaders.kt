@@ -50,23 +50,24 @@ object basicShaderEnd : OShaderProcessor {
                         "#endif\n" + source
         }
 
-        if (Core.gl30 != null) {
-            val version =
-                if (source.contains("#version ")) "" else
-                    if (Core.app.isDesktop()) (if (Core.graphics.getGLVersion()
-                            .atLeast(3, 2)
-                    ) "150" else "130") else "300 es"
-            return """#version $version 
-                ${(if (fragment) "out${if (Core.app.isMobile()) " lowp" else ""} vec4 fragColor;\n" else "")}
-                ${
-                source
-                    .replace("varying", if (fragment) "in" else "out")
-                    .replace("attribute", if (fragment) "???" else "in")
-                    .replace("texture2D(", "texture(")
-                    .replace("textureCube(", "texture(")
-                    .replace("gl_FragColor", "fragColor")
-            }"""
+        if (Core.gl30 == null) {
+            throw ArcRuntimeException("OpenGL 3.0 not supported by this device")
         }
+        val version =
+            if (source.contains("#version ")) "" else
+                if (Core.app.isDesktop()) (if (Core.graphics.getGLVersion()
+                        .atLeast(3, 2)
+                ) "330" else "130") else "300 es"
+        return """#version $version 
+            ${(if (fragment) "out${if (Core.app.isMobile()) " lowp" else ""} vec4 fragColor;\n" else "")}
+            ${
+            source
+                .replace("varying", if (fragment) "in" else "out")
+                .replace("attribute", if (fragment) "???" else "in")
+                .replace("texture2D(", "texture(")
+                .replace("textureCube(", "texture(")
+                .replace("gl_FragColor", "fragColor")
+        }"""
         return source
     }
 }

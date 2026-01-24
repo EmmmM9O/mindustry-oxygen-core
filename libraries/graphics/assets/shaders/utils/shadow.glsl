@@ -13,9 +13,9 @@ float basicShadow(sampler2D shadowMap, vec3 projCoords, float bias) {
     return (currentDepth - bias) > closestDepth ? 1.0 : 0.0;
 }
 
-float baiscShadow(sampler2D shadowMap, vec3 projCoords) { basicShadow(shadowMap, projCoords, c_bias); }
+float baiscShadow(sampler2D shadowMap, vec3 projCoords) { return basicShadow(shadowMap, projCoords, c_bias); }
 float baiscShadow(sampler2D shadowMap, vec3 projCoords, vec3 normal, vec3 lightDir) {
-    basicShadow(shadowMap, projCoords, AUTO_BIOS);
+    return basicShadow(shadowMap, projCoords, AUTO_BIOS);
 }
 // PCF shadow function
 float pcfShadow(sampler2D shadowMap, vec3 projCoords, float bias) {
@@ -35,7 +35,7 @@ float pcfShadow(sampler2D shadowMap, vec3 projCoords, float bias) {
     return shadow;
 }
 float pcfShadow(sampler2D shadowMap, vec3 projCoords, vec3 normal, vec3 lightDir) {
-    pcfShadow(shadowMap, projCoords, AUTO_BIOS);
+    return pcfShadow(shadowMap, projCoords, AUTO_BIOS);
 }
-float pcfShadow(sampler2D shadowMap, vec3 projCoords) { pcfShadow(shadowMap, projCoords, c_bias); }
+float pcfShadow(sampler2D shadowMap, vec3 projCoords) { return pcfShadow(shadowMap, projCoords, c_bias); }
 #endif // SHADOW_GLSL

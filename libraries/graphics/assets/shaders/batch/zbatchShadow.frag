@@ -1,5 +1,6 @@
 varying lowp vec4 v_color;
 varying lowp vec4 v_mix_color;
+varying vec4 v_scl_color;
 varying highp vec2 v_texCoords;
 varying vec3 v_worldPos;
 varying vec4 v_lightSpacePos;
@@ -13,7 +14,7 @@ uniform vec3 u_lightDir;
 
 void main() {
     vec4 c = texture2D(u_texture, v_texCoords);
-    vec4 color = v_color * mix(c, vec4(v_mix_color.rgb, c.a), v_mix_color.a);
+    vec4 color = v_color * mix(c, vec4(v_mix_color.rgb, c.a), v_mix_color.a) * v_scl_color;
     if (color.a < u_alphaTest)
         discard;
     float shadow = pcfShadow(u_shadowMap, v_lightSpacePos.xyz);

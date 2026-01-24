@@ -13,6 +13,6 @@ uniform vec3 u_camPos;
 void main() {
     float shadow = pcfShadow(u_shadowMap, v_lightSpacePos.xyz, v_normal, u_lightDir);
     float diff = halfLambert(v_normal, -u_lightDir);
-    vec3 color = vec3(1.0) * (ambientIntensity + diff * (1.0 - ambientIntensity)) * (1.0 - shadow * shadowIntensity);
+    vec3 color = vec3(1.5) * (ambientIntensity + diff * (1.0 - ambientIntensity)) * (1.0 - shadow * shadowIntensity);
     gl_FragColor = vec4(color, 1.0);
 }

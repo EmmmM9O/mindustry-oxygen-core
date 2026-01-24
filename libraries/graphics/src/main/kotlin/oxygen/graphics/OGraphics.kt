@@ -9,6 +9,7 @@ import oxygen.graphics.g2d.*
 object OGraphics {
     lateinit var zbatch: ZBatch
     private var zTransformer: ((Float) -> Float)? = null
+    private val retColor = Color()
 
     fun realZTransform(f: ((Float) -> Float)?) {
         zTransformer = f
@@ -49,4 +50,13 @@ object OGraphics {
         zbatch.setDrawDepth(value)
     }
 
+    fun getSclColor(): Color = retColor.abgr8888(zbatch.sclColorPacked)
+
+    fun sclColor(color: Color) {
+        zbatch.sclColorPacked = color.toFloatBits()
+    }
+
+    fun sclColor(r: Float, g: Float, b: Float, a: Float) {
+        zbatch.sclColorPacked = Color.toFloatBits(r / COLOR_SCL, g / COLOR_SCL, b / COLOR_SCL, a / COLOR_SCL)
+    }
 }

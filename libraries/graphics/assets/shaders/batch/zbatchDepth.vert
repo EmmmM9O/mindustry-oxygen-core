@@ -2,6 +2,7 @@ attribute vec3 a_position;
 attribute vec4 a_color;
 attribute vec2 a_texCoord0;
 attribute vec4 a_mix_color;
+attribute vec4 a_scl_color;
 
 uniform mat4 u_trans;
 uniform mat4 u_proj;

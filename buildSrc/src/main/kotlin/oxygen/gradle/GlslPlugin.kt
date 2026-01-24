@@ -2,10 +2,12 @@ package oxygen.gradle
 
 import org.gradle.api.*
 import org.gradle.api.file.*
+import org.gradle.api.model.*
 import org.gradle.api.provider.*
 import org.gradle.api.tasks.*
 import org.gradle.kotlin.dsl.*
 import java.io.*
+import javax.inject.*
 
 const val DEFAULT_SHADER_DIR = "assets/shaders"
 const val DEFAULT_CONFIG_FILE = ".clang-format"
@@ -32,6 +34,12 @@ abstract class GlslPlugin : Plugin<Project> {
     }
 }
 
+abstract class GlslExtension @Inject constructor(objects: ObjectFactory) {
+    var shaderDir: Property<String> = objects.property(String::class.java).convention(DEFAULT_SHADER_DIR)
+    var configFile: Property<String> = objects.property(String::class.java).convention(DEFAULT_CONFIG_FILE)
+    var fileExtensions: ListProperty<String> = objects.listProperty(String::class.java).convention(defaultExtensions)
+    var clangFormatPath: Property<String> = objects.property(String::class.java)
+}
 
 abstract class ShaderFormatTask : DefaultTask() {
     @get:Internal

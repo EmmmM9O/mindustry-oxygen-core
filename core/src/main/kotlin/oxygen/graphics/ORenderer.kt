@@ -26,11 +26,13 @@ import oxygen.*
 import oxygen.Oxygen.lightCam
 import oxygen.Oxygen.lightDir
 import oxygen.Oxygen.log
+import oxygen.graphics.bloom.*
 import oxygen.math.*
 import kotlin.math.*
 
 class ORenderer : RendererI() {
     val customBackgrounds: ObjectMap<String, Runnable> = ObjectMap()
+    val envRenderers: Seq<EnvRenderer> = Seq.with()
 
     private val clearColor = Color(0f, 0f, 0f, 1f)
 
@@ -60,6 +62,8 @@ class ORenderer : RendererI() {
 
     var lightDir_ = lightDir
 
+    lateinit var obloom: OBloom
+
     init {
         blocks = blocksL
         Core.camera = Camera()
@@ -84,12 +88,16 @@ class ORenderer : RendererI() {
         lightCam.up.set(Vec3.Y)
     }
 
-    override fun addEnvRenderer(mask: Int, render: Runnable) {}
+    override fun addEnvRenderer(mask: Int, render: Runnable) {
+        envRenderers.add(EnvRenderer(mask, render))
+    }
+
     override fun addCustomBackground(name: String, render: Runnable) {
         customBackgrounds.put(name, render)
     }
 
     override fun init() {
+        obloom = PyramidFourNAvgBloom()
         planets = PlanetRenderer()
 
         if (Core.settings.getBool("bloom", true)) {
@@ -118,6 +126,9 @@ class ORenderer : RendererI() {
                 backgroundBuffer = null
             }
         }
+
+        EffectConfigs.init()
+        EffectConfigs.default()
     }
 
     override fun loadFluidFrames() {
@@ -282,7 +293,6 @@ class ORenderer : RendererI() {
             blocksL.floorL.drawDepth = depth
             blocksL.floor.drawFloor()
         }
-        //Draw.draw(Layer.block - 1) { blocksL.drawShadows() }
         /*
         Draw.drawRange(
             Layer.blockBuilding,
@@ -291,18 +301,14 @@ class ORenderer : RendererI() {
             */
         //render all matching environments
         /*
-        for (renderer in envRenderers) {
-            if ((renderer.env and Vars.state.rules.env) == renderer.env) {
-                renderer.renderer.run()
-            }
-        }
+
         */
 
         OGraphics.realZ(0f)
         Groups.draw.draw { obj: Drawc? ->
             if (obj is Heightc) {
                 OGraphics.realZ(obj.height)
-            } else OGraphics.realZ(3f)
+            } else OGraphics.realZ(0.2f)
             obj!!.draw()
         }
 
@@ -327,6 +333,8 @@ class ORenderer : RendererI() {
         lightCam.update()
     }
 
+    var sclColor = Color(0.12f, 0.12f, 0.12f, 0.1f)
+
     override fun draw() {
         val w = Core.graphics.width.toFloat()
         val h = Core.graphics.height.toFloat()
@@ -346,9 +354,9 @@ class ORenderer : RendererI() {
         Core.camera.height = ch * 8f
         Core.camera.update()
 
-        if (animateWater || animateShields) {
+        /*if (animateWater || animateShields) {
             effectBuffer.resize(Core.graphics.width, Core.graphics.height)
-        }
+        }*/
         MapPreviewLoader.checkPreviews()
 
         blocksL.checkChanges()
@@ -404,8 +412,6 @@ class ORenderer : RendererI() {
 
             OGraphics.proj3D(cam.combined)
 
-
-
             Draw.sort(false)
             Draw.shader(shader)
             Draw.sort(true)
@@ -414,8 +420,33 @@ class ORenderer : RendererI() {
             if (Vars.renderer.pixelate) {
                 pixelator.register()
             }*/
+
+            val holder = object {
+                var color = 0f
+            }
+
+            OGraphics.zbatch.beforeVert = func1@{
+                val z = Draw.z()
+                if (z < Layer.bullet - 0.02f || z > Layer.effect + 0.02f) return@func1
+                holder.color = sclColorPacked
+                sclColorPacked = sclColor.toFloatBits()
+            }
+            OGraphics.zbatch.afterVert = func2@{
+                val z = Draw.z()
+                if (z < Layer.bullet - 0.02f || z > Layer.effect + 0.02f) return@func2
+                sclColorPacked = holder.color
+            }
+            obloom.resize(Core.graphics.width, Core.graphics.height)
+            obloom.capture()
             Core.graphics.clear(clearColor)
             Gl.clear(Gl.depthBufferBit)
+            /*
+            if (Vars.enableDarkness) {
+                Draw.draw(Layer.darkness) { blocksL.drawDarkness() }
+            }*/
+
+            //Draw.draw(Layer.block - 1) { blocksL.drawShadows() }
+            Draw.flush()
 
             Gl.enable(Gl.cullFace)
             Gl.cullFace(Gl.back)
@@ -424,23 +455,16 @@ class ORenderer : RendererI() {
 
             OGraphics.realZ(0f)
             drawObjs(false)
-            if (Vars.state.rules.lighting && drawLight) {
-                Draw.draw(Layer.light) { lights.draw() }
-            }
-
-            if (Vars.enableDarkness) {
-                Draw.draw(Layer.darkness) { blocksL.drawDarkness() }
-            }
-
+            /*
             if (bloom != null) {
                 bloom.resize(Core.graphics.width, Core.graphics.height)
                 bloom.setBloomIntensity(Core.settings.getInt("bloomintensity", 6) / 4f + 1f)
                 bloom.blurPasses = Core.settings.getInt("bloomblur", 1)
                 Draw.draw(Layer.bullet - 0.02f) { bloom.capture() }
                 Draw.draw(Layer.effect + 0.02f) { bloom.render() }
-            }
+            }*/
 
-            OGraphics.realZ(0.2f)
+            OGraphics.realZ(0.1f)
             Vars.control.input.drawCommanded()
 
             Draw.draw(Layer.plans) { overlays.drawBottom() }
@@ -482,7 +506,6 @@ class ORenderer : RendererI() {
             Draw.draw(Layer.overlayUI) {
                 overlays.drawTop()
             }
-            if (Vars.state.rules.fog) Draw.draw(Layer.fogOfWar) { fog.drawFog() }
             /*
                 Draw.draw(Layer.space) {
                     if (launchAnimator != null && landTime > 0f) launchAnimator.drawLaunch()
@@ -494,7 +517,7 @@ class ORenderer : RendererI() {
                 }*/
 
             Events.fire(Trigger.drawOver)
-            OGraphics.realZ(0.1f)
+            OGraphics.realZ(0.2f)
             blocksL.drawBlocks()
             Draw.draw(Layer.block - 0.09f) {
                 OGraphics.realZ(0.1f)
@@ -507,6 +530,26 @@ class ORenderer : RendererI() {
             }
             OGraphics.realZ(0f)
             Draw.flush()
+
+            obloom.render()
+
+            OGraphics.proj3D(tmpMat1)
+            OGraphics.trans3D(tmpMat2)
+            //OGraphics.realZ(5f)
+            for (renderer in envRenderers) {
+                if ((renderer.env and Vars.state.rules.env) == renderer.env) {
+                    renderer.renderer.run()
+                }
+            }
+            //OGraphics.realZ(0.1f)
+            if (Vars.state.rules.fog) Draw.draw(Layer.fogOfWar) { fog.drawFog() }
+            if (Vars.state.rules.lighting && drawLight) {
+                Draw.draw(Layer.light) { lights.draw() }
+            }
+            Draw.flush()
+
+            OGraphics.zbatch.beforeVert = null
+            OGraphics.zbatch.afterVert = null
         }
         OGraphics.drawDepth(false)
 
@@ -571,4 +614,5 @@ class ORenderer : RendererI() {
         }
     }
 
+    class EnvRenderer(val env: Int, val renderer: Runnable)
 }

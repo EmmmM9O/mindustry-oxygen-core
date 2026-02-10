@@ -1,9 +1,10 @@
 attribute vec4 a_position;
 attribute vec2 a_texCoord0;
 
-varying vec2 v_texCoords;
+uniform mat4 u_trans;
 
+varying vec2 v_texCoords;
 void main() {
     v_texCoords = a_texCoord0;
-    gl_Position = a_position;
+    gl_Position = u_trans * a_position;
 }

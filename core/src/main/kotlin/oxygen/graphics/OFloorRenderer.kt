@@ -187,6 +187,7 @@ class OFloorRenderer : FloorRendererI() {
         underwaterDraw.add(run)
     }
 
+    var realZ = 0f
     public override fun beginDraw() {
         if (cache == null) {
             return
@@ -198,7 +199,7 @@ class OFloorRenderer : FloorRendererI() {
         val sh = getShader()
         sh.bind()
         //coordinates of geometry are normalized to [0, 1] based on map size (normWidth/normHeight), so the matrix needs to be updated accordingly
-        combinedMat.set(Oxygen.trans3D).translate(-packPad, -packPad, 0f).scale(packWidth, packHeight, 1f)
+        combinedMat.set(Oxygen.trans3D).translate(-packPad, -packPad, realZ).scale(packWidth, packHeight, 1f)
         sh.setUniformMatrix4("u_trans", combinedMat.`val`)
         sh.setUniformMatrix4("u_proj", OGraphics.proj3D().`val`)
 
@@ -327,7 +328,9 @@ class OFloorRenderer : FloorRendererI() {
                 }
 
                 if (tile.block().cacheLayer === layer && layer === CacheLayer.walls && !(tile.isDarkened && tile.data >= 5)) {
+                    OGraphics.realZ(4f)
                     tile.block().drawBase(tile)
+                    OGraphics.realZ(0f)
                 } else if (floor.cacheLayer === layer && (ignoreWalls || Vars.world.isAccessible(
                         tile.x.toInt(),
                         tile.y.toInt()

@@ -17,7 +17,7 @@ import oxygen.util.*
 import oxygen.world.blocks.*
 
 open class CubeBlock(name: String) : Block(name) {
-    val cubeMesh = Meshes.solidCubeMesh(24f, 24f, 12f)
+    val cubeMesh = Meshes.solidCubeMesh(24f, 24f, 24f)
     val depthShader = OGShaders.solidDepth
     val objShader = OGShaders.solid
 

@@ -124,4 +124,34 @@ vec3 tonemapMode(vec3 color, int mode) {
     return v;
 }
 
+vec3 tonemap(vec3 color) {
+#ifdef TONEMAP_MODE
+#if TONEMAP_MODE == 0
+    return color;
+#elif TONEMAP_MODE == 1
+    return reinhard(color);
+#elif TONEMAP_MODE == 2
+    return reinhard2(color);
+#elif TONEMAP_MODE == 3
+    return reinhardJodie(color);
+#elif TONEMAP_MODE == 4
+    return acesFilm(color);
+#elif TONEMAP_MODE == 5
+    return unreal(color);
+#elif TONEMAP_MODE == 6
+    return uncharted2(color);
+#elif TONEMAP_MODE == 7
+    return filmic(color);
+#elif TONEMAP_MODE == 8
+    return lottes(color);
+#elif TONEMAP_MODE == 9
+    return neutral(color);
+#else
+    return color;
+#endif
+#else
+    return color;
+#endif
+}
+
 #endif // TONEMAP_GLSL

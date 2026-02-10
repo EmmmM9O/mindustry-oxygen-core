@@ -8,6 +8,7 @@ import arc.math.geom.*
 import arc.util.*
 import mindustry.*
 import oxygen.files.*
+import oxygen.util.*
 
 interface OShaderProcessor {
     fun preprocess(sourceO: String, fragment: Boolean, shader: OShader): String
@@ -67,10 +68,29 @@ object basicShaderEnd : OShaderProcessor {
                 .replace("texture2D(", "texture(")
                 .replace("textureCube(", "texture(")
                 .replace("gl_FragColor", "fragColor")
-        }"""
+        }""".trimIndent()
         return source
     }
 }
+
+open class MacroProcessor : OShaderProcessor {
+    override fun preprocess(sourceO: String, fragment: Boolean, shader: OShader): String {
+        if (shader.macros == null) return sourceO
+        var source = """
+        ${
+            StringBuilder().apply {
+                shader.macros!!.forEach { (key, value) ->
+                    appendLine("#define $key $value")
+                }
+            }
+        }
+        $sourceO
+        """
+        return source
+    }
+}
+
+object macroProcessor : MacroProcessor()
 
 open class IncludeProcessor : OShaderProcessor {
     var maxIncludeDepth: Int = 50
@@ -105,13 +125,17 @@ open class OShader(val vertFile: Fi, val fragFile: Fi) : Shader(vertFile, fragFi
         OGShaders.getShaderFi("$frag.frag")
     )
 
+    var macros: Map<String, String>? = null
     val processors: List<OShaderProcessor> by lazy { createProcessors() }
-    open fun createProcessors(): List<OShaderProcessor> = listOf(basicShaderChecker, includeProcessor, basicShaderEnd)
+    open fun createProcessors(): List<OShaderProcessor> =
+        listOf(basicShaderChecker, macroProcessor, includeProcessor, basicShaderEnd)
+
     override fun preprocess(sourceO: String, fragment: Boolean): String {
         var source = sourceO
         processors.forEach {
             source = it.preprocess(source, fragment, this)
         }
+        OGShaders.log?.debug { "Compile Shader $vertFile $fragFile \n$source" }
         return source
     }
 }
@@ -135,10 +159,16 @@ fun <T : Shader> T.setup(): T {
 }
 
 object OGShaders {
+    var log: OLogger? = null
     fun getShaderFi(file: String) = Vars.tree.get("shaders/$file")!!
     val texturePlane: OShader by lazy { OShader("3d/simple", "3d/simpleUV").setup() }
     val zbatchShadow: ShadowShader by lazy { ShadowShader("batch/zbatchShadow", "batch/zbatchShadow").setup() }
     val solidDepth: OShader by lazy { OShader("3d/solidDepth", "3d/depth").setup() }
     val solid: ShadowShader by lazy { ShadowShader("3d/solid", "3d/solid").setup() }
+
+    val screen: OShader by lazy { OShader("screen/screenspace", "screen/screenspace").setup() }
 }
 
+object Macros {
+    const val tonemapMode = "TONEMAP_MODE"
+}

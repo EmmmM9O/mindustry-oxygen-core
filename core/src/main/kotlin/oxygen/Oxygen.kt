@@ -29,20 +29,59 @@ object Oxygen {
     val trans3D = Mat3D()
 
     val lightCam = Camera3D()
-    val lightDir = Vec3(-1f, -1f, -4f).nor()
+    val lightDir = Vec3(-1f, -1f, -1.5f).nor()
 
     val renderer = ORenderer()
 
     lateinit var testTools: TestTools
+
     fun init() {
-        Events.run(EventType.ClientLoadEvent::class.java) {
-            testTools = TestTools()
-            Time.run(10f) {
-                testTools.floatTable.setPosition(
-                    Core.graphics.width.toFloat() / 2f,
-                    Core.graphics.height.toFloat() / 1.5f
-                )
+        if (!OCPreloader.preloaded) {
+            Log.err("Oxygen preload fail")
+            OCMain.preloadFailed = true
+            OCPreloader.failReason = "@dialog.oxygen.error.preload"
+        } else if (OCPreloader.error) {
+            // Logged in preloader
+            OCMain.preloadFailed = true
+        } else {
+            if (OCMain.modConfig.minGameVersion.isEmpty()) {
+                log.atError {
+                    mark(omark)
+                    message("@ModConfig init failed ,MdtAnnoProcessor do not work")
+                }
+                // TODO exception Dialog
             }
+            log.atInfo {
+                mark(omark)
+                message("Oxygen Core init success")
+            }
+        }
+        //OGShaders.log = log
+
+        Events.run(EventType.ClientLoadEvent::class.java) {
+            if (OCMain.preloadFailed) {
+                OCMain.fail(OCPreloader.failReason)
+            } else {
+                testTools = TestTools()
+                Time.run(10f) {
+                    testTools.floatTable.setPosition(
+                        Core.graphics.width.toFloat() / 2f,
+                        Core.graphics.height.toFloat() / 1.5f
+                    )
+                }
+            }
+        }
+
+        val unitRun = { unit: mindustry.gen.Unit ->
+            if (unit.type.flying) unit.height = 5f
+        }
+
+        Events.on(EventType.UnitSpawnEvent::class.java) {
+            unitRun(it.unit)
+        }
+
+        Events.on(EventType.UnitCreateEvent::class.java) {
+            unitRun(it.unit)
         }
     }
 

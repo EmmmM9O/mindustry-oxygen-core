@@ -1,16 +1,16 @@
 package oxygen.graphics.gl
 
-import arc.*
 import arc.graphics.*
-import arc.graphics.Texture.*
+import arc.graphics.Texture.TextureFilter
+import arc.graphics.Texture.TextureWrap
 import arc.graphics.gl.*
 
-class HDRFrameBuffer : FrameBuffer{
+class HDRFrameBuffer : FrameBuffer {
     constructor()
-    protected constructor(bufferBuilder:GLFrameBufferBuilder<out GLFrameBuffer<Texture>> ) : super(bufferBuilder)
-    constructor(width: Int, height: Int, hasDepth: Boolean = true){
+    protected constructor(bufferBuilder: GLFrameBufferBuilder<out GLFrameBuffer<Texture>>) : super(bufferBuilder)
+    constructor(width: Int, height: Int, hasDepth: Boolean = true) {
         val bufferBuilder = HDRFrameBufferBuilder(width, height)
-        if(hasDepth) bufferBuilder.addBasicDepthRenderBuffer()
+        if (hasDepth) bufferBuilder.addBasicDepthRenderBuffer()
         bufferBuilder.addFloatAttachment(GL30.GL_RGBA16F, GL30.GL_RGBA, GL30.GL_FLOAT, true)
         this.textureAttachments.clear()
         this.framebufferHandle = 0
@@ -23,16 +23,30 @@ class HDRFrameBuffer : FrameBuffer{
         build()
     }
 
-    override protected fun create(format: Pixmap.Format, width:Int, height:Int, hasDepth:Boolean,hasStencil:Boolean){}
+    override protected fun create(
+        format: Pixmap.Format,
+        width: Int,
+        height: Int,
+        hasDepth: Boolean,
+        hasStencil: Boolean
+    ) {
+    }
 
-    override protected fun createTexture(attachmentSpec: FrameBufferTextureAttachmentSpec): Texture{
-	val data = GLOnlyTextureData(bufferBuilder.width, bufferBuilder.height, 0, attachmentSpec.internalFormat, attachmentSpec.format, attachmentSpec.type)
+    override protected fun createTexture(attachmentSpec: FrameBufferTextureAttachmentSpec): Texture {
+        val data = GLOnlyTextureData(
+            bufferBuilder.width,
+            bufferBuilder.height,
+            0,
+            attachmentSpec.internalFormat,
+            attachmentSpec.format,
+            attachmentSpec.type
+        )
         /*val data = FloatTextureData(bufferBuilder.width, bufferBuilder.height,
         attachmentSpec.internalFormat, attachmentSpec.format, attachmentSpec.type,
         attachmentSpec.isGpuOnly)*/
         val result = Texture(data)
-        if (Core.app.isDesktop()) result.setFilter(TextureFilter.linear, TextureFilter.linear)
-        else result.setFilter(TextureFilter.nearest, TextureFilter.nearest)
+        /*if (Core.app.isDesktop())*/ result.setFilter(TextureFilter.linear, TextureFilter.linear)
+        /*else result.setFilter(TextureFilter.nearest, TextureFilter.nearest)*/
         result.setWrap(TextureWrap.clampToEdge, TextureWrap.clampToEdge)
         return result
     }
@@ -62,7 +76,7 @@ class HDRFrameBuffer : FrameBuffer{
         getTexture().setFilter(min, mag)
     }
 
-    class HDRFrameBufferBuilder(width: Int, height: Int) : GLFrameBufferBuilder<HDRFrameBuffer>(width, height){
+    class HDRFrameBufferBuilder(width: Int, height: Int) : GLFrameBufferBuilder<HDRFrameBuffer>(width, height) {
         override fun build(): HDRFrameBuffer = HDRFrameBuffer(this)
     }
 }

@@ -42,7 +42,7 @@ class ORenderer : RendererI() {
     var blocksL = OBlockRenderer()
 
     //g3d
-    var dis = 100f
+    var dis = 150f
     val cam = Camera3D()
 
     val camPos = Vec3(0f, 0f, 20f)
@@ -97,7 +97,14 @@ class ORenderer : RendererI() {
     }
 
     override fun init() {
-        obloom = PyramidFourNAvgBloom()
+        OCShaders.init()
+        obloom = StandardDualFilterBloom()
+	/*
+        obloom = CompareBloom().apply {
+            blooms.add(PyramidStandardDualBloom())
+            blooms.add(PyramidFourNAvgBloom())
+            blooms.add(StandardDualFilterBloom())
+        }*/
         planets = PlanetRenderer()
 
         if (Core.settings.getBool("bloom", true)) {
@@ -286,7 +293,16 @@ class ORenderer : RendererI() {
         }
     }
 
-    fun drawObjs(depth: Boolean) {
+    fun drawGroups() {
+        Groups.draw.draw { obj: Drawc? ->
+            if (obj is Heightc) {
+                OGraphics.realZ(obj.height)
+            } else OGraphics.realZ(0.2f)
+            obj!!.draw()
+        }
+    }
+
+    fun drawFloor(depth: Boolean) {
         OGraphics.realZ(0f)
         //Draw.draw(Layer.background) { this.drawBackground() }
         Draw.draw(Layer.floor) {
@@ -300,18 +316,7 @@ class ORenderer : RendererI() {
             { Draw.shader() })
             */
         //render all matching environments
-        /*
-
-        */
-
         OGraphics.realZ(0f)
-        Groups.draw.draw { obj: Drawc? ->
-            if (obj is Heightc) {
-                OGraphics.realZ(obj.height)
-            } else OGraphics.realZ(0.2f)
-            obj!!.draw()
-        }
-
     }
 
     fun updateLight(width: Float, height: Float) {
@@ -362,12 +367,15 @@ class ORenderer : RendererI() {
         blocksL.checkChanges()
         blocksL.floor.checkChanges()
         blocksL.processBlocks()
+        blocksL.processShadows()
+        blocksL.processDarkness()
 
         tmpMat1.set(OGraphics.proj3D())
         tmpMat2.set(OGraphics.trans3D())
-        tmpMat.setToScaling(cw, tw, 1f)
+        tmpMat.setToScaling(cw, tw, 1f / 4f)
         OGraphics.trans3D(tmpMat)
         Draw.proj(Core.camera)
+
 
         updateLight(cw * 2f, ch * 2f)
 
@@ -392,7 +400,8 @@ class ORenderer : RendererI() {
         Gl.disable(Gl.cullFace)
 
 
-        drawObjs(true)
+        drawFloor(true)
+        drawGroups()
         Draw.flush()
         Draw.reset()
         OGraphics.zbatch.alphaTest = 0f
@@ -412,9 +421,6 @@ class ORenderer : RendererI() {
 
             OGraphics.proj3D(cam.combined)
 
-            Draw.sort(false)
-            Draw.shader(shader)
-            Draw.sort(true)
             Events.fire(Trigger.draw)
             /*
             if (Vars.renderer.pixelate) {
@@ -436,25 +442,33 @@ class ORenderer : RendererI() {
                 if (z < Layer.bullet - 0.02f || z > Layer.effect + 0.02f) return@func2
                 sclColorPacked = holder.color
             }
-            obloom.resize(Core.graphics.width, Core.graphics.height)
-            obloom.capture()
             Core.graphics.clear(clearColor)
             Gl.clear(Gl.depthBufferBit)
-            /*
-            if (Vars.enableDarkness) {
-                Draw.draw(Layer.darkness) { blocksL.drawDarkness() }
-            }*/
-
-            //Draw.draw(Layer.block - 1) { blocksL.drawShadows() }
-            Draw.flush()
+            obloom.resize(Core.graphics.width, Core.graphics.height)
+            obloom.capture()
+            DepthFunc.lequal.apply()
+            Core.graphics.clear(clearColor)
+            Gl.clear(Gl.depthBufferBit)
 
             Gl.enable(Gl.cullFace)
             Gl.cullFace(Gl.back)
             blocksL.draw3D()
             Gl.disable(Gl.cullFace)
 
+            drawFloor(false)
+
+            OGraphics.realZ(0.05f)
+            Draw.draw(Layer.block - 1) { blocksL.drawShadows() }
+            Draw.flush()
+
             OGraphics.realZ(0f)
-            drawObjs(false)
+
+            Draw.sort(false)
+            Draw.shader(shader)
+            Draw.sort(true)
+            Draw.draw(Layer.min) {
+                Draw.shader(shader)
+            }
             /*
             if (bloom != null) {
                 bloom.resize(Core.graphics.width, Core.graphics.height)
@@ -464,7 +478,7 @@ class ORenderer : RendererI() {
                 Draw.draw(Layer.effect + 0.02f) { bloom.render() }
             }*/
 
-            OGraphics.realZ(0.1f)
+            OGraphics.realZ(2.0f)
             Vars.control.input.drawCommanded()
 
             Draw.draw(Layer.plans) { overlays.drawBottom() }
@@ -502,10 +516,12 @@ class ORenderer : RendererI() {
 
             Draw.reset()
 
-            OGraphics.realZ(0.2f)
+            OGraphics.realZ(2.0f)
             Draw.draw(Layer.overlayUI) {
                 overlays.drawTop()
             }
+
+            drawGroups()
             /*
                 Draw.draw(Layer.space) {
                     if (launchAnimator != null && landTime > 0f) launchAnimator.drawLaunch()
@@ -521,8 +537,10 @@ class ORenderer : RendererI() {
             blocksL.drawBlocks()
             Draw.draw(Layer.block - 0.09f) {
                 OGraphics.realZ(0.1f)
+                blocksL.floorL.realZ = 5f
                 blocksL.floor.beginDraw()
                 blocksL.floor.drawLayer(CacheLayer.walls)
+                blocksL.floorL.realZ = 0f
             }
 
             if (Vars.drawDebugHitboxes) {
@@ -535,16 +553,24 @@ class ORenderer : RendererI() {
 
             OGraphics.proj3D(tmpMat1)
             OGraphics.trans3D(tmpMat2)
+
+            Draw.sort(false)
+            Draw.shader()
+            Draw.sort(true)
+            Gl.disable(Gl.depthTest)
             //OGraphics.realZ(5f)
             for (renderer in envRenderers) {
                 if ((renderer.env and Vars.state.rules.env) == renderer.env) {
                     renderer.renderer.run()
                 }
             }
-            //OGraphics.realZ(0.1f)
+            OGraphics.realZ(0.2f)
             if (Vars.state.rules.fog) Draw.draw(Layer.fogOfWar) { fog.drawFog() }
             if (Vars.state.rules.lighting && drawLight) {
                 Draw.draw(Layer.light) { lights.draw() }
+            }
+            if (Vars.enableDarkness) {
+                Draw.draw(Layer.darkness) { blocksL.drawDarkness() }
             }
             Draw.flush()
 

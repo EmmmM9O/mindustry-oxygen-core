@@ -307,7 +307,7 @@ class OBlockRenderer : BlockRendererI() {
         }
     }
 
-    fun drawDarkness() {
+    fun processDarkness() {
         if (!darkEvents.isEmpty) {
             Draw.flush()
 
@@ -329,8 +329,10 @@ class OBlockRenderer : BlockRendererI() {
 
             Draw.proj(Core.camera)
         }
+    }
 
-        Draw.shader(Shaders.darkness)
+    fun drawDarkness() {
+        Draw.shader(OCShaders.darkness)
         Draw.fbo(dark.texture, Vars.world.width(), Vars.world.height(), Vars.tilesize, Vars.tilesize / 2f)
         Draw.shader()
     }
@@ -395,8 +397,7 @@ class OBlockRenderer : BlockRendererI() {
     }
 
     fun drawShadows() {
-        processShadows()
-
+        // processShadows()
         val ww = (Vars.world.width() * Vars.tilesize).toFloat()
         val wh = (Vars.world.height() * Vars.tilesize).toFloat()
         val x = Core.camera.position.x + Vars.tilesize / 2f
@@ -409,7 +410,7 @@ class OBlockRenderer : BlockRendererI() {
         Tmp.tr1.set(shadows.texture)
         Tmp.tr1.set(u, v2, u2, v)
 
-        Draw.shader(Shaders.darkness)
+        Draw.shader(OCShaders.darkness)
         Draw.rect(Tmp.tr1, Core.camera.position.x, Core.camera.position.y, Core.camera.width, Core.camera.height)
         Draw.shader()
     }

@@ -12,7 +12,8 @@ import oxygen.util.Marks
 class OCPreloader : Preloader() {
     companion object {
         val log: OLogger = logConfig { }.logger {
-            logLevel(if (Log.level == Log.LogLevel.debug) Level.DEBUG else Level.INFO)
+            logLevel(Level.DEBUG)
+            //logLevel(if (Log.level == Log.LogLevel.debug) Level.DEBUG else Level.INFO)
             name(null)
             arcHandlerAppender()
             simpleFormat {
@@ -33,6 +34,7 @@ class OCPreloader : Preloader() {
     }
 
     init {
+        Log.level = Log.LogLevel.debug
         preloaded = true
         Log.logger = Log.LogHandler { level, text ->
             log.at {

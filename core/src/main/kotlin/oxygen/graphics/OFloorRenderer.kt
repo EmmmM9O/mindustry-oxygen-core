@@ -10,7 +10,7 @@ import arc.math.geom.*
 import arc.struct.*
 import arc.util.*
 import mindustry.*
-import mindustry.game.EventType.WorldLoadEvent
+import mindustry.game.EventType.*
 import mindustry.graphics.*
 import mindustry.world.*
 import mindustry.world.blocks.environment.*
@@ -19,6 +19,7 @@ import oxygen.Oxygen.lightCam
 import oxygen.Oxygen.lightDir
 import oxygen.graphics.g2d.*
 import oxygen.math.*
+import oxygen.world.*
 import kotlin.math.*
 
 /**
@@ -37,25 +38,17 @@ import kotlin.math.*
  */
 class OFloorRenderer : FloorRendererI() {
     val _vertexBuffer: FloatArray = FloatArray(maxSprites * vertexSize * 4)
-    private var vidx = 0
     private val batch = FloorRenderBatch()
     private val shader: Shader
     private val depthShader: Shader
     private val combinedMat = Mat3D()
+    private val tmpMat = Mat3D()
     private var texture: Texture? = null
     private var error: TextureRegion? = null
 
     val _indexData: IndexData
-    private var cache: Array<Array<Array<ChunkMesh?>?>?>? = null
-    private val drawnLayerSet = IntSet()
-    private val recacheSet = IntSet()
-    private val drawnLayers = IntSeq()
-    private val used = ObjectSet<CacheLayer>()
 
-    private var packWidth = 0f
-    private var packHeight = 0f
-
-    private val underwaterDraw = Seq<Runnable?>(Runnable::class.java)
+    private val underwaterDraw = Seq<Runnable>(Runnable::class.java)
 
     //alpha value of pixels cannot exceed the alpha of the surface they're being drawn on
     private val underwaterBlend = Blending(
@@ -95,40 +88,59 @@ class OFloorRenderer : FloorRendererI() {
 
         depthShader = OShader("batch/ofloorDepth", "3d/depth").setup()
 
-        Events.on<WorldLoadEvent>(WorldLoadEvent::class.java) { event: WorldLoadEvent -> reload() }
+        Events.on(WorldLoadEvent::class.java) { reloadTexture() }
     }
 
     public fun getShader() = if (drawDepth) depthShader else shader
 
+    fun getData(tiles: Tiles): TilesRenderData = Oxygen.renderer.getData(tiles)
+
     /** Queues up a cache change for a tile. Only runs in render loop.  */
     public override fun recacheTile(tile: Tile) {
-        recacheTile(tile.x.toInt(), tile.y.toInt())
+        recacheTile(tile.tiles, tile.x.toInt(), tile.y.toInt())
     }
 
     public override fun recacheTile(x: Int, y: Int) {
-        recacheSet.add(Point2.pack(x / chunksize, y / chunksize))
+        recacheTile(Vars.world.tiles, x, y)
+    }
+
+    fun recacheTile(tiles: Tiles, x: Int, y: Int) {
+        getData(tiles).recacheSet.add(Point2.pack(x / chunksize, y / chunksize))
+    }
+
+    fun recacheTile(data: TilesRenderData, x: Int, y: Int) {
+        data.recacheSet.add(Point2.pack(x / chunksize, y / chunksize))
     }
 
     public override fun drawFloor() {
-        if (cache == null) {
-            return
+        for (tiles in Vars.world.allTiles) {
+            if (tiles.craft == null) continue
+            drawFloor(getData(tiles))
         }
+    }
+
+    fun drawFloor(data: TilesRenderData) {
+        val tiles = data.tiles
+        val cache = data.cache
+        if (cache == null) return
 
         val camera = Core.camera
 
         val pad = Vars.tilesize / 2f
 
-        val minx = max(((camera.position.x - camera.width / 2f - pad) / chunkunits).toInt(), 0)
-        val miny = max(((camera.position.y - camera.height / 2f - pad) / chunkunits).toInt(), 0)
-        val maxx = min(Mathf.ceil((camera.position.x + camera.width / 2f + pad) / chunkunits), cache!!.size)
-        val maxy = min(Mathf.ceil((camera.position.y + camera.height / 2f + pad) / chunkunits), cache!![0]!!.size)
+        val bounds = camera.bounds(Tmp.r3)
+        TilesHandler.rect(bounds, tiles.craft.inv())
+
+        val minx = max(((bounds.x - pad) / chunkunits).toInt(), 0)
+        val miny = max(((bounds.y - pad) / chunkunits).toInt(), 0)
+        val maxx = min(Mathf.ceil((bounds.x + bounds.width + pad) / chunkunits), cache!!.size)
+        val maxy = min(Mathf.ceil((bounds.y + bounds.height + pad) / chunkunits), cache!![0]!!.size)
 
         val layers = CacheLayer.all.size
 
-        drawnLayers.clear()
-        drawnLayerSet.clear()
+        data.drawnLayers.clear()
+        data.drawnLayerSet.clear()
 
-        val bounds = camera.bounds(Tmp.r3)
 
         //preliminary layer check
         for (x in minx..maxx) {
@@ -136,34 +148,34 @@ class OFloorRenderer : FloorRendererI() {
                 if (!Structs.inBounds<Array<ChunkMesh?>?>(x, y, cache)) continue
 
                 if (cache!![x]!![y]!!.isEmpty()) {
-                    cacheChunk(x, y, false)
+                    cacheChunk(data, x, y, false)
                 }
 
                 val chunk: Array<ChunkMesh?> = cache!![x]!![y]!!
 
-                //loop through all layers, and add layer index if it exists
+                //loop through all layers, and add layer index if it exists 
                 for (i in 0..<layers) {
                     if (chunk[i] != null && i != CacheLayer.walls.id && chunk[i]!!.bounds.overlaps(bounds)) {
-                        drawnLayerSet.add(i)
+                        data.drawnLayerSet.add(i)
                     }
                 }
             }
         }
 
-        val it = drawnLayerSet.iterator()
+        val it = data.drawnLayerSet.iterator()
         while (it.hasNext) {
-            drawnLayers.add(it.next())
+            data.drawnLayers.add(it.next())
         }
 
-        drawnLayers.sort()
+        data.drawnLayers.sort()
 
-        beginDraw()
+        beginDraw(data)
 
-        for (i in 0..<drawnLayers.size) {
-            drawLayer(CacheLayer.all[drawnLayers.get(i)])
+        for (i in 0..<data.drawnLayers.size) {
+            drawLayer(data, CacheLayer.all[data.drawnLayers.get(i)])
         }
 
-        underwaterDraw.clear()
+        //underwaterDraw.clear()
     }
 
     public override fun checkChanges() {
@@ -171,15 +183,24 @@ class OFloorRenderer : FloorRendererI() {
     }
 
     public override fun checkChanges(ignoreWalls: Boolean) {
-        if (recacheSet.size > 0) {
-            //recache one chunk at a time
-            val iterator = recacheSet.iterator()
-            while (iterator.hasNext) {
-                val chunk = iterator.next()
-                cacheChunk(Point2.x(chunk).toInt(), Point2.y(chunk).toInt(), ignoreWalls)
-            }
+        for (tiles in Vars.world.allTiles) {
+            if (tiles.craft == null) continue
+            checkChanges(tiles, ignoreWalls)
+        }
+    }
 
-            recacheSet.clear()
+    fun checkChanges(tiles: Tiles, ignoreWalls: Boolean) {
+        getData(tiles).apply {
+            if (recacheSet.size > 0) {
+                //recache one chunk at a time
+                val iterator = recacheSet.iterator()
+                while (iterator.hasNext) {
+                    val chunk = iterator.next()
+                    cacheChunk(this, Point2.x(chunk).toInt(), Point2.y(chunk).toInt(), ignoreWalls)
+                }
+
+                recacheSet.clear()
+            }
         }
     }
 
@@ -188,10 +209,7 @@ class OFloorRenderer : FloorRendererI() {
     }
 
     var realZ = 0f
-    public override fun beginDraw() {
-        if (cache == null) {
-            return
-        }
+    fun beginDraw(data: TilesRenderData) {
         val renderer = Oxygen.renderer
 
         Draw.flush()
@@ -199,7 +217,9 @@ class OFloorRenderer : FloorRendererI() {
         val sh = getShader()
         sh.bind()
         //coordinates of geometry are normalized to [0, 1] based on map size (normWidth/normHeight), so the matrix needs to be updated accordingly
-        combinedMat.set(Oxygen.trans3D).translate(-packPad, -packPad, realZ).scale(packWidth, packHeight, 1f)
+        combinedMat.set(Oxygen.trans3D).mul(data.tiles.craft.trans().to3D(tmpMat))
+            .translate(0f, 0f, data.tiles.craft.height() - 2f).translate(-packPad, -packPad, realZ)
+            .scale(data.packWidth, data.packHeight, 1f)
         sh.setUniformMatrix4("u_trans", combinedMat.`val`)
         sh.setUniformMatrix4("u_proj", OGraphics.proj3D().`val`)
 
@@ -216,21 +236,23 @@ class OFloorRenderer : FloorRendererI() {
         Gl.enable(Gl.blend)
     }
 
-    public override fun drawLayer(layer: CacheLayer) {
-        if (cache == null) {
-            return
-        }
+    public override fun beginDraw() {
+        if (Vars.world.tiles.craft == null) return
+        beginDraw(getData(Vars.world.tiles))
+    }
 
+    fun drawLayer(data: TilesRenderData, layer: CacheLayer) {
         val camera = Core.camera
-
-        val minx = max(((camera.position.x - camera.width / 2f - pad) / chunkunits).toInt(), 0)
-        val miny = max(((camera.position.y - camera.height / 2f - pad) / chunkunits).toInt(), 0)
-        val maxx = min(Mathf.ceil((camera.position.x + camera.width / 2f + pad) / chunkunits), cache!!.size)
-        val maxy = min(Mathf.ceil((camera.position.y + camera.height / 2f + pad) / chunkunits), cache!![0]!!.size)
-
-        layer.begin()
+        val cache = data.cache
 
         val bounds = camera.bounds(Tmp.r3)
+        TilesHandler.rect(bounds, data.tiles.craft.inv())
+        val minx = max(((bounds.x - pad) / chunkunits).toInt(), 0)
+        val miny = max(((bounds.y - pad) / chunkunits).toInt(), 0)
+        val maxx = min(Mathf.ceil((bounds.x + bounds.width + pad) / chunkunits), cache!!.size)
+        val maxy = min(Mathf.ceil((bounds.y + bounds.height + pad) / chunkunits), cache!![0]!!.size)
+
+        layer.begin()
 
         for (x in minx..maxx) {
             for (y in miny..maxy) {
@@ -253,61 +275,77 @@ class OFloorRenderer : FloorRendererI() {
             val items = underwaterDraw.items
             val len = underwaterDraw.size
             for (i in 0..<len) {
-                items[i]!!.run()
+                items[i].run()
             }
 
             Draw.flush()
             Draw.blend(Blending.normal)
             Blending.normal.apply()
-            beginDraw()
+            beginDraw(data)
         }
 
         layer.end()
+
     }
 
-    private fun cacheChunk(cx: Int, cy: Int, ignoreWalls: Boolean) {
-        used.clear()
+    public override fun drawLayer(layer: CacheLayer) {
+        if (Vars.world.tiles.craft == null) return
+        drawLayer(getData(Vars.world.tiles), layer)
+    }
 
-        var tilex = max(cx * chunksize - 1, 0)
-        while (tilex < (cx + 1) * chunksize + 1 && tilex < Vars.world.width()) {
-            var tiley = max(cy * chunksize - 1, 0)
-            while (tiley < (cy + 1) * chunksize + 1 && tiley < Vars.world.height()) {
-                val tile = Vars.world.rawTile(tilex, tiley)
-                val wall = !ignoreWalls && tile.block().cacheLayer !== CacheLayer.normal
+    private fun cacheChunk(data: TilesRenderData, cx: Int, cy: Int, ignoreWalls: Boolean) {
+        data.apply {
+            used.clear()
 
-                if (wall) {
-                    used.add(tile.block().cacheLayer)
+            var tilex = max(cx * chunksize - 1, 0)
+            while (tilex < (cx + 1) * chunksize + 1 && tilex < tiles.width) {
+                var tiley = max(cy * chunksize - 1, 0)
+                while (tiley < (cy + 1) * chunksize + 1 && tiley < tiles.height) {
+                    val tile = tiles.get(tilex, tiley)
+                    if (tile == null) continue
+                    val wall = !ignoreWalls && tile.block().cacheLayer !== CacheLayer.normal
+
+                    if (wall) {
+                        used.add(tile.block().cacheLayer)
+                    }
+
+                    if (!wall || tiles.isAccessible(tilex, tiley)) {
+                        used.add(tile.floor().cacheLayer)
+                    }
+                    tiley++
                 }
+                tilex++
+            }
 
-                if (!wall || Vars.world.isAccessible(tilex, tiley)) {
-                    used.add(tile.floor().cacheLayer)
+            if (cache!![cx]!![cy]!!.isEmpty()) {
+                cache!![cx]!![cy] = arrayOfNulls(CacheLayer.all.size)
+            }
+
+            val meshes: Array<ChunkMesh?> = cache!![cx]!![cy]!!
+
+            for (layer in CacheLayer.all) {
+                if (meshes[layer.id] != null) {
+                    meshes[layer.id]!!.dispose()
                 }
-                tiley++
+                meshes[layer.id] = null
             }
-            tilex++
-        }
 
-        if (cache!![cx]!![cy]!!.isEmpty()) {
-            cache!![cx]!![cy] = arrayOfNulls(CacheLayer.all.size)
-        }
-
-        val meshes: Array<ChunkMesh?> = cache!![cx]!![cy]!!
-
-        for (layer in CacheLayer.all) {
-            if (meshes[layer.id] != null) {
-                meshes[layer.id]!!.dispose()
+            for (layer in used) {
+                meshes[layer.id] = cacheChunkLayer(this, cx, cy, layer, ignoreWalls)
             }
-            meshes[layer.id] = null
-        }
-
-        for (layer in used) {
-            meshes[layer.id] = cacheChunkLayer(cx, cy, layer, ignoreWalls)
         }
     }
 
-    private fun cacheChunkLayer(cx: Int, cy: Int, layer: CacheLayer?, ignoreWalls: Boolean): ChunkMesh {
-        vidx = 0
-
+    private fun cacheChunkLayer(
+        data: TilesRenderData,
+        cx: Int,
+        cy: Int,
+        layer: CacheLayer?,
+        ignoreWalls: Boolean
+    ): ChunkMesh {
+        batch.vidx = 0
+        batch.packWidth = data.packWidth
+        batch.packHeight = data.packHeight
         var flag = false
         val current = Core.batch
         if (current == OGraphics.zbatch) {
@@ -316,22 +354,24 @@ class OFloorRenderer : FloorRendererI() {
         }
         Core.batch = batch
 
+        val tiles = data.tiles
+        val craft = tiles.craft
+
         for (tilex in cx * chunksize..<(cx + 1) * chunksize) {
             for (tiley in cy * chunksize..<(cy + 1) * chunksize) {
-                val tile = Vars.world.tile(tilex, tiley)
+                val tile = tiles.get(tilex, tiley)
                 val floor: Floor
 
                 if (tile == null) {
                     continue
-                } else {
-                    floor = tile.floor()
                 }
+                floor = tile.floor()
 
                 if (tile.block().cacheLayer === layer && layer === CacheLayer.walls && !(tile.isDarkened && tile.data >= 5)) {
                     OGraphics.realZ(4f)
                     tile.block().drawBase(tile)
                     OGraphics.realZ(0f)
-                } else if (floor.cacheLayer === layer && (ignoreWalls || Vars.world.isAccessible(
+                } else if (floor.cacheLayer === layer && (ignoreWalls || tiles.isAccessible(
                         tile.x.toInt(),
                         tile.y.toInt()
                     ) || tile.block().cacheLayer !== CacheLayer.walls || !tile.block().fillsTile)
@@ -346,7 +386,7 @@ class OFloorRenderer : FloorRendererI() {
         Core.batch = current
         if (flag) OGraphics.zbatch = current as ZBatch
 
-        val floats = vidx
+        val floats = batch.vidx
         val mesh = ChunkMesh(
             true,
             floats / vertexSize,
@@ -358,69 +398,69 @@ class OFloorRenderer : FloorRendererI() {
             (cy + 1) * Vars.tilesize * chunksize + Vars.tilesize / 2f
         )
 
-        mesh.setVertices(_vertexBuffer, 0, vidx)
+        mesh.setVertices(_vertexBuffer, 0, floats)
         //all indices are shared and identical
         mesh.indices = _indexData
 
         return mesh
     }
 
-    public override fun reload(ignoreWalls: Boolean) {
+    fun reload(data: TilesRenderData, ignoreWalls: Boolean) {
         //dispose all old meshes
-        if (cache != null) {
-            for (x in cache) {
-                for (y in x!!) {
-                    for (mesh in y!!) {
-                        mesh?.dispose()
+        data.apply {
+            if (cache != null) {
+                for (x in cache) {
+                    for (y in x!!) {
+                        for (mesh in y!!) {
+                            mesh?.dispose()
+                        }
                     }
                 }
             }
+
+            recacheSet.clear()
+            val chunksx = Mathf.ceil(tiles.width.toFloat() / chunksize)
+            val chunksy = Mathf.ceil(tiles.height.toFloat() / chunksize)
+            cache =
+                Array<Array<Array<ChunkMesh?>?>?>(chunksx) {
+                    Array<Array<ChunkMesh?>?>(chunksy) {
+                        arrayOfNulls<ChunkMesh>(
+                            if (dynamic) 0 else CacheLayer.all.size
+                        )
+                    }
+                }
+
+            packWidth = tiles.unitWidth().toFloat() + packPad * 2f
+            packHeight = tiles.unitHeight().toFloat() + packPad * 2f
+
+            //pre-cache chunks
+            if (!dynamic) {
+                Time.mark();
+
+                for (x in 0..<chunksx) {
+                    for (y in 0..<chunksy) {
+                        cacheChunk(this, x, y, ignoreWalls)
+                    }
+                }
+
+                Log.debug("Load @ mesh: @ms", data.tiles, Time.elapsed())
+            }
         }
+    }
 
-        recacheSet.clear()
-        val chunksx = Mathf.ceil((Vars.world.width()).toFloat() / chunksize)
-        val chunksy = Mathf.ceil((Vars.world.height()).toFloat() / chunksize)
-        cache =
-            Array<Array<Array<ChunkMesh?>?>?>(chunksx) { Array<Array<ChunkMesh?>?>(chunksy) { arrayOfNulls<ChunkMesh>(if (dynamic) 0 else CacheLayer.all.size) } }
-
+    fun reloadTexture() {
         texture = Core.atlas.find("grass1").texture
         error = Core.atlas.find("env-error")
-
-        packWidth = Vars.world.unitWidth() + packPad * 2f
-        packHeight = Vars.world.unitHeight() + packPad * 2f
-
-        //pre-cache chunks
-        if (!dynamic) {
-            Time.mark()
-
-            for (x in 0..<chunksx) {
-                for (y in 0..<chunksy) {
-                    cacheChunk(x, y, ignoreWalls)
-                }
-            }
-
-            Log.debug("Generated world mesh: @ms", Time.elapsed())
-        }
     }
 
-    internal class ChunkMesh(
-        isStatic: Boolean,
-        maxVertices: Int,
-        maxIndices: Int,
-        attributes: Array<VertexAttribute>,
-        minX: Float,
-        minY: Float,
-        maxX: Float,
-        maxY: Float
-    ) : Mesh(isStatic, maxVertices, maxIndices, *attributes) {
-        var bounds: Rect = Rect()
-
-        init {
-            bounds.set(minX, minY, maxX - minX, maxY - minY)
-        }
+    public override fun reload(ignoreWalls: Boolean) {
     }
+
 
     internal inner class FloorRenderBatch : ZBatch() {
+        var vidx = 0
+        var packWidth = 0f
+        var packHeight = 0f
         //TODO: alternate clipping approach, can be more accurate
         /*
         float minX, minY, maxX, maxY;
@@ -599,5 +639,22 @@ class OFloorRenderer : FloorRendererI() {
 
         //if true, chunks are rendered on-demand; this causes small lag spikes and is generally not needed for most maps
         private const val dynamic = false
+    }
+}
+
+class ChunkMesh(
+    isStatic: Boolean,
+    maxVertices: Int,
+    maxIndices: Int,
+    attributes: Array<VertexAttribute>,
+    minX: Float,
+    minY: Float,
+    maxX: Float,
+    maxY: Float
+) : Mesh(isStatic, maxVertices, maxIndices, *attributes) {
+    var bounds: Rect = Rect()
+
+    init {
+        bounds.set(minX, minY, maxX - minX, maxY - minY)
     }
 }

@@ -4,7 +4,9 @@ import arc.*
 import arc.util.*
 import mindustry.*
 import mindustry.mod.*
+import mindustry.graphics.*
 import oxygen.*
+import oxygen.graphics.*
 import oxygen.graphics.g2d.*
 import oxygen.util.*
 import oxygen.util.Marks
@@ -43,7 +45,7 @@ class OCPreloader : Preloader() {
                 message(text)
             }
         }
-        if (Core.gl30 == null) {
+        if (Core.gl30 == null && !Vars.headless) {
             error = true
             log.atError {
                 message("OpenGL 3.0 not supported.Oxygen do not load")
@@ -65,10 +67,17 @@ class OCPreloader : Preloader() {
 
     }
 
-    override fun beforeAll(app: ClientLauncher) {
+    override fun beforeAll() {}
+
+    override fun setupGraphics() {
         if (error) return
         OGraphics.zbatch = ZSpriteBatch()
         Core.batch = OGraphics.zbatch
+        Vars.zdraw = object : ZDraw() {
+            override fun z(z: Float) {
+                OGraphics.realZ(z)
+            }
+        }
         log.atInfo {
             message("Replace batch")
             mark(omark)
@@ -77,6 +86,7 @@ class OCPreloader : Preloader() {
 
     override fun modifyApplication(app: ClientLauncher) {
         if (error) return
+        Oxygen.renderer = ORenderer()
         Vars.renderer = Oxygen.renderer
         app.add(Oxygen.renderer)
         log.atInfo {

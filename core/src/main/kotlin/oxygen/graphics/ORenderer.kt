@@ -16,11 +16,14 @@ import mindustry.*
 import mindustry.core.*
 import mindustry.game.EventType.*
 import mindustry.game.MapObjectives.MapObjective
+import mindustry.world.blocks.environment.Floor.UpdateRenderState
 import mindustry.gen.*
 import mindustry.graphics.*
 import mindustry.graphics.g3d.*
 import mindustry.maps.*
+import mindustry.world.*
 import mindustry.type.*
+import mindustry.entities.*
 import mindustry.world.blocks.*
 import oxygen.*
 import oxygen.Oxygen.lightCam
@@ -28,6 +31,9 @@ import oxygen.Oxygen.lightDir
 import oxygen.Oxygen.log
 import oxygen.graphics.bloom.*
 import oxygen.math.*
+import oxygen.world.*
+import oxygen.world.blocks.*
+import oxygen.graphics.OBlockRenderer.*
 import kotlin.math.*
 
 class ORenderer : RendererI() {
@@ -57,12 +63,43 @@ class ORenderer : RendererI() {
 
     //Test
     var showShadowMap = false
-
     var lightFar = 100f
-
     var lightDir_ = lightDir
 
     lateinit var obloom: OBloom
+
+    //Tiles
+    val renderDatas: Seq<TilesRenderData> = Seq.with()
+
+    fun getData(tiles: Tiles): TilesRenderData {
+        while (renderDatas.size <= tiles.id) {
+            renderDatas.add(null as TilesRenderData?)
+        }
+        return (renderDatas.get(tiles.id) ?: createData(tiles)).also {
+            if (it.tiles != tiles) {
+                it.tiles = tiles
+                reloadData(it)
+            }
+        }
+    }
+
+    fun reloadData(data: TilesRenderData) {
+        renderDatas.set(data.tiles.id, data)
+        blocksL.floorL.reload(data, false)
+        blocksL.reload(data)
+    }
+
+    fun createData(tiles: Tiles): TilesRenderData =
+        TilesRenderData(tiles).also(::reloadData)
+
+    fun reload() {
+        for (data in renderDatas) {
+            if (data == null) continue
+            data.dispose()
+        }
+        renderDatas.clear()
+        getData(Vars.world.tiles)
+    }
 
     init {
         blocks = blocksL
@@ -99,7 +136,7 @@ class ORenderer : RendererI() {
     override fun init() {
         OCShaders.init()
         obloom = StandardDualFilterBloom()
-	/*
+        /*
         obloom = CompareBloom().apply {
             blooms.add(PyramidStandardDualBloom())
             blooms.add(PyramidFourNAvgBloom())
@@ -131,6 +168,15 @@ class ORenderer : RendererI() {
             if (backgroundBuffer != null) {
                 backgroundBuffer.dispose()
                 backgroundBuffer = null
+            }
+        }
+
+        Events.run(Trigger.tilesInit) {
+            reload()
+            blocksL.floor.reload()
+            if (blocksL.hadMapLimit && !Vars.state.rules.limitMapArea) {
+                blocks.updateDarkness()
+                Vars.renderer.minimap.updateAll()
             }
         }
 
@@ -294,12 +340,21 @@ class ORenderer : RendererI() {
     }
 
     fun drawGroups() {
-        Groups.draw.draw { obj: Drawc? ->
-            if (obj is Heightc) {
-                OGraphics.realZ(obj.height)
-            } else OGraphics.realZ(0.2f)
-            obj!!.draw()
+        Groups.draw.draw(::drawObj)
+    }
+
+    fun drawObj(obj: Drawc) {
+        if (obj is Heightc) {
+            OGraphics.realZ(obj.height())
+            ZDraw.height = obj.height() + 4f
+        } else {
+            OGraphics.realZ(4f)
+            ZDraw.height = 4f
         }
+        if (obj is TilesCraftc) {
+            if (obj.craftType().drawUnit) obj.draw()
+        } else obj.draw()
+        ZDraw.height = 0f
     }
 
     fun drawFloor(depth: Boolean) {
@@ -316,7 +371,6 @@ class ORenderer : RendererI() {
             { Draw.shader() })
             */
         //render all matching environments
-        OGraphics.realZ(0f)
     }
 
     fun updateLight(width: Float, height: Float) {
@@ -339,6 +393,8 @@ class ORenderer : RendererI() {
     }
 
     var sclColor = Color(0.12f, 0.12f, 0.12f, 0.1f)
+
+    val objs: Seq<Object> = Seq.with()
 
     override fun draw() {
         val w = Core.graphics.width.toFloat()
@@ -372,10 +428,9 @@ class ORenderer : RendererI() {
 
         tmpMat1.set(OGraphics.proj3D())
         tmpMat2.set(OGraphics.trans3D())
-        tmpMat.setToScaling(cw, tw, 1f / 4f)
+        tmpMat.setToScaling(cw, tw, 1f / 8f)
         OGraphics.trans3D(tmpMat)
         Draw.proj(Core.camera)
-
 
         updateLight(cw * 2f, ch * 2f)
 
@@ -383,7 +438,7 @@ class ORenderer : RendererI() {
         Oxygen.trans3D.set(OGraphics.trans3D()).mul(Core.camera.mat.to3D(tmpMat))
         OGraphics.drawDepth(true)
 
-        OGraphics.zbatch.alphaTest = 0.9f
+        OGraphics.zbatch.alphaTest = 0.95f
 
         Draw.sort(true)
         Gl.depthMask(true)
@@ -398,7 +453,6 @@ class ORenderer : RendererI() {
         Gl.cullFace(Gl.front)
         blocksL.draw3DDepth()
         Gl.disable(Gl.cullFace)
-
 
         drawFloor(true)
         drawGroups()
@@ -442,33 +496,74 @@ class ORenderer : RendererI() {
                 if (z < Layer.bullet - 0.02f || z > Layer.effect + 0.02f) return@func2
                 sclColorPacked = holder.color
             }
-            Core.graphics.clear(clearColor)
-            Gl.clear(Gl.depthBufferBit)
             obloom.resize(Core.graphics.width, Core.graphics.height)
             obloom.capture()
             DepthFunc.lequal.apply()
             Core.graphics.clear(clearColor)
             Gl.clear(Gl.depthBufferBit)
 
-            Gl.enable(Gl.cullFace)
-            Gl.cullFace(Gl.back)
-            blocksL.draw3D()
-            Gl.disable(Gl.cullFace)
-
-            drawFloor(false)
-
-            OGraphics.realZ(0.05f)
-            Draw.draw(Layer.block - 1) { blocksL.drawShadows() }
-            Draw.flush()
-
-            OGraphics.realZ(0f)
-
             Draw.sort(false)
             Draw.shader(shader)
             Draw.sort(true)
-            Draw.draw(Layer.min) {
-                Draw.shader(shader)
+
+            objs.clear()
+            for (tiles in Vars.world.allTiles) {
+                if (tiles.craft == null) continue
+                objs.add(tiles.craft as Object)
             }
+            Groups.draw.draw { obj: Drawc ->
+                objs.add(obj as Object)
+            }
+            objs.sort { obj -> if (obj is Heightc) obj.height else 0f }
+
+            blocksL.floorL.drawDepth = false
+
+            for (obj in objs) {
+                if (obj is TilesCraftc) {
+                    ZDraw.height = obj.height() + 4f
+                    if (obj.craftType().drawUnit) obj.draw()
+                    val tiles = obj.tiles()
+                    val data = getData(tiles)
+
+                    Gl.enable(Gl.cullFace)
+                    Gl.cullFace(Gl.back)
+                    blocksL.g3dEach(data, G3DrawBuilding::draw3D)
+                    Gl.disable(Gl.cullFace)
+
+                    blocksL.floorL.realZ = 0f
+                    blocksL.floorL.drawFloor(data)
+                    Draw.flush()
+
+                    OGraphics.realZ(0f)
+                    Draw.draw(Layer.block - 1f) {
+                        blocksL.drawShadows(data)
+                    }
+                    Draw.flush()
+
+                    OGraphics.realZ(0f)
+                    Draw.z(Layer.block - 0.09f)
+                    blocksL.floorL.realZ = 4f
+                    blocksL.floorL.beginDraw(data)
+                    blocksL.floorL.drawLayer(data, CacheLayer.walls)
+                    blocksL.floorL.realZ = 0f
+                    Draw.flush()
+
+                    Draw.draw(Layer.min) {
+                        Draw.shader(shader)
+                    }
+                    OGraphics.realZ(0f)
+                    Draw.z(Layer.block)
+                    blocksL.drawBlocks(data)
+                    ZDraw.height = 0f
+                } else if (obj is Drawc) {
+                    drawObj(obj)
+                }
+            }
+
+            Draw.sort(false)
+            Draw.shader()
+            Draw.sort(true)
+            Draw.reset()
             /*
             if (bloom != null) {
                 bloom.resize(Core.graphics.width, Core.graphics.height)
@@ -478,10 +573,6 @@ class ORenderer : RendererI() {
                 Draw.draw(Layer.effect + 0.02f) { bloom.render() }
             }*/
 
-            OGraphics.realZ(2.0f)
-            Vars.control.input.drawCommanded()
-
-            Draw.draw(Layer.plans) { overlays.drawBottom() }
 
             /* TODO animateShields support
             if (animateShields && Shaders.shield != null) {
@@ -495,11 +586,52 @@ class ORenderer : RendererI() {
                     effectBuffer.end()
                     effectBuffer.blit(Shaders.buildBeam)
                 })
-            }*/
+            }
+                Draw.draw(Layer.space) {
+                    if (launchAnimator != null && landTime > 0f) launchAnimator.drawLaunch()
+                }
+                if (launchAnimator != null) {
+                    Draw.z(Layer.space)
+                    launchAnimator.drawLaunchGlobalZ()
+                    Draw.reset()
+                }*/
 
+            if (Vars.drawDebugHitboxes) {
+                DebugCollisionRenderer.draw()
+            }
+
+            OGraphics.realZ(0f)
+            Draw.flush()
+
+            obloom.render()
+
+            OGraphics.proj3D(tmpMat1)
+            OGraphics.trans3D(tmpMat2)
+
+            Gl.disable(Gl.depthTest)
+
+            Events.fire(Trigger.drawOver)
+
+            OGraphics.realZ(2.0f)
             val scaleFactor = 4f / Vars.renderer.displayScale
 
             //draw objective markers
+
+            for (renderer in envRenderers) {
+                if ((renderer.env and Vars.state.rules.env) == renderer.env) {
+                    renderer.renderer.run()
+                }
+            }
+            OGraphics.realZ(0.2f)
+            if (Vars.state.rules.fog) Draw.draw(Layer.fogOfWar) { fog.drawFog() }
+            if (Vars.state.rules.lighting && drawLight) {
+                Draw.draw(Layer.light) { lights.draw() }
+            }
+            if (Vars.enableDarkness) {
+                Draw.draw(Layer.darkness) { blocksL.drawDarkness() }
+            }
+            Draw.flush()
+
             Vars.state.rules.objectives.eachRunning { obj: MapObjective? ->
                 for (marker in obj!!.markers) {
                     if (marker.world) {
@@ -513,64 +645,10 @@ class ORenderer : RendererI() {
                     marker.draw(if (marker.autoscale) scaleFactor else 1f)
                 }
             }
-
-            Draw.reset()
-
-            OGraphics.realZ(2.0f)
+            Vars.control.input.drawCommanded()
+            Draw.draw(Layer.plans) { overlays.drawBottom() }
             Draw.draw(Layer.overlayUI) {
                 overlays.drawTop()
-            }
-
-            drawGroups()
-            /*
-                Draw.draw(Layer.space) {
-                    if (launchAnimator != null && landTime > 0f) launchAnimator.drawLaunch()
-                }
-                if (launchAnimator != null) {
-                    Draw.z(Layer.space)
-                    launchAnimator.drawLaunchGlobalZ()
-                    Draw.reset()
-                }*/
-
-            Events.fire(Trigger.drawOver)
-            OGraphics.realZ(0.2f)
-            blocksL.drawBlocks()
-            Draw.draw(Layer.block - 0.09f) {
-                OGraphics.realZ(0.1f)
-                blocksL.floorL.realZ = 5f
-                blocksL.floor.beginDraw()
-                blocksL.floor.drawLayer(CacheLayer.walls)
-                blocksL.floorL.realZ = 0f
-            }
-
-            if (Vars.drawDebugHitboxes) {
-                DebugCollisionRenderer.draw()
-            }
-            OGraphics.realZ(0f)
-            Draw.flush()
-
-            obloom.render()
-
-            OGraphics.proj3D(tmpMat1)
-            OGraphics.trans3D(tmpMat2)
-
-            Draw.sort(false)
-            Draw.shader()
-            Draw.sort(true)
-            Gl.disable(Gl.depthTest)
-            //OGraphics.realZ(5f)
-            for (renderer in envRenderers) {
-                if ((renderer.env and Vars.state.rules.env) == renderer.env) {
-                    renderer.renderer.run()
-                }
-            }
-            OGraphics.realZ(0.2f)
-            if (Vars.state.rules.fog) Draw.draw(Layer.fogOfWar) { fog.drawFog() }
-            if (Vars.state.rules.lighting && drawLight) {
-                Draw.draw(Layer.light) { lights.draw() }
-            }
-            if (Vars.enableDarkness) {
-                Draw.draw(Layer.darkness) { blocksL.drawDarkness() }
             }
             Draw.flush()
 
@@ -641,4 +719,55 @@ class ORenderer : RendererI() {
     }
 
     class EnvRenderer(val env: Int, val renderer: Runnable)
+
+    companion object {
+        val initialRequests: Int = 32 * 32
+    }
+}
+
+open class TilesRenderData(var tiles: Tiles) : Disposable {
+    var cache: Array<Array<Array<ChunkMesh?>?>?>? = null
+    val recacheSet = IntSet()
+    val used = ObjectSet<CacheLayer>()
+
+    val drawnLayerSet = IntSet()
+    val drawnLayers = IntSeq()
+
+    var packWidth = 0f
+    var packHeight = 0f
+
+    val tileview = Seq<Tile>(false, ORenderer.initialRequests, Tile::class.java)
+    val g3dview = Seq<Tile>(false, ORenderer.initialRequests, Tile::class.java)
+    val lightview = Seq<Tile>(false, ORenderer.initialRequests, Tile::class.java)
+
+    val procLinks = IntSet()
+    val procLights = IntSet()
+    val proc3D = IntSet()
+
+    var blockTree = BlockQuadtree(Rect(0f, 0f, 1f, 1f))
+    var blockLightTree = BlockLightQuadtree(Rect(0f, 0f, 1f, 1f))
+    var block3DTree = Block3DQuadtree(Rect(0f, 0f, 1f, 1f))
+    var floorTree = FloorQuadtree(Rect(0f, 0f, 1f, 1f))
+
+    val updateFloors = Seq<UpdateRenderState>(UpdateRenderState::class.java)
+
+    val shadows = FrameBuffer()
+    val dark = FrameBuffer()
+    val outArray2 = Seq<Building>()
+    val shadowEvents = Seq<Tile>()
+    val darkEvents = IntSet()
+
+    override fun dispose() {
+        if (cache != null) {
+            for (x in cache) {
+                for (y in x!!) {
+                    for (mesh in y!!) {
+                        mesh?.dispose()
+                    }
+                }
+            }
+        }
+        shadows.dispose()
+        dark.dispose()
+    }
 }

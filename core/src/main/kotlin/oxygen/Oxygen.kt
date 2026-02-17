@@ -29,9 +29,9 @@ object Oxygen {
     val trans3D = Mat3D()
 
     val lightCam = Camera3D()
-    val lightDir = Vec3(-1f, -1f, -1.5f).nor()
+    val lightDir = Vec3(-1f, -1f, -1f).nor()
 
-    val renderer = ORenderer()
+    lateinit var renderer: ORenderer
 
     lateinit var testTools: TestTools
 
@@ -70,18 +70,6 @@ object Oxygen {
                     )
                 }
             }
-        }
-
-        val unitRun = { unit: mindustry.gen.Unit ->
-            if (unit.type.flying) unit.height = 5f
-        }
-
-        Events.on(EventType.UnitSpawnEvent::class.java) {
-            unitRun(it.unit)
-        }
-
-        Events.on(EventType.UnitCreateEvent::class.java) {
-            unitRun(it.unit)
         }
     }
 

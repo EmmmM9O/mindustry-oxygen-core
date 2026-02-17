@@ -2,6 +2,7 @@ package oxygen.content
 
 import arc.graphics.*
 import arc.graphics.gl.*
+import mindustry.*
 import mindustry.content.*
 import mindustry.gen.*
 import mindustry.type.*
@@ -17,9 +18,9 @@ import oxygen.util.*
 import oxygen.world.blocks.*
 
 open class CubeBlock(name: String) : Block(name) {
-    val cubeMesh = Meshes.solidCubeMesh(24f, 24f, 24f)
-    val depthShader = OGShaders.solidDepth
-    val objShader = OGShaders.solid
+    val cubeMesh: Mesh?
+    val depthShader: OShader?
+    val objShader: ShadowShader?
 
     init {
         solid = true
@@ -28,6 +29,15 @@ open class CubeBlock(name: String) : Block(name) {
         drawDisabled = false
 
         envEnabled = Env.any
+        if (!Vars.headless) {
+            cubeMesh = Meshes.solidCubeMesh(24f, 24f, 48f)
+            depthShader = OGShaders.solidDepth
+            objShader = OGShaders.solid
+        } else {
+            cubeMesh = null
+            depthShader = null
+            objShader = null
+        }
     }
 
     public inner class CubeBuild() : Building(), G3DrawBuilding {
@@ -40,17 +50,19 @@ open class CubeBlock(name: String) : Block(name) {
         }
 
         override fun draw3D() {
+            objShader!!
             objShader.lightMat = lightCam.combined
             objShader.lightDir = lightDir
             objShader.shadowMap = renderer.shadowBuffer.texture
-            objShader.setUniformf("u_camPos", lightCam.position)
+            //objShader.setUniformf("u_camPos", lightCam.position)
             prepare(objShader)
-            cubeMesh.render(objShader, Gl.triangles)
+            cubeMesh!!.render(objShader!!, Gl.triangles)
         }
 
         override fun drawDepth() {
+            depthShader!!
             prepare(depthShader)
-            cubeMesh.render(depthShader, Gl.triangles)
+            cubeMesh!!.render(depthShader, Gl.triangles)
         }
 
         override fun draw() {

@@ -2,7 +2,7 @@
 #define ZBATCH_GLSL
 #include "/utils/shadow.glsl"
 
-const float shadowIntensity = 0.7;
+const float shadowIntensity = 0.6;
 const float ambientIntensity = 0.2;
 vec3 lightColor = vec3(1.0);
 

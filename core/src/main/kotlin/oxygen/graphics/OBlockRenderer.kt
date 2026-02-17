@@ -18,7 +18,10 @@ import mindustry.graphics.*
 import mindustry.world.*
 import mindustry.world.blocks.environment.Floor.UpdateRenderState
 import mindustry.world.blocks.power.*
+import oxygen.*
+import oxygen.world.*
 import oxygen.world.blocks.*
+import oxygen.math.*
 import kotlin.math.*
 
 class OBlockRenderer : BlockRendererI() {
@@ -30,38 +33,24 @@ class OBlockRenderer : BlockRendererI() {
     val shadowColor: Color = Color(0f, 0f, 0f, 0.71f)
     val blendShadowColor: Color = Color.white.cpy().lerp(Color.black, shadowColor.a)
 
-    private val initialRequests: Int = 32 * 32
+    private val initialRequests: Int = ORenderer.initialRequests
 
     lateinit var cracks: Array<Array<TextureRegion>>
 
-    private val tileview = Seq<Tile>(false, initialRequests, Tile::class.java)
-    private val g3dview = Seq<Tile>(false, initialRequests, Tile::class.java)
-    private val lightview = Seq<Tile>(false, initialRequests, Tile::class.java)
-
     //TODO I don't like this system
-    private val updateFloors = Seq<UpdateRenderState?>(UpdateRenderState::class.java)
 
-    private var hadMapLimit = false
-    private var lastCamX = 0
-    private var lastCamY: Int = 0
-    private var lastRangeX: Int = 0
-    private var lastRangeY: Int = 0
-    private var brokenFade = 0f
-    private val shadows = FrameBuffer()
-    private val dark = FrameBuffer()
-    private val outArray2 = Seq<Building>()
-    private val shadowEvents = Seq<Tile>()
-    private val darkEvents = IntSet()
-    private val procLinks = IntSet()
-    private val procLights = IntSet()
-    private val proc3D = IntSet()
+    var hadMapLimit = false
+    var brokenFade = 0f
 
-    private var blockTree = BlockQuadtree(Rect(0f, 0f, 1f, 1f))
-    private var blockLightTree = BlockLightQuadtree(Rect(0f, 0f, 1f, 1f))
-    private var block3DTree = Block3DQuadtree(Rect(0f, 0f, 1f, 1f))
-    private var floorTree = FloorQuadtree(Rect(0f, 0f, 1f, 1f))
+    val tmpMat1 = Mat3D()
+    val tmpMat2 = Mat3D()
+
+    val tmpM = Mat()
+    val tmpV = Vec2()
 
     val floorL = OFloorRenderer()
+
+    fun getData(tiles: Tiles): TilesRenderData = Oxygen.renderer.getData(tiles)
 
     init {
         floor = floorL
@@ -73,196 +62,191 @@ class OBlockRenderer : BlockRendererI() {
             }
         }
 
-        Events.on(WorldLoadEvent::class.java) { _: WorldLoadEvent ->
+        Events.on(WorldLoadEvent::class.java) { event: WorldLoadEvent ->
             reload()
-        }
-
-        //sometimes darkness gets disabled.
-        Events.run(Trigger.newGame) {
-            if (hadMapLimit && !Vars.state.rules.limitMapArea) {
-                updateDarkness()
-                Vars.renderer.minimap.updateAll()
-            }
         }
 
         Events.on(TilePreChangeEvent::class.java) { event: TilePreChangeEvent ->
             //if (blockTree == null || floorTree == null) return@Cons
-            if (indexBlock(event.tile)) {
-                blockTree.remove(event.tile)
-                blockLightTree.remove(event.tile)
-                if (event.tile.build != null && event.tile.build is G3DrawBuilding) block3DTree.remove(event.tile)
+            val tile = event.tile
+            if (tile.tiles.craft == null) return@on
+            val data = getData(tile.tiles)
+            if (indexBlock(tile)) {
+                data.blockTree.remove(tile)
+                data.blockLightTree.remove(tile)
+                if (tile.build != null && tile.build is G3DrawBuilding) data.block3DTree.remove(tile)
             }
-            if (indexFloor(event.tile)) floorTree.remove(event.tile)
+            if (indexFloor(tile)) data.floorTree.remove(tile)
         }
 
         Events.on(TileChangeEvent::class.java) { event: TileChangeEvent ->
-            val visible = event!!.tile.build == null || !event.tile.build.inFogTo(Vars.player.team())
-            if (event.tile.build != null) {
-                event.tile.build.wasVisible = visible
+            val tile = event.tile
+            val visible = tile.build == null || !tile.build.inFogTo(Vars.player.team())
+            if (tile.build != null) {
+                tile.build.wasVisible = visible
             }
+            if (tile.tiles == null) return@on
+            if (tile.tiles.craft == null) return@on
+            val data = getData(tile.tiles)
 
             if (visible) {
-                shadowEvents.add(event.tile)
+                data.shadowEvents.add(event.tile)
             }
 
-            val avgx = (Core.camera.position.x / Vars.tilesize).toInt()
-            val avgy = (Core.camera.position.y / Vars.tilesize).toInt()
-            val rangex = (Core.camera.width / Vars.tilesize / 2).toInt() + 2
-            val rangey = (Core.camera.height / Vars.tilesize / 2).toInt() + 2
+            invalidateTile(tile)
+            recordIndex(tile)
+        }
+    }
 
-            if (abs(avgx - event.tile.x) <= rangex && abs(avgy - event.tile.y) <= rangey) {
-                lastCamX = -99
-                lastCamY = lastCamX //invalidate camera position so blocks get updated
+    fun reload(data: TilesRenderData) {
+        data.apply {
+            blockTree = BlockQuadtree(Rect(0f, 0f, tiles.unitWidth().toFloat(), tiles.unitHeight().toFloat()))
+            blockLightTree =
+                BlockLightQuadtree(Rect(0f, 0f, tiles.unitWidth().toFloat(), tiles.unitHeight().toFloat()))
+            block3DTree =
+                Block3DQuadtree(Rect(0f, 0f, tiles.unitWidth().toFloat(), tiles.unitHeight().toFloat()))
+
+            floorTree = FloorQuadtree(Rect(0f, 0f, tiles.unitWidth().toFloat(), tiles.unitHeight().toFloat()))
+            shadowEvents.clear()
+            updateFloors.clear()
+
+            shadows.texture.setFilter(TextureFilter.linear, TextureFilter.linear)
+            shadows.resize(tiles.width + 2, tiles.height + 2)
+            shadows.begin()
+            Core.graphics.clear(Color.white)
+            Draw.proj().setOrtho(0f, 0f, tiles.width.toFloat() + 2f, tiles.height.toFloat() + 2f)
+
+            Draw.color(blendShadowColor)
+
+            for (tile in tiles) {
+                recordIndex(tile)
+
+                if (tile.floor().updateRender(tile)) {
+                    updateFloors.add(UpdateRenderState(tile, tile.floor()))
+                }
+
+                if (tile.overlay().updateRender(tile)) {
+                    updateFloors.add(UpdateRenderState(tile, tile.overlay()))
+                }
+
+                if (tile.build != null && (tile.team() === Vars.player.team() || !Vars.state.rules.fog || (tile.build.visibleFlags and (1L shl Vars.player.team().id)) != 0L)) {
+                    tile.build.wasVisible = true
+                }
+
+                if (tile.block().displayShadow(tile) && (tile.build == null || tile.build.wasVisible)) {
+                    Fill.rect(tile.x + 1.5f, tile.y + 1.5f, 1f, 1f)
+                }
             }
 
-            invalidateTile(event.tile)
-            recordIndex(event.tile)
+            Draw.flush()
+            Draw.color()
+            shadows.end()
+
+            //TODO
+            if (tiles == Vars.world.tiles) updateDarkness(this)
         }
     }
 
     override fun reload() {
-        blockTree = BlockQuadtree(Rect(0f, 0f, Vars.world.unitWidth().toFloat(), Vars.world.unitHeight().toFloat()))
-        blockLightTree =
-            BlockLightQuadtree(Rect(0f, 0f, Vars.world.unitWidth().toFloat(), Vars.world.unitHeight().toFloat()))
-        block3DTree =
-            Block3DQuadtree(Rect(0f, 0f, Vars.world.unitWidth().toFloat(), Vars.world.unitHeight().toFloat()))
-
-        floorTree = FloorQuadtree(Rect(0f, 0f, Vars.world.unitWidth().toFloat(), Vars.world.unitHeight().toFloat()))
-
-        shadowEvents.clear()
-        updateFloors.clear()
-        lastCamX = -99
-        lastCamY = lastCamX //invalidate camera position so blocks get updated
         hadMapLimit = Vars.state.rules.limitMapArea
+    }
 
-        shadows.texture.setFilter(TextureFilter.linear, TextureFilter.linear)
-        shadows.resize(Vars.world.width(), Vars.world.height())
-        shadows.begin()
-        Core.graphics.clear(Color.white)
-        Draw.proj().setOrtho(0f, 0f, shadows.width.toFloat(), shadows.height.toFloat())
+    fun updateShadows(data: TilesRenderData, ignoreBuildings: Boolean, ignoreTerrain: Boolean) {
+        data.apply {
+            shadows.texture.setFilter(TextureFilter.linear, TextureFilter.linear)
+            shadows.resize(tiles.width, tiles.height)
+            shadows.begin()
+            Core.graphics.clear(Color.white)
+            Draw.proj().setOrtho(0f, 0f, tiles.width.toFloat() + 2f, tiles.height.toFloat() + 2f)
 
-        Draw.color(blendShadowColor)
+            Draw.color(blendShadowColor)
 
-        for (tile in Vars.world.tiles) {
-            recordIndex(tile)
-
-            if (tile.floor().updateRender(tile)) {
-                updateFloors.add(UpdateRenderState(tile, tile.floor()))
+            for (tile in tiles) {
+                if (tile.block()
+                        .displayShadow(tile) && (tile.build == null || tile.build.wasVisible) && !(ignoreBuildings && !tile.block().isStatic) && !(ignoreTerrain && tile.block().isStatic)
+                ) {
+                    Fill.rect(tile.x + 1.5f, tile.y + 1.5f, 1f, 1f)
+                }
             }
 
-            if (tile.overlay().updateRender(tile)) {
-                updateFloors.add(UpdateRenderState(tile, tile.overlay()))
-            }
-
-            if (tile.build != null && (tile.team() === Vars.player.team() || !Vars.state.rules.fog || (tile.build.visibleFlags and (1L shl Vars.player.team().id)) != 0L)) {
-                tile.build.wasVisible = true
-            }
-
-            if (tile.block().displayShadow(tile) && (tile.build == null || tile.build.wasVisible)) {
-                Fill.rect(tile.x + 0.5f, tile.y + 0.5f, 1f, 1f)
-            }
+            Draw.flush()
+            Draw.color()
+            shadows.end()
         }
-
-        Draw.flush()
-        Draw.color()
-        shadows.end()
-
-        updateDarkness()
     }
 
     override fun updateShadows(ignoreBuildings: Boolean, ignoreTerrain: Boolean) {
-        shadows.texture.setFilter(TextureFilter.linear, TextureFilter.linear)
-        shadows.resize(Vars.world.width(), Vars.world.height())
-        shadows.begin()
-        Core.graphics.clear(Color.white)
-        Draw.proj().setOrtho(0f, 0f, shadows.width.toFloat(), shadows.height.toFloat())
+        updateShadows(getData(Vars.world.tiles), ignoreBuildings, ignoreTerrain)
+    }
 
-        Draw.color(blendShadowColor)
+    fun updateDarkness(data: TilesRenderData) {
+        data.apply {
+            darkEvents.clear()
+            dark.texture.setFilter(TextureFilter.linear)
+            dark.resize(Vars.world.width(), Vars.world.height())
+            dark.begin()
 
-        for (tile in Vars.world.tiles) {
-            if (tile.block()
-                    .displayShadow(tile) && (tile.build == null || tile.build.wasVisible) && !(ignoreBuildings && !tile.block().isStatic) && !(ignoreTerrain && tile.block().isStatic)
-            ) {
-                Fill.rect(tile.x + 0.5f, tile.y + 0.5f, 1f, 1f)
+            //fill darkness with black when map area is limited
+            Core.graphics.clear(if (Vars.state.rules.limitMapArea && tiles == Vars.world.tiles) Color.black else Color.white)
+            Draw.proj().setOrtho(0f, 0f, dark.width.toFloat(), dark.height.toFloat())
+
+            //clear out initial starting area
+            if (Vars.state.rules.limitMapArea && tiles == Vars.world.tiles) {
+                Draw.color(Color.white)
+                Fill.crect(
+                    Vars.state.rules.limitX.toFloat(),
+                    Vars.state.rules.limitY.toFloat(),
+                    Vars.state.rules.limitWidth.toFloat(),
+                    Vars.state.rules.limitHeight.toFloat()
+                )
             }
-        }
 
-        Draw.flush()
-        Draw.color()
-        shadows.end()
+            for (tile in tiles) {
+                //skip lighting outside rect
+                if (Vars.state.rules.limitMapArea && tiles == Vars.world.tiles && !Rect.contains(
+                        Vars.state.rules.limitX.toFloat(),
+                        Vars.state.rules.limitY.toFloat(),
+                        (Vars.state.rules.limitWidth - 1).toFloat(),
+                        (Vars.state.rules.limitHeight - 1).toFloat(),
+                        tile.x.toFloat(),
+                        tile.y.toFloat()
+                    )
+                ) {
+                    continue
+                }
+
+                val darkness = tiles.getDarkness(tile.x.toInt(), tile.y.toInt())
+
+                if (darkness > 0) {
+                    val dark = 1f - min((darkness + 0.5f) / 4f, 1f)
+                    Draw.colorl(dark)
+                    Fill.rect(tile.x + 0.5f, tile.y + 0.5f, 1f, 1f)
+                }
+            }
+
+            Draw.flush()
+            Draw.color()
+            dark.end()
+        }
     }
 
     override fun updateDarkness() {
-        darkEvents.clear()
-        dark.texture.setFilter(TextureFilter.linear)
-        dark.resize(Vars.world.width(), Vars.world.height())
-        dark.begin()
-
-        //fill darkness with black when map area is limited
-        Core.graphics.clear(if (Vars.state.rules.limitMapArea) Color.black else Color.white)
-        Draw.proj().setOrtho(0f, 0f, dark.width.toFloat(), dark.height.toFloat())
-
-        //clear out initial starting area
-        if (Vars.state.rules.limitMapArea) {
-            Draw.color(Color.white)
-            Fill.crect(
-                Vars.state.rules.limitX.toFloat(),
-                Vars.state.rules.limitY.toFloat(),
-                Vars.state.rules.limitWidth.toFloat(),
-                Vars.state.rules.limitHeight.toFloat()
-            )
-        }
-
-        for (tile in Vars.world.tiles) {
-            //skip lighting outside rect
-            if (Vars.state.rules.limitMapArea && !Rect.contains(
-                    Vars.state.rules.limitX.toFloat(),
-                    Vars.state.rules.limitY.toFloat(),
-                    (Vars.state.rules.limitWidth - 1).toFloat(),
-                    (Vars.state.rules.limitHeight - 1).toFloat(),
-                    tile.x.toFloat(),
-                    tile.y.toFloat()
-                )
-            ) {
-                continue
-            }
-
-            val darkness = Vars.world.getDarkness(tile.x.toInt(), tile.y.toInt())
-
-            if (darkness > 0) {
-                val dark = 1f - min((darkness + 0.5f) / 4f, 1f)
-                Draw.colorl(dark)
-                Fill.rect(tile.x + 0.5f, tile.y + 0.5f, 1f, 1f)
-            }
-        }
-
-        Draw.flush()
-        Draw.color()
-        dark.end()
+        updateDarkness(getData(Vars.world.tiles))
     }
 
     override fun invalidateTile(tile: Tile) {
-        val avgx = (Core.camera.position.x / Vars.tilesize).toInt()
-        val avgy = (Core.camera.position.y / Vars.tilesize).toInt()
-        val rangex = (Core.camera.width / Vars.tilesize / 2).toInt() + 3
-        val rangey = (Core.camera.height / Vars.tilesize / 2).toInt() + 3
-
-        if (abs(avgx - tile.x) <= rangex && abs(avgy - tile.y) <= rangey) {
-            lastCamX = -99
-            lastCamY = lastCamX //invalidate camera position so blocks get updated
-        }
     }
 
     override fun getShadowBuffer(): FrameBuffer {
-        return shadows
+        return getData(Vars.world.tiles).shadows
     }
 
     override fun removeFloorIndex(tile: Tile) {
-        if (indexFloor(tile)) floorTree.remove(tile)
+        if (indexFloor(tile)) getData(tile.tiles).floorTree.remove(tile)
     }
 
     override fun addFloorIndex(tile: Tile) {
-        if (indexFloor(tile)) floorTree.insert(tile)
+        if (indexFloor(tile)) getData(tile.tiles).floorTree.insert(tile)
     }
 
     fun indexBlock(tile: Tile): Boolean {
@@ -271,72 +255,95 @@ class OBlockRenderer : BlockRendererI() {
     }
 
     fun indexFloor(tile: Tile): Boolean {
-        return tile.block() === Blocks.air && tile.floor().emitLight && Vars.world.getDarkness(
+        return tile.block() === Blocks.air && tile.floor().emitLight && tile.tiles.getDarkness(
             tile.x.toInt(),
             tile.y.toInt()
         ) < 3
     }
 
     fun recordIndex(tile: Tile) {
+        val data = getData(tile.tiles)
         if (indexBlock(tile)) {
-            blockTree.insert(tile)
-            blockLightTree.insert(tile)
-            if (tile.build is G3DrawBuilding) block3DTree.insert(tile)
+            data.blockTree.insert(tile)
+            data.blockLightTree.insert(tile)
+            if (tile.build is G3DrawBuilding) data.block3DTree.insert(tile)
         }
-        if (indexFloor(tile)) floorTree.insert(tile)
+        if (indexFloor(tile)) data.floorTree.insert(tile)
     }
 
     override fun recacheWall(tile: Tile) {
+        val data = getData(tile.tiles)
         for (cx in tile.x - Vars.darkRadius..tile.x + Vars.darkRadius) {
             for (cy in tile.y - Vars.darkRadius..tile.y + Vars.darkRadius) {
-                val other = Vars.world.tile(cx, cy)
+                val other = tile.tiles.get(cx, cy)
                 if (other != null) {
-                    darkEvents.add(other.pos())
-                    floor.recacheTile(other)
+                    data.darkEvents.add(other.pos())
+                    floorL.recacheTile(data, other.x.toInt(), other.y.toInt())
+                }
+            }
+        }
+    }
+
+    fun checkChanges(data: TilesRenderData) {
+        data.apply {
+            darkEvents.each { pos: Int ->
+                val tile = tiles.getp(pos)
+                if (tile != null && tile.block().fillsTile) {
+                    tile.data = tiles.getWallDarkness(tile)
                 }
             }
         }
     }
 
     fun checkChanges() {
-        darkEvents.each { pos: Int ->
-            val tile = Vars.world.tile(pos)
-            if (tile != null && tile.block().fillsTile) {
-                tile.data = Vars.world.getWallDarkness(tile)
+        //TODO
+        checkChanges(getData(Vars.world.tiles))
+    }
+
+    fun processDarkness(data: TilesRenderData) {
+        data.apply {
+            if (!darkEvents.isEmpty) {
+                Draw.flush()
+
+                dark.begin()
+                Draw.proj().setOrtho(0f, 0f, dark.width.toFloat(), dark.height.toFloat())
+
+                darkEvents.each({ pos: Int ->
+                    val tile = tiles.getp(pos) ?: return@each
+                    val darkness = tiles.getDarkness(tile.x.toInt(), tile.y.toInt())
+                    //then draw the shadow
+                    Draw.colorl(if (darkness <= 0f) 1f else 1f - min((darkness + 0.5f) / 4f, 1f))
+                    Fill.rect(tile.x + 0.5f, tile.y + 0.5f, 1f, 1f)
+                })
+
+                Draw.flush()
+                Draw.color()
+                dark.end()
+                darkEvents.clear()
+
+                Draw.proj(Core.camera)
             }
         }
     }
 
     fun processDarkness() {
-        if (!darkEvents.isEmpty) {
-            Draw.flush()
+        processDarkness(getData(Vars.world.tiles))
+    }
 
-            dark.begin()
-            Draw.proj().setOrtho(0f, 0f, dark.width.toFloat(), dark.height.toFloat())
-
-            darkEvents.each(Intc { pos: Int ->
-                val tile = Vars.world.tile(pos) ?: return@Intc
-                val darkness = Vars.world.getDarkness(tile.x.toInt(), tile.y.toInt())
-                //then draw the shadow
-                Draw.colorl(if (darkness <= 0f) 1f else 1f - min((darkness + 0.5f) / 4f, 1f))
-                Fill.rect(tile.x + 0.5f, tile.y + 0.5f, 1f, 1f)
-            })
-
-            Draw.flush()
-            Draw.color()
-            dark.end()
-            darkEvents.clear()
-
-            Draw.proj(Core.camera)
+    fun drawDarkness(data: TilesRenderData) {
+        //TODO
+        data.apply {
+            Draw.shader(OCShaders.darkness)
+            Draw.fbo(dark.texture, Vars.world.width(), Vars.world.height(), Vars.tilesize, Vars.tilesize / 2f)
+            Draw.shader()
         }
     }
 
     fun drawDarkness() {
-        Draw.shader(OCShaders.darkness)
-        Draw.fbo(dark.texture, Vars.world.width(), Vars.world.height(), Vars.tilesize, Vars.tilesize / 2f)
-        Draw.shader()
+        drawDarkness(getData(Vars.world.tiles))
     }
 
+    /*
     fun drawDestroyed() {
         if (!Core.settings.getBool("destroyedblocks")) return
 
@@ -367,120 +374,174 @@ class OBlockRenderer : BlockRendererI() {
             }
             Draw.reset()
         }
+    }*/
+
+    fun processShadows(data: TilesRenderData) {
+        data.apply {
+            if (!shadowEvents.isEmpty) {
+                Draw.flush()
+
+                shadows.begin()
+                Draw.proj().setOrtho(0f, 0f, tiles.width.toFloat() + 2f, tiles.height.toFloat() + 2f)
+
+                for (tile in shadowEvents) {
+                    if (tile == null) continue
+                    //draw white/shadow color depending on blend
+                    Draw.color(
+                        if (!tile.block()
+                                .displayShadow(tile) || (Vars.state.rules.fog && tile.build != null && !tile.build.wasVisible)
+                        ) Color.white else blendShadowColor
+                    )
+                    Fill.rect(tile.x + 1.5f, tile.y + 1.5f, 1f, 1f)
+                }
+
+                Draw.flush()
+                Draw.color()
+                shadows.end()
+                shadowEvents.clear()
+
+                Draw.proj(Core.camera)
+            }
+        }
     }
 
     override fun processShadows() {
-        if (!shadowEvents.isEmpty) {
-            Draw.flush()
+        for (tiles in Vars.world.allTiles) {
+            if (tiles.craft == null) continue
+            processShadows(getData(tiles))
+        }
+    }
 
-            shadows.begin()
-            Draw.proj().setOrtho(0f, 0f, shadows.width.toFloat(), shadows.height.toFloat())
+    fun drawShadows(data: TilesRenderData) {
+        data.apply {
+            val MAX = 25
+            val craft = tiles.craft
+            if (tiles.width <= MAX && tiles.height <= MAX) {
+                tmpMat1.set(OGraphics.trans3D())
+                tmpM.set(Draw.trans())
+                OGraphics.trans3D().translate(0f, 0f, data.tiles.craft.height())
+                Draw.trans(craft.trans())
+                Tmp.tr1.set(shadows.texture)
+                Tmp.tr1.set(0f, 1f, 1f, 0f)
 
-            for (tile in shadowEvents) {
-                if (tile == null) continue
-                //draw white/shadow color depending on blend
-                Draw.color(
-                    if (!tile.block()
-                            .displayShadow(tile) || (Vars.state.rules.fog && tile.build != null && !tile.build.wasVisible)
-                    ) Color.white else blendShadowColor
+                Draw.shader(OCShaders.darkness)
+                Draw.rect(
+                    Tmp.tr1,
+                    tiles.unitWidth().toFloat() / 2f - Vars.tilesize / 2f,
+                    tiles.unitHeight().toFloat() / 2f - Vars.tilesize / 2f,
+                    tiles.unitWidth().toFloat() + 2f * Vars.tilesize,
+                    tiles.unitHeight().toFloat() + 2f * Vars.tilesize
                 )
-                Fill.rect(tile.x + 0.5f, tile.y + 0.5f, 1f, 1f)
+                Draw.shader()
+
+                OGraphics.trans3D(tmpMat1)
+                Draw.trans(tmpM)
+            } else {
+                //TODO
+                val ww = (tiles.width * Vars.tilesize + Vars.tilesize * 2).toFloat()
+                val wh = (tiles.height * Vars.tilesize + Vars.tilesize * 2).toFloat()
+                val bounds = Core.camera.bounds(Tmp.r3).grow(Vars.tilesize * 2f)
+                TilesHandler.rect(bounds, craft.inv())
+                val x = bounds.x + Vars.tilesize * 1.5f
+                val y = bounds.y + Vars.tilesize * 1.5f
+                val u = x / ww
+                val v = y / wh
+                val u2 = (x + bounds.width) / ww
+                val v2 = (y + bounds.height) / wh
+
+                Tmp.tr1.set(shadows.texture)
+                Tmp.tr1.set(u, v2, u2, v)
+                tmpMat1.set(OGraphics.trans3D())
+                tmpM.set(Draw.trans())
+                OGraphics.trans3D().translate(0f, 0f, data.tiles.craft.height())
+                Draw.trans(craft.trans())
+
+                Draw.shader(OCShaders.darkness)
+                Draw.rect(
+                    Tmp.tr1,
+                    bounds.x + bounds.width / 2,
+                    bounds.y + bounds.height / 2,
+                    bounds.width,
+                    bounds.height
+                )
+                Draw.shader()
+
+                OGraphics.trans3D(tmpMat1)
+                Draw.trans(tmpM)
             }
-
-            Draw.flush()
-            Draw.color()
-            shadows.end()
-            shadowEvents.clear()
-
-            Draw.proj(Core.camera)
         }
     }
 
     fun drawShadows() {
-        // processShadows()
-        val ww = (Vars.world.width() * Vars.tilesize).toFloat()
-        val wh = (Vars.world.height() * Vars.tilesize).toFloat()
-        val x = Core.camera.position.x + Vars.tilesize / 2f
-        val y = Core.camera.position.y + Vars.tilesize / 2f
-        val u = (x - Core.camera.width / 2f) / ww
-        val v = (y - Core.camera.height / 2f) / wh
-        val u2 = (x + Core.camera.width / 2f) / ww
-        val v2 = (y + Core.camera.height / 2f) / wh
+        for (tiles in Vars.world.allTiles) {
+            if (tiles.craft == null) continue
+            drawShadows(getData(tiles))
+        }
+    }
 
-        Tmp.tr1.set(shadows.texture)
-        Tmp.tr1.set(u, v2, u2, v)
-
-        Draw.shader(OCShaders.darkness)
-        Draw.rect(Tmp.tr1, Core.camera.position.x, Core.camera.position.y, Core.camera.width, Core.camera.height)
-        Draw.shader()
+    fun processBlocks() {
+        for (tiles in Vars.world.allTiles) {
+            if (tiles.craft == null) continue
+            processBlocks(getData(tiles))
+        }
     }
 
     /** Process all blocks to draw.  */
-    fun processBlocks() {
-        val avgx = (Core.camera.position.x / Vars.tilesize).toInt()
-        val avgy = (Core.camera.position.y / Vars.tilesize).toInt()
-
-        val rangex = (Core.camera.width / Vars.tilesize / 2).toInt()
-        val rangey = (Core.camera.height / Vars.tilesize / 2).toInt()
-
-        if (!Vars.state.isPaused) {
-            val updates = updateFloors.size
-            val uitems = updateFloors.items
-            for (i in 0..<updates) {
-                val tile: UpdateRenderState = uitems[i]!!
-                tile.floor.renderUpdate(tile)
+    fun processBlocks(data: TilesRenderData) {
+        data.apply {
+            if (!Vars.state.isPaused) {
+                val updates = updateFloors.size
+                val uitems = updateFloors.items
+                for (i in 0..<updates) {
+                    val tile: UpdateRenderState = uitems[i]!!
+                    tile.floor.renderUpdate(tile)
+                }
             }
-        }
 
+            val craft = tiles.craft
 
-        if (avgx == lastCamX && avgy == lastCamY && lastRangeX == rangex && lastRangeY == rangey) {
-            return
-        }
+            tileview.clear()
+            lightview.clear()
+            g3dview.clear()
+            procLinks.clear()
+            procLights.clear()
+            proc3D.clear()
 
-        tileview.clear()
-        lightview.clear()
-        g3dview.clear()
-        procLinks.clear()
-        procLights.clear()
-        proc3D.clear()
+            val bounds = Core.camera.bounds(Tmp.r3).grow(Vars.tilesize * 2f)
+            TilesHandler.rect(bounds, craft.inv())
 
-        val bounds = Core.camera.bounds(Tmp.r3).grow(Vars.tilesize * 2f)
+            //draw floor lights
+            floorTree.intersect(bounds) { value: Tile -> lightview.add(value) }
 
-        //draw floor lights
-        floorTree.intersect(bounds) { value: Tile -> lightview.add(value) }
-
-        blockLightTree.intersect(bounds) { tile: Tile ->
-            if (tile.block().emitLight && (tile.build == null || procLights.add(tile.build.pos()))) {
-                lightview.add(tile)
+            blockLightTree.intersect(bounds) { tile: Tile ->
+                if (tile.block().emitLight && (tile.build == null || procLights.add(tile.build.pos()))) {
+                    lightview.add(tile)
+                }
             }
-        }
 
-        block3DTree.intersect(bounds) { tile: Tile ->
-            if (tile.build != null && tile.build is G3DrawBuilding && proc3D.add(tile.build.id)) {
-                g3dview.add(tile)
+            block3DTree.intersect(bounds) { tile: Tile ->
+                if (tile.build != null && tile.build is G3DrawBuilding && proc3D.add(tile.build.id)) {
+                    g3dview.add(tile)
+                }
             }
-        }
 
-        blockTree.intersect(bounds) { tile: Tile ->
-            if (tile.build == null || procLinks.add(tile.build.id)) {
-                tileview.add(tile)
-            }
-            if (tile.build != null && tile.build.power != null && tile.build.power.links.size > 0) {
-                for (other in tile.build.getPowerConnections(outArray2)) {
-                    if (other.block is PowerNode && procLinks.add(other.id)) { //TODO need a generic way to render connections!
-                        tileview.add(other.tile)
+            blockTree.intersect(bounds) { tile: Tile ->
+                if (tile.build == null || procLinks.add(tile.build.id)) {
+                    tileview.add(tile)
+                }
+                if (tile.build != null && tile.build.power != null && tile.build.power.links.size > 0) {
+                    for (other in tile.build.getPowerConnections(outArray2)) {
+                        if (other.block is PowerNode && procLinks.add(other.id)) { //TODO need a generic way to render connections!
+                            tileview.add(other.tile)
+                        }
                     }
                 }
             }
         }
-
-        lastCamX = avgx
-        lastCamY = avgy
-        lastRangeX = rangex
-        lastRangeY = rangey
     }
 
     //debug method for drawing block bounds
+    /*
     fun drawTree(tree: QuadTree<Tile>) {
         Draw.color(Color.blue)
         Lines.rect(tree.bounds)
@@ -491,7 +552,7 @@ class OBlockRenderer : BlockRendererI() {
             Tmp.r1.setCentered(
                 tile.worldx() + block.offset,
                 tile.worldy() + block.offset,
-                block.clipSize,
+ block.clipSize,
                 block.clipSize
             )
             Lines.rect(Tmp.r1)
@@ -504,14 +565,24 @@ class OBlockRenderer : BlockRendererI() {
             drawTree(tree.topRight)
         }
         Draw.reset()
-    }
+    }*/
 
-    fun g3dEach(cons: (G3DrawBuilding) -> Unit) {
-        g3dview.each { tile: Tile ->
+    fun g3dEach(data: TilesRenderData, cons: (G3DrawBuilding) -> Unit) {
+        tmpMat1.set(Oxygen.trans3D)
+        Oxygen.trans3D.mul(data.tiles.craft.trans().to3D(tmpMat2)).translate(0f, 0f, data.tiles.craft.height())
+        data.g3dview.each { tile: Tile ->
             val build = tile.build
             if (build != null && build is G3DrawBuilding) {
                 cons(build)
             }
+        }
+        Oxygen.trans3D.set(tmpMat1)
+    }
+
+    fun g3dEach(cons: (G3DrawBuilding) -> Unit) {
+        for (tiles in Vars.world.allTiles) {
+            if (tiles.craft == null) continue
+            g3dEach(getData(tiles), cons)
         }
     }
 
@@ -523,100 +594,112 @@ class OBlockRenderer : BlockRendererI() {
         g3dEach(G3DrawBuilding::draw3D)
     }
 
-    fun drawBlocks() {
-        val pteam = Vars.player.team()
+    fun drawBlocks(data: TilesRenderData) {
+        data.apply {
+            tmpMat1.set(OGraphics.trans3D())
+            OGraphics.trans3D().translate(0f, 0f, tiles.craft.height() + 2f)
+            tmpM.set(Draw.trans())
+            Draw.trans(tiles.craft.trans())
 
-        drawDestroyed()
+            val pteam = Vars.player.team()
 
-        //draw most tile stuff
-        for (i in 0..<tileview.size) {
-            val tile = tileview.items[i]
-            val block = tile.block()
-            val build = tile.build
+            //TODO
+            //drawDestroyed()
 
-            Draw.z(Layer.block)
+            //draw most tile stuff
+            for (i in 0..<tileview.size) {
+                val tile = tileview.items[i]
+                val block = tile.block()
+                val build = tile.build
 
-            val visible = (build == null || !build.inFogTo(pteam))
-
-            //comment wasVisible part for hiding?
-            if (block !== Blocks.air && (visible || build.wasVisible)) {
-                block.drawBase(tile)
-                Draw.reset()
                 Draw.z(Layer.block)
 
-                if (block.customShadow) {
-                    Draw.z(Layer.block - 1)
-                    block.drawShadow(tile)
+                val visible = (build == null || !build.inFogTo(pteam))
+
+                //comment wasVisible part for hiding?
+                if (block !== Blocks.air && (visible || build.wasVisible)) {
+                    block.drawBase(tile)
+                    Draw.reset()
                     Draw.z(Layer.block)
-                }
 
-                if (build != null) {
-                    if (visible) {
-                        build.visibleFlags = build.visibleFlags or (1L shl pteam.id)
-                        if (!build.wasVisible) {
-                            build.wasVisible = true
-                            updateShadow(build)
-                            Vars.renderer.minimap.update(tile)
-                        }
-                    }
-
-                    if (build.damaged()) {
-                        Draw.z(Layer.blockCracks)
-                        build.drawCracks()
+                    if (block.customShadow) {
+                        Draw.z(Layer.block - 1)
+                        block.drawShadow(tile)
                         Draw.z(Layer.block)
                     }
 
-                    if (build.team !== pteam) {
-                        if (build.block.drawTeamOverlay) {
-                            build.drawTeam()
+                    if (build != null) {
+                        if (visible) {
+                            build.visibleFlags = build.visibleFlags or (1L shl pteam.id)
+                            if (!build.wasVisible) {
+                                build.wasVisible = true
+                                updateShadow(build)
+                                Vars.renderer.minimap.update(tile)
+                            }
+                        }
+
+                        if (build.damaged()) {
+                            Draw.z(Layer.blockCracks)
+                            build.drawCracks()
                             Draw.z(Layer.block)
                         }
-                    } else if (Vars.renderer.drawStatus && block.hasConsumers) {
-                        build.drawStatus()
+
+                        if (build.team !== pteam) {
+                            if (build.block.drawTeamOverlay) {
+                                build.drawTeam()
+                                Draw.z(Layer.block)
+                            }
+                        } else if (Vars.renderer.drawStatus && block.hasConsumers) {
+                            build.drawStatus()
+                        }
+                    }
+                    Draw.reset()
+                } else if (!visible) {
+                    //TODO here is the question: should buildings you lost sight of remain rendered? if so, how should this information be stored?
+                    //uncomment lines below for buggy persistence
+                    //if(build.wasVisible) updateShadow(build);
+                    //build.wasVisible = false;
+                }
+            }
+
+            if (Vars.renderer.lights.enabled()) {
+                //draw lights
+                for (i in 0..<lightview.size) {
+                    val tile = lightview.items[i]
+                    val entity = tile.build
+
+                    if (entity != null) {
+                        entity.drawLight()
+                    } else if (tile.block().emitLight) {
+                        tile.block().drawEnvironmentLight(tile)
+                    } else if (tile.floor().emitLight && tile.block() === Blocks.air) { //only draw floor light under non-solid blocks
+                        tile.floor().drawEnvironmentLight(tile)
                     }
                 }
-                Draw.reset()
-            } else if (!visible) {
-                //TODO here is the question: should buildings you lost sight of remain rendered? if so, how should this information be stored?
-                //uncomment lines below for buggy persistence
-                //if(build.wasVisible) updateShadow(build);
-                //build.wasVisible = false;
             }
-        }
 
-        if (Vars.renderer.lights.enabled()) {
-            //draw lights
-            for (i in 0..<lightview.size) {
-                val tile = lightview.items[i]
-                val entity = tile.build
+            if (drawQuadtreeDebug) {
+                //TODO remove
+                Draw.z(Layer.overlayUI)
+                Lines.stroke(1f, Color.green)
 
-                if (entity != null) {
-                    entity.drawLight()
-                } else if (tile.block().emitLight) {
-                    tile.block().drawEnvironmentLight(tile)
-                } else if (tile.floor().emitLight && tile.block() === Blocks.air) { //only draw floor light under non-solid blocks
-                    tile.floor().drawEnvironmentLight(tile)
+                blockTree.intersect(Core.camera.bounds(Tmp.r1)) { tile: Tile? ->
+                    Lines.rect(tile!!.getHitbox(Tmp.r2))
                 }
-            }
-        }
 
-        if (drawQuadtreeDebug) {
-            //TODO remove
-            Draw.z(Layer.overlayUI)
-            Lines.stroke(1f, Color.green)
-
-            blockTree.intersect(Core.camera.bounds(Tmp.r1)) { tile: Tile? ->
-                Lines.rect(tile!!.getHitbox(Tmp.r2))
+                Draw.reset()
             }
 
-            Draw.reset()
+            OGraphics.trans3D(tmpMat1)
+            Draw.trans(tmpM)
         }
     }
 
+    /*
     fun eachDrawBlocks(func: Cons<Block>) {
         val pteam = Vars.player.team()
 
-        drawDestroyed()
+        //drawDestroyed()
 
         //draw most tile stuff
         for (i in 0..<tileview.size) {
@@ -633,11 +716,14 @@ class OBlockRenderer : BlockRendererI() {
                 func.get(block)
             }
         }
-    }
+    }*/
 
 
     override fun updateShadow(build: Building) {
         if (build.tile == null) return
+        if (build.tile.tiles.craft == null) return
+
+        val data = getData(build.tile.tiles)
         val size = build.block.size
         val of = build.block.sizeOffset
         val tx = build.tile.x.toInt()
@@ -645,13 +731,14 @@ class OBlockRenderer : BlockRendererI() {
 
         for (x in 0..<size) {
             for (y in 0..<size) {
-                shadowEvents.add(Vars.world.tile(x + tx + of, y + ty + of))
+                data.shadowEvents.add(data.tiles.get(x + tx + of, y + ty + of))
             }
         }
     }
 
-    override fun updateShadowTile(tile: Tile?) {
-        shadowEvents.add(tile)
+    override fun updateShadowTile(tile: Tile) {
+        if (tile.tiles.craft == null) return
+        getData(tile.tiles).shadowEvents.add(tile)
     }
 
     override fun getCracks(building: Building?): Array<Array<TextureRegion?>?> {

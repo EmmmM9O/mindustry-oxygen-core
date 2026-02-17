@@ -1,7 +1,7 @@
 #ifndef SHADOW_GLSL
 #define SHADOW_GLSL
 const float c_bias = 0.005;
-#define AUTO_BIOS max(0.05 * (1.0 - dot(normal, lightDir)), c_bias)
+#define AUTO_BIOS max(0.005 * (1.0 - dot(normal, lightDir)), c_bias)
 // Basic shadow function
 float basicShadow(sampler2D shadowMap, vec3 projCoords, float bias) {
     if (projCoords.z > 1.0 || projCoords.x < 0.0 || projCoords.x > 1.0 || projCoords.y < 0.0 || projCoords.y > 1.0) {

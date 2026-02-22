@@ -51,9 +51,6 @@ object basicShaderEnd : OShaderProcessor {
                         "#endif\n" + source
         }
 
-        if (Core.gl30 == null) {
-            throw ArcRuntimeException("OpenGL 3.0 not supported by this device")
-        }
         val version =
             if (source.contains("#version ")) "" else
                 if (Core.app.isDesktop()) (if (Core.graphics.getGLVersion()

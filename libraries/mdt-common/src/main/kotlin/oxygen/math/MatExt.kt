@@ -24,3 +24,17 @@ fun Mat.to3D(mat4: Mat3D): Mat3D {
 }
 
 fun Mat.to3D(): Mat3D = to3D(Mat3D())
+
+fun Mat3D.noTranslation(): Mat3D {
+    val m = this.`val`
+    m[Mat3D.M03] = 0f
+    m[Mat3D.M13] = 0f
+    m[Mat3D.M23] = 0f
+
+    m[Mat3D.M30] = 0f
+    m[Mat3D.M31] = 0f
+    m[Mat3D.M32] = 0f
+
+    m[Mat3D.M33] = 1f
+    return this
+}

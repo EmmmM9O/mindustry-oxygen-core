@@ -3,11 +3,12 @@ package oxygen.core
 import arc.*
 import arc.util.*
 import mindustry.*
-import mindustry.mod.*
 import mindustry.graphics.*
+import mindustry.mod.*
 import oxygen.*
 import oxygen.graphics.*
 import oxygen.graphics.g2d.*
+import oxygen.input.*
 import oxygen.util.*
 import oxygen.util.Marks
 
@@ -91,6 +92,16 @@ class OCPreloader : Preloader() {
         app.add(Oxygen.renderer)
         log.atInfo {
             message("Replace renderer")
+            mark(omark)
+        }
+    }
+
+    override fun resetPlayer() {
+        if (error) return
+        Oxygen.input = if (Vars.mobile) OMobileInput() else ODesktopInput()
+        Vars.control.input = Oxygen.input
+        log.atInfo {
+            message("Setup inputHandler")
             mark(omark)
         }
     }

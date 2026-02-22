@@ -1,18 +1,17 @@
 package oxygen.graphics.bloom
 
 import arc.*
-import arc.math.*
-import arc.util.*
 import arc.graphics.*
 import arc.graphics.g2d.*
 import arc.graphics.gl.*
-import arc.graphics.Pixmap.*
+import arc.math.*
+import arc.util.*
 import oxygen.graphics.*
 import oxygen.graphics.gl.*
 
 open class CompareBloom(width: Int, height: Int, hasDepth:Boolean): CaptureBloom() {
     var enableTest = false
-    var choice = 0
+    var choice = 3
     var blooms:MutableList<OBloom> = mutableListOf()
     lateinit var fbo: FrameBuffer
 
@@ -77,6 +76,7 @@ open class CompareBloom(width: Int, height: Int, hasDepth:Boolean): CaptureBloom
     override fun render(texture:Texture){
         if(!enableTest){
             if(choice == 0){
+                prework()
                 shader.bind()
                 shader.setUniformMatrix4("u_trans", Tmp.m3.idt())
                 Draw.blit(texture,shader)
@@ -86,6 +86,7 @@ open class CompareBloom(width: Int, height: Int, hasDepth:Boolean): CaptureBloom
             }
             return
         }
+        prework()
         shader.bind()
         shader.setUniformMatrix4("u_trans", getMat(0,Tmp.m3.idt()))
         Draw.blit(texture,shader)

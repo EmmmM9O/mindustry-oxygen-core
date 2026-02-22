@@ -1,7 +1,6 @@
 package oxygen.graphics
 
 import arc.*
-import arc.func.*
 import arc.graphics.*
 import arc.graphics.g2d.*
 import arc.graphics.gl.*
@@ -10,7 +9,7 @@ import arc.math.geom.*
 import arc.struct.*
 import arc.util.*
 import mindustry.*
-import mindustry.game.EventType.*
+import mindustry.game.EventType.WorldLoadEvent
 import mindustry.graphics.*
 import mindustry.world.*
 import mindustry.world.blocks.environment.*
@@ -218,7 +217,7 @@ class OFloorRenderer : FloorRendererI() {
         sh.bind()
         //coordinates of geometry are normalized to [0, 1] based on map size (normWidth/normHeight), so the matrix needs to be updated accordingly
         combinedMat.set(Oxygen.trans3D).mul(data.tiles.craft.trans().to3D(tmpMat))
-            .translate(0f, 0f, data.tiles.craft.height() - 2f).translate(-packPad, -packPad, realZ)
+            .translate(0f, 0f, data.tiles.craft.height() - 1f).translate(-packPad, -packPad, realZ)
             .scale(data.packWidth, data.packHeight, 1f)
         sh.setUniformMatrix4("u_trans", combinedMat.`val`)
         sh.setUniformMatrix4("u_proj", OGraphics.proj3D().`val`)

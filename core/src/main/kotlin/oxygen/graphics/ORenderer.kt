@@ -14,26 +14,28 @@ import arc.struct.*
 import arc.util.*
 import mindustry.*
 import mindustry.core.*
+import mindustry.entities.*
+import mindustry.entities.units.*
+import mindustry.game.*
 import mindustry.game.EventType.*
 import mindustry.game.MapObjectives.MapObjective
-import mindustry.world.blocks.environment.Floor.UpdateRenderState
 import mindustry.gen.*
 import mindustry.graphics.*
 import mindustry.graphics.g3d.*
 import mindustry.maps.*
-import mindustry.world.*
 import mindustry.type.*
-import mindustry.entities.*
+import mindustry.world.*
 import mindustry.world.blocks.*
+import mindustry.world.blocks.ConstructBlock.ConstructBuild
+import mindustry.world.blocks.environment.Floor.UpdateRenderState
 import oxygen.*
 import oxygen.Oxygen.lightCam
 import oxygen.Oxygen.lightDir
 import oxygen.Oxygen.log
+import oxygen.graphics.OBlockRenderer.*
 import oxygen.graphics.bloom.*
 import oxygen.math.*
-import oxygen.world.*
 import oxygen.world.blocks.*
-import oxygen.graphics.OBlockRenderer.*
 import kotlin.math.*
 
 class ORenderer : RendererI() {
@@ -56,6 +58,9 @@ class ORenderer : RendererI() {
     val tmpMat = Mat3D()
     val tmpMat1 = Mat3D()
     val tmpMat2 = Mat3D()
+
+    val m1 = Mat()
+    val m3 = Mat3D()
 
     // Shaderi
     val shadowMapSize = 1024
@@ -85,6 +90,7 @@ class ORenderer : RendererI() {
 
     fun reloadData(data: TilesRenderData) {
         renderDatas.set(data.tiles.id, data)
+        if (data.tiles == Vars.world.tiles) data.dark = FrameBuffer()
         blocksL.floorL.reload(data, false)
         blocksL.reload(data)
     }
@@ -103,6 +109,7 @@ class ORenderer : RendererI() {
 
     init {
         blocks = blocksL
+        overlays = OOverlayRenderer()
         Core.camera = Camera()
         Shaders.init()
 
@@ -135,13 +142,13 @@ class ORenderer : RendererI() {
 
     override fun init() {
         OCShaders.init()
-        obloom = StandardDualFilterBloom()
-        /*
+        //obloom = StandardDualFilterBloom()
+
         obloom = CompareBloom().apply {
             blooms.add(PyramidStandardDualBloom())
             blooms.add(PyramidFourNAvgBloom())
             blooms.add(StandardDualFilterBloom())
-        }*/
+        }
         planets = PlanetRenderer()
 
         if (Core.settings.getBool("bloom", true)) {
@@ -343,16 +350,41 @@ class ORenderer : RendererI() {
         Groups.draw.draw(::drawObj)
     }
 
+    fun drawTilesFunc(craft: TilesCraftc, func: () -> Unit) {
+        m3.set(OGraphics.trans3D())
+        OGraphics.trans3D().translate(0f, 0f, craft.height())
+        m1.set(Draw.trans())
+        Draw.trans(craft.trans())
+        func()
+        OGraphics.trans3D(m3)
+        Draw.trans(m1)
+    }
+
+    fun drawTilesCraft(craft: TilesCraftc) {
+        val type = craft.craftType()
+        if (!type.drawUnit) return
+        m3.set(OGraphics.trans3D())
+        OGraphics.trans3D().translate(0f, 0f, craft.height())
+        m1.set(Draw.trans())
+        if (craft.father() != null) Draw.trans(craft.father().trans())
+        else Draw.trans().idt()
+
+        craft.draw()
+
+        OGraphics.trans3D(m3)
+        Draw.trans(m1)
+    }
+
     fun drawObj(obj: Drawc) {
         if (obj is Heightc) {
             OGraphics.realZ(obj.height())
-            ZDraw.height = obj.height() + 4f
+            ZDraw.height = obj.height()
         } else {
-            OGraphics.realZ(4f)
-            ZDraw.height = 4f
+            OGraphics.realZ(2f)
+            ZDraw.height = 2f
         }
         if (obj is TilesCraftc) {
-            if (obj.craftType().drawUnit) obj.draw()
+            drawTilesCraft(obj)
         } else obj.draw()
         ZDraw.height = 0f
     }
@@ -371,6 +403,27 @@ class ORenderer : RendererI() {
             { Draw.shader() })
             */
         //render all matching environments
+    }
+
+    fun draw3DDepth() {
+        for (tiles in Vars.world.allTiles) {
+            val obj = tiles.craft
+            if (obj == null) continue
+            val data = getData(tiles)
+            m3.set(OGraphics.trans3D())
+            OGraphics.trans3D().translate(0f, 0f, obj.height())
+            m1.set(Draw.trans())
+            Draw.trans(obj.trans())
+            OGraphics.setupMatrices()
+
+            Gl.enable(Gl.cullFace)
+            Gl.cullFace(Gl.front)
+            blocksL.g3dEach(data, G3DrawBuilding::drawDepth)
+            Gl.disable(Gl.cullFace)
+
+            OGraphics.trans3D(m3)
+            Draw.trans(m1)
+        }
     }
 
     fun updateLight(width: Float, height: Float) {
@@ -442,6 +495,7 @@ class ORenderer : RendererI() {
 
         Draw.sort(true)
         Gl.depthMask(true)
+        OGraphics.g3d(true)
 
         if (!showShadowMap) shadowBuffer.begin()
         DepthFunc.lequal.apply()
@@ -451,7 +505,7 @@ class ORenderer : RendererI() {
         Gl.enable(Gl.depthTest)
         Gl.enable(Gl.cullFace)
         Gl.cullFace(Gl.front)
-        blocksL.draw3DDepth()
+        draw3DDepth()
         Gl.disable(Gl.cullFace)
 
         drawFloor(true)
@@ -514,25 +568,28 @@ class ORenderer : RendererI() {
             Groups.draw.draw { obj: Drawc ->
                 objs.add(obj as Object)
             }
-            objs.sort { obj -> if (obj is Heightc) obj.height else 0f }
+            objs.sort { obj ->
+                if (obj is Heightc) if (obj is TilesCraftc) obj.height - 4f else obj.height
+                else 0f
+            }
 
             blocksL.floorL.drawDepth = false
 
             for (obj in objs) {
                 if (obj is TilesCraftc) {
-                    ZDraw.height = obj.height() + 4f
-                    if (obj.craftType().drawUnit) obj.draw()
+                    ZDraw.height = obj.height()
+                    val type = obj.craftType()
                     val tiles = obj.tiles()
                     val data = getData(tiles)
+                    Gl.disable(Gl.depthTest)
 
-                    Gl.enable(Gl.cullFace)
-                    Gl.cullFace(Gl.back)
-                    blocksL.g3dEach(data, G3DrawBuilding::draw3D)
-                    Gl.disable(Gl.cullFace)
+                    drawTilesCraft(obj)
 
-                    blocksL.floorL.realZ = 0f
-                    blocksL.floorL.drawFloor(data)
-                    Draw.flush()
+                    if (type.drawFloor) {
+                        blocksL.floorL.realZ = 0f
+                        blocksL.floorL.drawFloor(data)
+                        Draw.flush()
+                    }
 
                     OGraphics.realZ(0f)
                     Draw.draw(Layer.block - 1f) {
@@ -542,7 +599,7 @@ class ORenderer : RendererI() {
 
                     OGraphics.realZ(0f)
                     Draw.z(Layer.block - 0.09f)
-                    blocksL.floorL.realZ = 4f
+                    blocksL.floorL.realZ = 0f
                     blocksL.floorL.beginDraw(data)
                     blocksL.floorL.drawLayer(data, CacheLayer.walls)
                     blocksL.floorL.realZ = 0f
@@ -555,6 +612,20 @@ class ORenderer : RendererI() {
                     Draw.z(Layer.block)
                     blocksL.drawBlocks(data)
                     ZDraw.height = 0f
+                    Gl.enable(Gl.depthTest)
+                    m3.set(OGraphics.trans3D())
+                    OGraphics.trans3D().translate(0f, 0f, obj.height())
+                    m1.set(Draw.trans())
+                    Draw.trans(obj.trans())
+                    OGraphics.setupMatrices()
+
+                    Gl.enable(Gl.cullFace)
+                    Gl.cullFace(Gl.back)
+                    blocksL.g3dEach(data, G3DrawBuilding::draw3D)
+                    Gl.disable(Gl.cullFace)
+
+                    OGraphics.trans3D(m3)
+                    Draw.trans(m1)
                 } else if (obj is Drawc) {
                     drawObj(obj)
                 }
@@ -564,6 +635,7 @@ class ORenderer : RendererI() {
             Draw.shader()
             Draw.sort(true)
             Draw.reset()
+            OGraphics.g3d(false)
             /*
             if (bloom != null) {
                 bloom.resize(Core.graphics.width, Core.graphics.height)
@@ -605,10 +677,16 @@ class ORenderer : RendererI() {
 
             obloom.render()
 
+            Gl.disable(Gl.depthTest)
+            Draw.draw(Layer.plans) { overlays.drawBottom() }
+
+            Draw.draw(Layer.overlayUI) {
+                overlays.drawTop()
+            }
+
             OGraphics.proj3D(tmpMat1)
             OGraphics.trans3D(tmpMat2)
 
-            Gl.disable(Gl.depthTest)
 
             Events.fire(Trigger.drawOver)
 
@@ -646,10 +724,6 @@ class ORenderer : RendererI() {
                 }
             }
             Vars.control.input.drawCommanded()
-            Draw.draw(Layer.plans) { overlays.drawBottom() }
-            Draw.draw(Layer.overlayUI) {
-                overlays.drawTop()
-            }
             Draw.flush()
 
             OGraphics.zbatch.beforeVert = null
@@ -718,6 +792,237 @@ class ORenderer : RendererI() {
         }
     }
 
+    override fun tilesHitbox(tiles: Tiles, tmp: Rect) {
+        val h = tiles.realHeight() / 8f
+        if (h > camPos.z || tiles.craft == null) {
+            tmp.setCentered(8f, 8f, 1f, 1f)
+            return
+        }
+        tiles.hitbox(tmp);
+        val offsetX = tmp.x + tmp.width / 2f - Core.camera.position.x
+        val offsetY = tmp.y + tmp.height / 2f - Core.camera.position.y
+        val scl = camPos.z / (camPos.z - h)
+        tmp.setCentered(
+            Core.camera.position.x + offsetX * scl,
+            Core.camera.position.y + offsetY * scl,
+            tmp.width * scl,
+            tmp.height * scl
+        )
+    }
+
+    override fun perspectiveWorldPos(tiles: Tiles, pos: Vec2) {
+        pos.sub(Core.camera.position).scl(camPos.z / (camPos.z - tiles.realHeight() / 8f)).add(Core.camera.position)
+    }
+
+    fun unporjectTiles(tiles: Tiles, pos: Vec2) {
+        if (tiles.craft == null) return
+        pos.sub(Core.camera.position).scl((camPos.z - tiles.realHeight() / 8f) / camPos.z).add(Core.camera.position)
+            .mul(tiles.craft!!.inv())
+    }
+
+    override fun drawBuildPlans(builder: Unitc) {
+        val type = builder.type()
+        for (entry in builder.tilesPlan()) {
+            val tiles = Vars.world.getTiles(entry.key)
+            val plans = entry.value
+            if (tiles.craft == null) continue
+            drawTilesFunc(tiles.craft) {
+                for (i in 0..1) {
+                    for (plan in plans) {
+                        if (plan.progress > 0.01f || (builder.buildPlan() === plan && plan.initialized && (builder.within(
+                                plan.absDrawx(), plan.absDrawy(),
+                                type.buildRange
+                            ) || Vars.state.isEditor()))
+                        ) continue
+                        if (i == 0) {
+                            drawPlan(builder, plan, 1f)
+                        } else {
+                            drawPlanTop(builder, plan, 1f)
+                        }
+                    }
+                }
+            }
+        }
+
+        Draw.reset()
+    }
+
+    override fun drawPlan(builder: Unitc, plan: BuildPlan, alpha: Float) {
+        plan.animScale = 1f
+        if (plan.breaking) {
+            Vars.control.input.drawBreaking(plan)
+        } else {
+            plan.block.drawPlan(
+                plan, Vars.control.input.allPlans(),
+                Build.validPlace(
+                    plan.block,
+                    builder.team(),
+                    plan.tiles,
+                    plan.x,
+                    plan.y,
+                    plan.rotation
+                ) || Vars.control.input.planMatches(plan),
+                alpha
+            )
+        }
+    }
+
+    override fun drawPlanTop(builder: Unitc, plan: BuildPlan, alpha: Float) {
+        if (!plan.breaking) {
+            Draw.reset()
+            Draw.mixcol(Color.white, 0.24f + Mathf.absin(Time.globalTime, 6f, 0.28f))
+            Draw.alpha(alpha)
+            plan.block.drawPlanConfigTop(plan, builder.plans())
+        }
+    }
+
+    override fun drawBuilding(builder: Unitc) {
+        //TODO make this more generic so it works with builder "weapons"
+        val active = builder.activelyBuilding()
+        if (!active && builder.lastActive() == null) return
+        val type = builder.type()
+
+        Draw.z(Layer.flyingUnit)
+
+        val plan = if (active) builder.buildPlan() else builder.lastActive()
+        val tile = plan.tile()
+        val core = builder.team().core()
+
+        if (tile == null || !builder.within(
+                plan,
+                if (Vars.state.rules.infiniteResources) Float.Companion.MAX_VALUE else type.buildRange
+            )
+        ) {
+            return
+        }
+
+        //draw remote plans.
+        if (core != null && active && !builder.isLocal() && (tile.block() !is ConstructBlock)) {
+            drawTilesFunc(plan.tiles.craft) {
+                Draw.z(Layer.plans - 1f)
+                drawPlan(builder, plan, 0.5f)
+                drawPlanTop(builder, plan, 0.5f)
+                Draw.z(Layer.flyingUnit)
+            }
+        }
+
+        if (type.drawBuildBeam) {
+            val focusLen = type.buildBeamOffset + Mathf.absin(Time.time, 3f, 0.6f)
+            val px = builder.x() + Angles.trnsx(builder.rotation(), focusLen)
+            val py = builder.y() + Angles.trnsy(builder.rotation(), focusLen)
+
+            drawBuildingBeam(builder, px, py)
+        }
+    }
+
+    override fun drawBuildingBeam(builder: Unitc, px: Float, py: Float) {
+        val active = builder.activelyBuilding()
+        if (!active && builder.lastActive() == null) return
+        val type = builder.type()
+
+        Draw.z(Layer.flyingUnit)
+
+        val plan = if (active) builder.buildPlan() else builder.lastActive()
+        val tile = plan.tiles.tile(plan.x, plan.y)
+
+        if (tile == null || !builder.within(
+                plan,
+                if (Vars.state.rules.infiniteResources) Float.Companion.MAX_VALUE else type.buildRange
+            )
+        ) {
+            return
+        }
+
+        val size = if (plan.breaking) if (active) tile.block().size else builder.lastSize() else plan.block.size
+        val tx = plan.absDrawx()
+        val ty = plan.absDrawy()
+
+        Lines.stroke(1f, if (plan.breaking) Pal.remove else Pal.accent)
+        Draw.z(Layer.buildBeam)
+
+        Draw.alpha(builder.buildAlpha())
+
+        if (!active && tile.build !is ConstructBuild) {
+            Fill.square(tx, ty, size * Vars.tilesize / 2f, plan.tiles.craft.rotation())
+        }
+
+        Drawf.buildBeam(px, py, tx, ty, Vars.tilesize * size / 2f)
+
+        Fill.square(px, py, 1.8f + Mathf.absin(Time.time, 2.2f, 1.1f), builder.rotation() + 45)
+
+        Draw.reset()
+        Draw.z(Layer.flyingUnit)
+    }
+
+    override fun drawBeam(
+        x: Float,
+        y: Float,
+        height: Float,
+        rotation: Float,
+        length: Float,
+        id: Int,
+        @Nullable target: Sized?,
+        team: Team?,
+        strength: Float,
+        pulseStroke: Float,
+        pulseRadius: Float,
+        beamWidth: Float,
+        lastEnd: Vec2,
+        offset: Vec2,
+        laserColor: Color,
+        laserTopColor: Color,
+        laser: TextureRegion?,
+        laserEnd: TextureRegion,
+        laserTop: TextureRegion?,
+        laserTopEnd: TextureRegion
+    ) {
+        rand.setSeed((id + (if (target is Entityc) target.id() else 0)).toLong())
+
+        if (target != null) {
+            val originX = x + Angles.trnsx(rotation, length)
+            val originY = y + Angles.trnsy(rotation, length)
+
+            lastEnd.set(target).sub(originX, originY)
+            lastEnd.setLength(max(2f, lastEnd.len()))
+
+            lastEnd.add(
+                offset.trns(
+                    rand.random(360f) + Time.time / 2f,
+                    Mathf.sin(
+                        Time.time + rand.random(200f),
+                        55f,
+                        rand.random(target.hitSize() * 0.2f, target.hitSize() * 0.45f)
+                    )
+                ).rotate(if (target is Rotc) target.rotation() else 0f)
+            )
+
+            lastEnd.add(originX, originY)
+        }
+
+        if (strength > 0.01f) {
+            val originX = x + Angles.trnsx(rotation, length)
+            val originY = y + Angles.trnsy(rotation, length)
+
+            Draw.z(Layer.flyingUnit + 1) //above all units
+
+            Draw.color(laserColor)
+
+            val f = (Time.time / 85f + rand.random(1f)) % 1f
+
+            Draw.alpha(1f - Interp.pow5In.apply(f))
+            Lines.stroke(strength * pulseStroke)
+
+            Lines.circle(lastEnd.x, lastEnd.y, 1f + f * pulseRadius)
+
+            Draw.color(laserColor)
+            Drawf.laser(laser, laserEnd, originX, originY, lastEnd.x, lastEnd.y, strength * beamWidth)
+            Draw.z(Layer.flyingUnit + 1.1f)
+            Draw.color(laserTopColor)
+            Drawf.laser(laserTop, laserTopEnd, originX, originY, lastEnd.x, lastEnd.y, strength * beamWidth)
+            Draw.color()
+        }
+    }
+
     class EnvRenderer(val env: Int, val renderer: Runnable)
 
     companion object {
@@ -752,7 +1057,7 @@ open class TilesRenderData(var tiles: Tiles) : Disposable {
     val updateFloors = Seq<UpdateRenderState>(UpdateRenderState::class.java)
 
     val shadows = FrameBuffer()
-    val dark = FrameBuffer()
+    var dark: FrameBuffer? = null
     val outArray2 = Seq<Building>()
     val shadowEvents = Seq<Tile>()
     val darkEvents = IntSet()
@@ -768,6 +1073,6 @@ open class TilesRenderData(var tiles: Tiles) : Disposable {
             }
         }
         shadows.dispose()
-        dark.dispose()
+        dark?.dispose()
     }
 }

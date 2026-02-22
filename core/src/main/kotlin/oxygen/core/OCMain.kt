@@ -1,8 +1,7 @@
 package oxygen.core
 
-import arc.*
 import arc.util.*
-import mindustry.game.*
+import mindustry.*
 import mindustry.mod.*
 import oxygen.*
 import oxygen.annotations.*
@@ -27,24 +26,24 @@ class OCMain : Mod() {
         var modConfig: ModConfig = ModConfig(NAME, "")
         var preloadFailed = false
         fun fail(reason: String) {
-            Events.run(EventType.ClientLoadEvent::class.java) {
-                val errorDialog = ErrorDialog(reason)
-                Time.run(10f) {
-                    errorDialog.show()
-                }
+            val errorDialog = ErrorDialog(reason)
+            Time.run(10f) {
+                errorDialog.show()
             }
         }
     }
 
     init {
-        try {
-            Class.forName("mindustry.mod.Preloader")
-        } catch (e: ClassNotFoundException) {
-            preloadFailed = true
-            Log.err("mindustry.mod.Preloader not found.Please use Mindustry Oxygen")
-            fail("@dialog.oxygen.error.preload")
+        if (Vars.mods.getMod(NAME) != null) {
+            try {
+                Class.forName("mindustry.mod.Preloader")
+            } catch (e: ClassNotFoundException) {
+                preloadFailed = true
+                Log.err("mindustry.mod.Preloader not found.Please use Mindustry Oxygen")
+                fail("@dialog.oxygen.error.preload")
+            }
+            if (!preloadFailed) Oxygen.init()
         }
-        if (!preloadFailed) Oxygen.init()
     }
 
     override fun init() {

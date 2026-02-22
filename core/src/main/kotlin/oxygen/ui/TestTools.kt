@@ -4,6 +4,7 @@ import arc.*
 import arc.scene.event.*
 import arc.scene.ui.*
 import arc.scene.ui.layout.*
+import mindustry.*
 import mindustry.gen.*
 import mindustry.ui.*
 import oxygen.*
@@ -33,7 +34,7 @@ class TestTools {
             table.table().row()
             table.table { buttons ->
                 buttons.add(floatTable.dragButton).size(32f)
-                buttons.add(visButton).padLeft(10f).size(32f)
+                buttons.add(visButton).size(32f)
                 buttons.button(Icon.starSmall, Styles.cleari) {
                     val bloom = Oxygen.renderer.obloom
                     if (bloom is CompareBloom) {
@@ -48,6 +49,7 @@ class TestTools {
         contentTable = Table(Styles.black6).apply {
             bloomSettings(this)
             rendererSettings(this)
+            playerSettings(this)
         }
         floatTable.add(contentTable).width(400f).height(400f)
         Core.scene.add(floatTable)
@@ -101,7 +103,21 @@ class TestTools {
                 0.05f,
                 renderer.sclColor.b * COLOR_SCL,
                 { renderer.sclColor.b = it / COLOR_SCL })
-        }.grow().fill()
+        }.grow().fill().row()
+    }
+
+    fun playerSettings(table: Table) {
+        table.table { tab ->
+            addSlider(tab, "Height", 0f, 320f, 8f, { Vars.player.unit()?.height ?: 0f }, {
+                val unit = Vars.player.unit()
+                if (unit != null) {
+                    unit.height = it
+                    if (unit is BlockUnitc) {
+                        unit.tile().tiles.craft.height(it)
+                    }
+                }
+            })
+        }.grow().fill().row()
     }
 
     fun addSlider(
@@ -130,4 +146,29 @@ class TestTools {
         table.row()
     }
 
+    fun addSlider(
+        table: Table,
+        name: String,
+        min: Float,
+        max: Float,
+        step: Float,
+        value: () -> Float,
+        onChange: (value: Float) -> Unit
+    ) {
+        val slider = Slider(min, max, step, false)
+        slider.value = value()
+        val valueL = Label("", Styles.outlineLabel)
+        valueL.setText { "%.0f".format(value()) }
+        val content = Table()
+        content.add(name, Styles.outlineLabel).left().growX()
+        content.add(valueL).padLeft(10f).right()
+        content.touchable = Touchable.disabled
+        slider.changed {
+            onChange(slider.value)
+        }
+        slider.change()
+        table.add(slider).left().padLeft(10f).uniformY().width(200f).height(30f)
+        table.add(content).right().uniformY()
+        table.row()
+    }
 }

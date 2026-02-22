@@ -10,6 +10,7 @@ import mindustry.game.*
 import oxygen.annotations.*
 import oxygen.core.*
 import oxygen.graphics.*
+import oxygen.input.*
 import oxygen.ui.*
 import oxygen.util.*
 
@@ -32,6 +33,8 @@ object Oxygen {
     val lightDir = Vec3(-1f, -1f, -1f).nor()
 
     lateinit var renderer: ORenderer
+
+    lateinit var input: OInputHandler
 
     lateinit var testTools: TestTools
 

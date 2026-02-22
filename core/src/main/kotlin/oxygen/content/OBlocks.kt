@@ -30,7 +30,7 @@ open class CubeBlock(name: String) : Block(name) {
 
         envEnabled = Env.any
         if (!Vars.headless) {
-            cubeMesh = Meshes.solidCubeMesh(24f, 24f, 48f)
+            cubeMesh = Meshes.solidCubeMesh(24f, 24f, 24f)
             depthShader = OGShaders.solidDepth
             objShader = OGShaders.solid
         } else {
@@ -43,7 +43,8 @@ open class CubeBlock(name: String) : Block(name) {
     public inner class CubeBuild() : Building(), G3DrawBuilding {
         fun prepare(shader: Shader) {
             shader.bind()
-            OTmp.m1.set(Oxygen.trans3D).translate(x, y, 0f)
+            OTmp.m1.set(OGraphics.combinedTrans()).translate(x, y, 12f)
+            shader.setUniformMatrix4("u_normalMat", OGraphics.normalTrans().`val`)
             shader.setUniformMatrix4("u_trans", OTmp.m1.`val`)
             shader.setUniformMatrix4("u_proj", OGraphics.proj3D().`val`)
             shader.apply()

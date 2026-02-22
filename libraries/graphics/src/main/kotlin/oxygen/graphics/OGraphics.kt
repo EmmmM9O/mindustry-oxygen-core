@@ -59,4 +59,15 @@ object OGraphics {
     fun sclColor(r: Float, g: Float, b: Float, a: Float) {
         zbatch.sclColorPacked = Color.toFloatBits(r / COLOR_SCL, g / COLOR_SCL, b / COLOR_SCL, a / COLOR_SCL)
     }
+
+    fun setupMatrices() {
+        zbatch.setupMatricesP()
+    }
+
+    fun combinedTrans(): Mat3D = zbatch.combinedTrans
+    fun normalTrans(): Mat3D = zbatch.tmpMat
+
+    fun g3d(enable: Boolean) {
+        zbatch.g3d = enable
+    }
 }

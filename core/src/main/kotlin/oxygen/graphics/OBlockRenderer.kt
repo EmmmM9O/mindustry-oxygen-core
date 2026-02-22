@@ -1,14 +1,12 @@
 package oxygen.graphics
 
 import arc.*
-import arc.func.*
 import arc.graphics.*
 import arc.graphics.Texture.TextureFilter
 import arc.graphics.g2d.*
 import arc.graphics.gl.*
 import arc.math.*
 import arc.math.geom.*
-import arc.struct.*
 import arc.util.*
 import mindustry.*
 import mindustry.content.*
@@ -19,9 +17,9 @@ import mindustry.world.*
 import mindustry.world.blocks.environment.Floor.UpdateRenderState
 import mindustry.world.blocks.power.*
 import oxygen.*
+import oxygen.math.*
 import oxygen.world.*
 import oxygen.world.blocks.*
-import oxygen.math.*
 import kotlin.math.*
 
 class OBlockRenderer : BlockRendererI() {
@@ -181,14 +179,16 @@ class OBlockRenderer : BlockRendererI() {
 
     fun updateDarkness(data: TilesRenderData) {
         data.apply {
+            val darkFbo = dark
+            if (darkFbo == null) return@apply
             darkEvents.clear()
-            dark.texture.setFilter(TextureFilter.linear)
-            dark.resize(Vars.world.width(), Vars.world.height())
-            dark.begin()
+            darkFbo.texture.setFilter(TextureFilter.linear)
+            darkFbo.resize(Vars.world.width(), Vars.world.height())
+            darkFbo.begin()
 
             //fill darkness with black when map area is limited
             Core.graphics.clear(if (Vars.state.rules.limitMapArea && tiles == Vars.world.tiles) Color.black else Color.white)
-            Draw.proj().setOrtho(0f, 0f, dark.width.toFloat(), dark.height.toFloat())
+            Draw.proj().setOrtho(0f, 0f, darkFbo.width.toFloat(), darkFbo.height.toFloat())
 
             //clear out initial starting area
             if (Vars.state.rules.limitMapArea && tiles == Vars.world.tiles) {
@@ -226,7 +226,7 @@ class OBlockRenderer : BlockRendererI() {
 
             Draw.flush()
             Draw.color()
-            dark.end()
+            darkFbo.end()
         }
     }
 
@@ -303,10 +303,12 @@ class OBlockRenderer : BlockRendererI() {
     fun processDarkness(data: TilesRenderData) {
         data.apply {
             if (!darkEvents.isEmpty) {
+                val darkFbo = dark
+                if (darkFbo == null) return@apply
                 Draw.flush()
 
-                dark.begin()
-                Draw.proj().setOrtho(0f, 0f, dark.width.toFloat(), dark.height.toFloat())
+                darkFbo.begin()
+                Draw.proj().setOrtho(0f, 0f, darkFbo.width.toFloat(), darkFbo.height.toFloat())
 
                 darkEvents.each({ pos: Int ->
                     val tile = tiles.getp(pos) ?: return@each
@@ -318,7 +320,7 @@ class OBlockRenderer : BlockRendererI() {
 
                 Draw.flush()
                 Draw.color()
-                dark.end()
+                darkFbo.end()
                 darkEvents.clear()
 
                 Draw.proj(Core.camera)
@@ -333,8 +335,10 @@ class OBlockRenderer : BlockRendererI() {
     fun drawDarkness(data: TilesRenderData) {
         //TODO
         data.apply {
+            val darkFbo = dark
+            if (darkFbo == null) return@apply
             Draw.shader(OCShaders.darkness)
-            Draw.fbo(dark.texture, Vars.world.width(), Vars.world.height(), Vars.tilesize, Vars.tilesize / 2f)
+            Draw.fbo(darkFbo.texture, Vars.world.width(), Vars.world.height(), Vars.tilesize, Vars.tilesize / 2f)
             Draw.shader()
         }
     }
@@ -584,10 +588,6 @@ class OBlockRenderer : BlockRendererI() {
             if (tiles.craft == null) continue
             g3dEach(getData(tiles), cons)
         }
-    }
-
-    fun draw3DDepth() {
-        g3dEach(G3DrawBuilding::drawDepth)
     }
 
     fun draw3D() {

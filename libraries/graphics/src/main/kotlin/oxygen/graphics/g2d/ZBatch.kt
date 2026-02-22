@@ -27,6 +27,7 @@ abstract class ZBatch : Batch() {
     var sortRealZ = true
     var depth = false
     var depthShader: Shader? = null
+    var g3d = false
     var customDepthShader: Shader? = null
 
     var sclColorPacked = Color(1f / COLOR_SCL, 1f / COLOR_SCL, 1f / COLOR_SCL, 1f / COLOR_SCL).toFloatBits()
@@ -58,10 +59,19 @@ abstract class ZBatch : Batch() {
 
     fun getSortZ(): Float = if (sortRealZ) getDrawZ() else this.z
 
+    fun setupMatricesP() {
+        setupMatrices()
+    }
+
     override fun setupMatrices() {
         combinedTrans.set(transform3DMatrix)
             .mul(combinedMatrix.set(projectionMatrix).mul(transformMatrix).to3D(tmpMat))
         val sha = getShader()
+        sha.bind()
+        if (g3d) {
+            tmpMat.set(combinedTrans).toNormalMatrix()
+            sha.setUniformMatrix4("u_normalMat", tmpMat.`val`)
+        }
         sha.setUniformMatrix4("u_trans", combinedTrans.`val`)
         sha.setUniformMatrix4("u_proj", projection3DMatrix.`val`)
     }

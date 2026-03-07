@@ -65,6 +65,7 @@ class OMobileInput : OInputHandler(), GestureListener {
 
     /** Place plans to be removed.  */
     var removals: Seq<BuildPlan> = Seq<BuildPlan>()
+    val removalMap: ObjectMap<Tiles, Seq<BuildPlan>> = ObjectMap.of()
 
     /** Whether the player is currently shifting all placed tiles.  */
     var selecting: Boolean = false
@@ -148,11 +149,10 @@ class OMobileInput : OInputHandler(), GestureListener {
         InputHandler.r2.setSize((block.size * Vars.tilesize).toFloat())
         InputHandler.r2.setCenter(x * Vars.tilesize + block.offset, y * Vars.tilesize + block.offset)
 
-        for (plan in selectPlans) {
-            if (plan.tiles !== tiles) continue
+        eachPlanMap(selectMap, tiles) {plan ->
             val other = plan.tile()
 
-            if (other == null || plan.breaking) continue
+            if (other == null || plan.breaking) return@eachPlanMap
 
             InputHandler.r1.setSize((plan.block.size * Vars.tilesize).toFloat())
             InputHandler.r1.setCenter(other.worldx() + plan.block.offset, other.worldy() + plan.block.offset)
@@ -186,11 +186,10 @@ class OMobileInput : OInputHandler(), GestureListener {
         InputHandler.r2.setSize(Vars.tilesize.toFloat())
         InputHandler.r2.setCenter(tile.worldx(), tile.worldy())
 
-        for (plan in selectPlans) {
-            if (plan.tiles !== tile.tiles) continue
+        eachPlanMap(selectMap, tile.tiles) {plan ->
             val other = plan.tile()
 
-            if (other == null) continue
+            if (other == null) return@eachPlanMap 
 
             if (!plan.breaking) {
                 InputHandler.r1.setSize((plan.block.size * Vars.tilesize).toFloat())
@@ -207,8 +206,10 @@ class OMobileInput : OInputHandler(), GestureListener {
 
     fun removePlan(plan: BuildPlan) {
         selectPlans.remove(plan, true)
+        removePlanMap(selectMap, plan)
         if (!plan.breaking) {
             removals.add(plan)
+            addPlanMap(removalMap, plan)
         }
     }
 
@@ -296,7 +297,9 @@ class OMobileInput : OInputHandler(), GestureListener {
 
                 //move all current plans to removal array so they fade out
                 removals.addAll(selectPlans.select { r -> !r.breaking })
+                resetPlanMap(removalMap, removals)
                 selectPlans.clear()
+                selectMap.clear()
                 selecting = false
             }
         }.visible { !selectPlans.isEmpty() || schematicMode || rebuildMode }.update { i ->
@@ -324,6 +327,7 @@ class OMobileInput : OInputHandler(), GestureListener {
                     Vars.player.unit().clearBuilding()
                 }
                 selectPlans.clear()
+                selectMap.clear()
                 mode = PlaceMode.none
                 block = null
             }.width(155f).checked { b -> false }.height(50f).margin(12f)
@@ -368,6 +372,7 @@ class OMobileInput : OInputHandler(), GestureListener {
                     .disabled { f -> lastSchematic == null || lastSchematic.file != null }
                 b.button(Icon.cancel, style) {
                     selectPlans.clear()
+                    selectMap.clear()
                     lastSchematic = null
                 }
                 b.row()
@@ -389,7 +394,7 @@ class OMobileInput : OInputHandler(), GestureListener {
         Lines.stroke(1f)
 
         //draw plans about to be removed
-        for (entry in genTilesPlans(removals)) {
+        for (entry in removalMap) {
             val tiles = entry.key
             val plans = entry.value
             drawTiles = tiles
@@ -463,7 +468,7 @@ class OMobileInput : OInputHandler(), GestureListener {
 
     override fun drawOverSelect() {
         //draw list of plans
-        for (entry in genTilesPlans(selectPlans)) {
+        for (entry in selectMap) {
             val tiles = entry.key
             val plans = entry.value
             drawTiles = tiles
@@ -587,6 +592,7 @@ class OMobileInput : OInputHandler(), GestureListener {
                 checkHidden
             )
         )
+        resetPlanMap(selectMap, selectPlans)
         lastSchematic = schem
     }
 
@@ -657,6 +663,7 @@ class OMobileInput : OInputHandler(), GestureListener {
             lineMode = false
         } else if (mode == PlaceMode.schematicSelect) {
             selectPlans.clear()
+            selectMap.clear()
             lastSchematic = Vars.schematics.create(lineStartX, lineStartY, lastLineX, lastLineY, currentTiles!!)
             useSchematic(lastSchematic)
             if (selectPlans.isEmpty()) {
@@ -809,7 +816,10 @@ class OMobileInput : OInputHandler(), GestureListener {
                     rotation,
                     block,
                     block.nextConfig()
-                ).also { lastPlaced = it })
+                ).also { 
+                    lastPlaced = it
+                    addPlanMap(selectMap, it)
+                })
             block.onNewPlan(lastPlaced)
         } else if (mode == PlaceMode.breaking && validBreak(
                 linked.x.toInt(),
@@ -818,7 +828,9 @@ class OMobileInput : OInputHandler(), GestureListener {
             ) && !hasPlan(linked)
         ) {
             //add to selection queue if it's a valid BREAK position
-            selectPlans.add(BuildPlan(linked.x.toInt(), linked.y.toInt(), cursor.tiles))
+            selectPlans.add(BuildPlan(linked.x.toInt(), linked.y.toInt(), cursor.tiles).also{
+                addPlanMap(selectMap, it)
+            })
         } else if ((commandMode && selectedUnits.size > 0) || commandBuildings.size > 0) {
             //handle selecting units with command mode
             commandTap(x, y, queueCommandMode)
@@ -867,6 +879,8 @@ class OMobileInput : OInputHandler(), GestureListener {
         if (Vars.state.isMenu()) {
             selectPlans.clear()
             removals.clear()
+            selectMap.clear()
+            removalMap.clear()
             mode = PlaceMode.none
             manualShooting = false
             payloadTarget = null
@@ -975,9 +989,6 @@ class OMobileInput : OInputHandler(), GestureListener {
         }
 
         if (mode == PlaceMode.schematicSelect || mode == PlaceMode.rebuildSelect) {
-            val (lx, ly) = rawTilePos()
-            lastLineX = lx.toInt()
-            lastLineY = ly.toInt()
             autoPan()
         }
 
@@ -995,14 +1006,40 @@ class OMobileInput : OInputHandler(), GestureListener {
                 autoPan()
             }
 
-            val (lxf, lyf) = rawTilePos()
-            val lx = lxf.toInt()
-            val ly = lyf.toInt()
+            if(isPlacing()){
+                val tile = tileAtF(Core.input.mouseX().toFloat(), Core.input.mouseY().toFloat())
+                if(tile != null && tile.tiles != lineTiles){
+                    updateLine(lineStartX, lineStartY, lastLineX, lastLineY)
+                    flushSelectPlans(linePlans)
 
-            if ((lastLineX != lx || lastLineY != ly) && isPlacing()) {
-                lastLineX = lx
-                lastLineY = ly
-                updateLine(lineStartX, lineStartY, lx, ly)
+                    val tiles = tile.tiles
+                    val lx = tile.x.toInt()
+                    val ly = tile.y.toInt()
+                    lineStartX = lx 
+                    lineStartY = ly
+                    lastLineX = lx
+                    lastLineY = ly
+                    lineTiles = tiles
+
+                    updateLine(lineStartX, lineStartY, lx, ly)
+                    if (!Vars.state.isPaused()) Fx.tapBlock.at(
+                        //TODO Block Offset
+                        tile.absWorldx(),
+                        tile.absWorldy(),
+                        1f
+                    )
+                }
+                else {
+                    val (lxf, lyf) = rawTilePos()
+                    val lx = lxf.toInt()
+                    val ly = lyf.toInt()
+                    if (lastLineX != lx || lastLineY != ly) {
+
+                        lastLineX = lx
+                        lastLineY = ly
+                        updateLine(lineStartX, lineStartY, lx, ly)
+                    }
+                }
             }
         } else {
             linePlans.clear()
@@ -1013,6 +1050,7 @@ class OMobileInput : OInputHandler(), GestureListener {
         var i = removals.size - 1
         while (i >= 0) {
             if (removals.get(i).animScale <= 0.0001f) {
+                removePlanMap(removalMap, removals.get(i))
                 removals.remove(i)
                 i--
             }

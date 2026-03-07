@@ -236,7 +236,7 @@ class ODesktopInput : OInputHandler() {
             }
         }
 
-        for (entry in genTilesPlans(selectPlans)) {
+        for (entry in selectMap) {
             val tiles = entry.key
             val plans = entry.value
             drawTiles = tiles
@@ -636,6 +636,7 @@ class ODesktopInput : OInputHandler() {
 
         selectPlans.clear()
         selectPlans.addAll(Vars.schematics.toPlans(schem, schematicX, schematicY, tile.tiles, checkHidden))
+        resetPlanMap(selectMap, selectPlans)
         mode = PlaceMode.none
     }
 
@@ -727,6 +728,7 @@ class ODesktopInput : OInputHandler() {
         if (Core.input.keyTap(Binding.clearBuilding) || isPlacing()) {
             lastSchematic = null
             selectPlans.clear()
+            selectMap.clear()
         }
 
         if (!Core.scene.hasKeyboard() && selectX == -1 && selectY == -1 && schemX != -1 && schemY != -1) {
@@ -855,6 +857,7 @@ class ODesktopInput : OInputHandler() {
             mode = PlaceMode.none
         } else if (Core.input.keyTap(Binding.deselect) && !selectPlans.isEmpty()) {
             selectPlans.clear()
+            selectMap.clear()
             lastSchematic = null
         } else if (Core.input.keyTap(Binding.breakBlock) && !Core.scene.hasMouse() && Vars.player.isBuilder() && !commandMode) {
             //is recalculated because setting the mode to breaking removes potential multiblock cursor offset
@@ -1095,6 +1098,7 @@ class ODesktopInput : OInputHandler() {
             block = null
             splan = null
             selectPlans.clear()
+            selectMap.clear()
         }
     }
 

@@ -78,6 +78,9 @@ class OCPreloader : Preloader() {
             override fun z(z: Float) {
                 OGraphics.realZ(z)
             }
+            override fun scl(r: Float,g: Float,b: Float,a: Float){
+                OGraphics.sclColor(r,g,b,a)
+            }
         }
         log.atInfo {
             message("Replace batch")

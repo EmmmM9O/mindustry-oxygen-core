@@ -150,6 +150,7 @@ class OBlockRenderer : BlockRendererI() {
     }
 
     fun updateShadows(data: TilesRenderData, ignoreBuildings: Boolean, ignoreTerrain: Boolean) {
+        OGraphics.zbatch.alphaTest = 0f
         data.apply {
             shadows.texture.setFilter(TextureFilter.linear, TextureFilter.linear)
             shadows.resize(tiles.width, tiles.height)
@@ -301,6 +302,7 @@ class OBlockRenderer : BlockRendererI() {
     }
 
     fun processDarkness(data: TilesRenderData) {
+        OGraphics.zbatch.alphaTest = 0f
         data.apply {
             if (!darkEvents.isEmpty) {
                 val darkFbo = dark
@@ -381,6 +383,7 @@ class OBlockRenderer : BlockRendererI() {
     }*/
 
     fun processShadows(data: TilesRenderData) {
+        OGraphics.zbatch.alphaTest = 0f
         data.apply {
             if (!shadowEvents.isEmpty) {
                 Draw.flush()
@@ -421,10 +424,6 @@ class OBlockRenderer : BlockRendererI() {
             val MAX = 25
             val craft = tiles.craft
             if (tiles.width <= MAX && tiles.height <= MAX) {
-                tmpMat1.set(OGraphics.trans3D())
-                tmpM.set(Draw.trans())
-                OGraphics.trans3D().translate(0f, 0f, data.tiles.craft.height())
-                Draw.trans(craft.trans())
                 Tmp.tr1.set(shadows.texture)
                 Tmp.tr1.set(0f, 1f, 1f, 0f)
 
@@ -437,9 +436,6 @@ class OBlockRenderer : BlockRendererI() {
                     tiles.unitHeight().toFloat() + 2f * Vars.tilesize
                 )
                 Draw.shader()
-
-                OGraphics.trans3D(tmpMat1)
-                Draw.trans(tmpM)
             } else {
                 //TODO
                 val ww = (tiles.width * Vars.tilesize + Vars.tilesize * 2).toFloat()
@@ -455,11 +451,6 @@ class OBlockRenderer : BlockRendererI() {
 
                 Tmp.tr1.set(shadows.texture)
                 Tmp.tr1.set(u, v2, u2, v)
-                tmpMat1.set(OGraphics.trans3D())
-                tmpM.set(Draw.trans())
-                OGraphics.trans3D().translate(0f, 0f, data.tiles.craft.height())
-                Draw.trans(craft.trans())
-
                 Draw.shader(OCShaders.darkness)
                 Draw.rect(
                     Tmp.tr1,
@@ -469,9 +460,6 @@ class OBlockRenderer : BlockRendererI() {
                     bounds.height
                 )
                 Draw.shader()
-
-                OGraphics.trans3D(tmpMat1)
-                Draw.trans(tmpM)
             }
         }
     }
@@ -596,11 +584,6 @@ class OBlockRenderer : BlockRendererI() {
 
     fun drawBlocks(data: TilesRenderData) {
         data.apply {
-            tmpMat1.set(OGraphics.trans3D())
-            OGraphics.trans3D().translate(0f, 0f, tiles.craft.height() + 2f)
-            tmpM.set(Draw.trans())
-            Draw.trans(tiles.craft.trans())
-
             val pteam = Vars.player.team()
 
             //TODO
@@ -689,9 +672,6 @@ class OBlockRenderer : BlockRendererI() {
 
                 Draw.reset()
             }
-
-            OGraphics.trans3D(tmpMat1)
-            Draw.trans(tmpM)
         }
     }
 

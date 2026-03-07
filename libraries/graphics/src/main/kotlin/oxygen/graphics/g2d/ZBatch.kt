@@ -24,10 +24,11 @@ abstract class ZBatch : Batch() {
     val projection3DMatrix = Mat3D()
     val tmpMat = Mat3D()
     var alphaTest = 0f
-    var sortRealZ = true
+    var sortRealZ = false 
     var depth = false
     var depthShader: Shader? = null
     var g3d = false
+    var forceShader = false 
     var customDepthShader: Shader? = null
 
     var sclColorPacked = Color(1f / COLOR_SCL, 1f / COLOR_SCL, 1f / COLOR_SCL, 1f / COLOR_SCL).toFloatBits()
@@ -83,6 +84,10 @@ abstract class ZBatch : Batch() {
 
     override fun getShader(): Shader = if (depth) customDepthShader ?: depthShader!! else super.getShader()
 
+    fun setDefaultShader(shader: Shader?){
+        this.shader = shader
+    }
+
     abstract fun drawImpl(texture: Texture, spriteVertices: FloatArray, offset: Int, count: Int)
 }
 
@@ -125,6 +130,7 @@ class ZSpriteBatch(size: Int = 4096, defaultShader: Shader? = null, defaultDepth
         var blending: Blending? = null
         var run: Runnable? = null
         var realZ: Float = 0f
+        var sclColor: Float = Color(1f / COLOR_SCL, 1f / COLOR_SCL, 1f / COLOR_SCL, 1f / COLOR_SCL).toFloatBits()
     }
 
     /**
@@ -224,6 +230,7 @@ class ZSpriteBatch(size: Int = 4096, defaultShader: Shader? = null, defaultDepth
     }
 
     override fun setShader(shader: Shader?, apply: Boolean) {
+        if(forceShader) return
         require(!(!flushing && sort)) { "Shaders cannot be set while sorting is enabled. Set shaders inside Draw.run(...)." }
         super.setShader(shader, apply)
     }
@@ -312,6 +319,7 @@ class ZSpriteBatch(size: Int = 4096, defaultShader: Shader? = null, defaultDepth
             req.blending = blending
             req.run = null
             req.realZ = realZ
+            req.sclColor = sclColorPacked
             numRequests++
         } else {
             drawSuper(texture, spriteVertices, offset, count)
@@ -344,6 +352,7 @@ class ZSpriteBatch(size: Int = 4096, defaultShader: Shader? = null, defaultDepth
             if (numRequests >= requests.size) expandRequests()
             val req = requests[numRequests]!!
             req.realZ = realZ
+            req.sclColor = sclColorPacked
             req.run = request
             req.blending = blending
             requestZ[numRequests] = intZ
@@ -379,6 +388,7 @@ class ZSpriteBatch(size: Int = 4096, defaultShader: Shader? = null, defaultDepth
 
         val sha = getShader()
         sha.bind()
+        sha.apply()
         setupMatrices()
         sha.setUniformf("u_alphaTest", alphaTest)
 
@@ -423,6 +433,7 @@ class ZSpriteBatch(size: Int = 4096, defaultShader: Shader? = null, defaultDepth
 
             super.setBlending(req.blending)
             realZ(req.realZ)
+            sclColorPacked = req.sclColor
 
             if (req.run != null) {
                 req.run!!.run()

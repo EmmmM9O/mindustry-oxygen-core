@@ -216,8 +216,7 @@ class OFloorRenderer : FloorRendererI() {
         val sh = getShader()
         sh.bind()
         //coordinates of geometry are normalized to [0, 1] based on map size (normWidth/normHeight), so the matrix needs to be updated accordingly
-        combinedMat.set(Oxygen.trans3D).mul(data.tiles.craft.trans().to3D(tmpMat))
-            .translate(0f, 0f, data.tiles.craft.height() - 1f).translate(-packPad, -packPad, realZ)
+        combinedMat.set(OGraphics.combinedTrans()).translate(-packPad, -packPad, realZ)
             .scale(data.packWidth, data.packHeight, 1f)
         sh.setUniformMatrix4("u_trans", combinedMat.`val`)
         sh.setUniformMatrix4("u_proj", OGraphics.proj3D().`val`)
@@ -367,9 +366,7 @@ class OFloorRenderer : FloorRendererI() {
                 floor = tile.floor()
 
                 if (tile.block().cacheLayer === layer && layer === CacheLayer.walls && !(tile.isDarkened && tile.data >= 5)) {
-                    OGraphics.realZ(4f)
                     tile.block().drawBase(tile)
-                    OGraphics.realZ(0f)
                 } else if (floor.cacheLayer === layer && (ignoreWalls || tiles.isAccessible(
                         tile.x.toInt(),
                         tile.y.toInt()

@@ -16,7 +16,7 @@ object EffectConfigs {
         bloom.apply {
             threshold = 0.9f
             gamma = 0.65f
-            intensity = 0.2f
+            intensity = 0.5f
             exposure = 0.8f
             scale = 1.6f
             mode = 4

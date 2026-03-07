@@ -44,14 +44,34 @@ abstract class OInputHandler : InputHandler() {
     val posTiles: Seq<Tile> = Seq.with()
     var currentTiles: Tiles? = null
     var currentTile: Tile? = null
-    val tilesPlans: ObjectMap<Tiles, Queue<BuildPlan>> = ObjectMap.of()
-
-    fun genTilesPlans(plans: Seq<BuildPlan>): ObjectMap<Tiles, Queue<BuildPlan>> {
-        tilesPlans.clear();
+    val selectMap: ObjectMap<Tiles, Seq<BuildPlan>> = ObjectMap.of()
+    var crossTiles = true
+ 
+    fun resetPlanMap(map: ObjectMap<Tiles, Seq<BuildPlan>>,plans: Seq<BuildPlan>){
+        map.clear()
         for (plan in plans) {
-            tilesPlans.get(plan.tiles, ::Queue).add(plan);
+            map.get(plan.tiles, ::Seq).add(plan)
         }
-        return tilesPlans
+    }
+
+    fun addPlanMap(map: ObjectMap<Tiles, Seq<BuildPlan>>, plan: BuildPlan) {
+        map.get(plan.tiles, ::Seq).add(plan)
+    }
+
+    fun removePlanMap(map: ObjectMap<Tiles, Seq<BuildPlan>>, plan: BuildPlan) {
+        map.get(plan.tiles).remove(plan)
+    }
+
+    inline fun eachPlanMap(map: ObjectMap<Tiles, Seq<BuildPlan>>, tiles:Tiles, func: (BuildPlan) -> kotlin.Unit) {
+        map.getNull(tiles)?.forEach(func)
+    }
+
+    fun containsPlanMap(map: ObjectMap<Tiles, Seq<BuildPlan>>, tiles:Tiles, func: (BuildPlan)-> Boolean): Boolean {
+        return map.getNull(tiles)?.contains{ func(it) } ?: false
+    }
+
+    fun findPlanMap(map: ObjectMap<Tiles, Seq<BuildPlan>>, tiles:Tiles, func: (BuildPlan)-> Boolean): BuildPlan? {
+        return map.getNull(tiles)?.find { func(it) } ?: null
     }
 
     /*Get tiles according to world positio*/
@@ -168,7 +188,7 @@ abstract class OInputHandler : InputHandler() {
         InputHandler.r2.setCenter(x * tilesize + offset, y * tilesize + offset)
 
         resultplan = null
-        val test = Boolf(fun(plan: BuildPlan): Boolean {
+        val test =  fun(plan: BuildPlan):Boolean{
             if (plan.tiles != tiles) return false
             if (plan == skip) return false
             val other = plan.tile() ?: return false
@@ -182,14 +202,14 @@ abstract class OInputHandler : InputHandler() {
             }
 
             return InputHandler.r2.overlaps(InputHandler.r1)
-        })
+        }
         if (!player.dead()) {
             for (plan in player.unit().plans()) {
-                if (test.get(plan)) return plan
+                if (test(plan)) return plan
             }
         }
 
-        return selectPlans.find(test)
+        return findPlanMap(selectMap, tiles, test)
     }
 
     override protected fun flushSelectPlans(plans: Seq<BuildPlan>) {
@@ -197,10 +217,15 @@ abstract class OInputHandler : InputHandler() {
             if (plan.block != null && validPlace(plan.x, plan.y, plan.tiles, plan.block, plan.rotation, null, true)) {
                 val other = getPlan(plan.x, plan.y, plan.tiles, plan.block.size, null)
                 if (other == null) {
-                    selectPlans.add(plan.copy())
+                    selectPlans.add(plan.copy().also{
+                        addPlanMap(selectMap, it)
+                    })
                 } else if (!other.breaking && other.x == plan.x && other.y == plan.y && other.block.size == plan.block.size) {
                     selectPlans.remove(other)
-                    selectPlans.add(plan.copy())
+                    removePlanMap(selectMap, other)
+                    selectPlans.add(plan.copy().also{
+                        addPlanMap(selectMap, it)
+                    })
                 }
             }
         }
@@ -321,9 +346,11 @@ abstract class OInputHandler : InputHandler() {
                         tile.x.toInt(),
                         tile.y.toInt(),
                         tiles
-                    ) && !selectPlans.contains { r -> r.tile() != null && r.tile() === tile }
+                    ) && !containsPlanMap(selectMap, tiles) { r -> r.tile() != null && r.tile() === tile } 
                 ) {
-                    selectPlans.add(BuildPlan(tile.x.toInt(), tile.y.toInt(), tiles))
+                    val p = BuildPlan(tile.x.toInt(), tile.y.toInt(), tiles)
+                    selectPlans.add(p)
+                    addPlanMap(selectMap, p)
                 }
             }
         }
@@ -354,6 +381,7 @@ abstract class OInputHandler : InputHandler() {
                         it.remove()
                     }
                 }
+                resetPlanMap(selectMap, selectPlans)
             }
         }
 

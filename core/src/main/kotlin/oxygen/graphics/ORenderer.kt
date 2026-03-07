@@ -71,6 +71,8 @@ class ORenderer : RendererI() {
     var lightFar = 100f
     var lightDir_ = lightDir
 
+    var drawingShaodows = false
+
     lateinit var obloom: OBloom
 
     //Tiles
@@ -142,13 +144,14 @@ class ORenderer : RendererI() {
 
     override fun init() {
         OCShaders.init()
-        //obloom = StandardDualFilterBloom()
+        obloom = PyramidStandardDualBloom()
 
+	/*
         obloom = CompareBloom().apply {
             blooms.add(PyramidStandardDualBloom())
             blooms.add(PyramidFourNAvgBloom())
             blooms.add(StandardDualFilterBloom())
-        }
+        }*/
         planets = PlanetRenderer()
 
         if (Core.settings.getBool("bloom", true)) {
@@ -351,20 +354,30 @@ class ORenderer : RendererI() {
     }
 
     fun drawTilesFunc(craft: TilesCraftc, func: () -> Unit) {
+        drawTilesFunc(-1f,craft,func)
+    }
+    fun drawTilesFunc(offset:Float,craft: TilesCraftc, func: () -> Unit) {
         m3.set(OGraphics.trans3D())
-        OGraphics.trans3D().translate(0f, 0f, craft.height())
+        OGraphics.trans3D().translate(0f, 0f, craft.height() + offset)
         m1.set(Draw.trans())
         Draw.trans(craft.trans())
         func()
         OGraphics.trans3D(m3)
         Draw.trans(m1)
     }
+    
+    fun setMat(craft: TilesCraftc, func: () -> Unit){
+        drawTilesFunc(-5f ,craft){
+            OGraphics.setupMatrices()
+            func()
+        }
+    }
 
     fun drawTilesCraft(craft: TilesCraftc) {
         val type = craft.craftType()
         if (!type.drawUnit) return
         m3.set(OGraphics.trans3D())
-        OGraphics.trans3D().translate(0f, 0f, craft.height())
+        OGraphics.trans3D().translate(0f, 0f, craft.height() - 5f)
         m1.set(Draw.trans())
         if (craft.father() != null) Draw.trans(craft.father().trans())
         else Draw.trans().idt()
@@ -380,8 +393,8 @@ class ORenderer : RendererI() {
             OGraphics.realZ(obj.height())
             ZDraw.height = obj.height()
         } else {
-            OGraphics.realZ(2f)
-            ZDraw.height = 2f
+            OGraphics.realZ(0f)
+            ZDraw.height = 0f
         }
         if (obj is TilesCraftc) {
             drawTilesCraft(obj)
@@ -394,7 +407,12 @@ class ORenderer : RendererI() {
         //Draw.draw(Layer.background) { this.drawBackground() }
         Draw.draw(Layer.floor) {
             blocksL.floorL.drawDepth = depth
-            blocksL.floor.drawFloor()
+            for (tiles in Vars.world.allTiles) {
+                if (tiles.craft == null) continue
+                setMat(tiles.craft){
+                    blocksL.floorL.drawFloor(getData(tiles))
+                }
+            }
         }
         /*
         Draw.drawRange(
@@ -473,6 +491,7 @@ class ORenderer : RendererI() {
         }*/
         MapPreviewLoader.checkPreviews()
 
+        OGraphics.zbatch.alphaTest = 0f
         blocksL.checkChanges()
         blocksL.floor.checkChanges()
         blocksL.processBlocks()
@@ -508,8 +527,11 @@ class ORenderer : RendererI() {
         draw3DDepth()
         Gl.disable(Gl.cullFace)
 
+        drawingShaodows = true
+        OGraphics.realZ(0f)
         drawFloor(true)
         drawGroups()
+        drawingShaodows = false
         Draw.flush()
         Draw.reset()
         OGraphics.zbatch.alphaTest = 0f
@@ -556,15 +578,12 @@ class ORenderer : RendererI() {
             Core.graphics.clear(clearColor)
             Gl.clear(Gl.depthBufferBit)
 
-            Draw.sort(false)
-            Draw.shader(shader)
-            Draw.sort(true)
-
             objs.clear()
             for (tiles in Vars.world.allTiles) {
                 if (tiles.craft == null) continue
                 objs.add(tiles.craft as Object)
             }
+            //TODO make it fast
             Groups.draw.draw { obj: Drawc ->
                 objs.add(obj as Object)
             }
@@ -575,46 +594,23 @@ class ORenderer : RendererI() {
 
             blocksL.floorL.drawDepth = false
 
+            OGraphics.zbatch.alphaTest = 0.1f
+            var oriS = Draw.getShader()
+            OGraphics.zbatch.setDefaultShader(shader)
             for (obj in objs) {
                 if (obj is TilesCraftc) {
                     ZDraw.height = obj.height()
                     val type = obj.craftType()
                     val tiles = obj.tiles()
                     val data = getData(tiles)
-                    Gl.disable(Gl.depthTest)
+                    OGraphics.zbatch.alphaTest = 0.1f
 
                     drawTilesCraft(obj)
-
-                    if (type.drawFloor) {
-                        blocksL.floorL.realZ = 0f
-                        blocksL.floorL.drawFloor(data)
-                        Draw.flush()
-                    }
-
-                    OGraphics.realZ(0f)
-                    Draw.draw(Layer.block - 1f) {
-                        blocksL.drawShadows(data)
-                    }
                     Draw.flush()
 
-                    OGraphics.realZ(0f)
-                    Draw.z(Layer.block - 0.09f)
-                    blocksL.floorL.realZ = 0f
-                    blocksL.floorL.beginDraw(data)
-                    blocksL.floorL.drawLayer(data, CacheLayer.walls)
-                    blocksL.floorL.realZ = 0f
-                    Draw.flush()
-
-                    Draw.draw(Layer.min) {
-                        Draw.shader(shader)
-                    }
-                    OGraphics.realZ(0f)
-                    Draw.z(Layer.block)
-                    blocksL.drawBlocks(data)
-                    ZDraw.height = 0f
-                    Gl.enable(Gl.depthTest)
+                    OGraphics.zbatch.alphaTest = 0.0f
                     m3.set(OGraphics.trans3D())
-                    OGraphics.trans3D().translate(0f, 0f, obj.height())
+                    OGraphics.trans3D().translate(0f, 0f, obj.height() - 5f)
                     m1.set(Draw.trans())
                     Draw.trans(obj.trans())
                     OGraphics.setupMatrices()
@@ -624,16 +620,46 @@ class ORenderer : RendererI() {
                     blocksL.g3dEach(data, G3DrawBuilding::draw3D)
                     Gl.disable(Gl.cullFace)
 
+                    if (type.drawFloor) {
+                        OGraphics.realZ(0f)
+                        blocksL.floorL.drawFloor(data)
+                    }
+                    Draw.draw(Layer.block - 0.09f){
+                        blocksL.floorL.realZ = 4f
+                        OGraphics.realZ(0f)
+                        blocksL.floorL.beginDraw(data)
+                        blocksL.floorL.drawLayer(data, CacheLayer.walls)
+                        blocksL.floorL.realZ = 0f
+                    }
+
+                    Draw.flush()
+
+                    Draw.draw(Layer.block - 1f) {
+                        OGraphics.realZ(2f)
+                        blocksL.drawShadows(data)
+                        OGraphics.realZ(0f)
+                    }
+
+                    Draw.flush()
+                    OGraphics.zbatch.alphaTest = 0.1f
+
+                    OGraphics.realZ(4f)
+                    blocksL.drawBlocks(data)
+
+                    Draw.flush()
+                    OGraphics.realZ(0f)
+                    ZDraw.height = 0f
+
                     OGraphics.trans3D(m3)
                     Draw.trans(m1)
                 } else if (obj is Drawc) {
                     drawObj(obj)
                 }
             }
+            Draw.flush()
+            OGraphics.zbatch.alphaTest = 0.0f
+            OGraphics.zbatch.setDefaultShader(oriS)
 
-            Draw.sort(false)
-            Draw.shader()
-            Draw.sort(true)
             Draw.reset()
             OGraphics.g3d(false)
             /*
@@ -877,6 +903,7 @@ class ORenderer : RendererI() {
     }
 
     override fun drawBuilding(builder: Unitc) {
+        if(drawingShaodows) return
         //TODO make this more generic so it works with builder "weapons"
         val active = builder.activelyBuilding()
         if (!active && builder.lastActive() == null) return
